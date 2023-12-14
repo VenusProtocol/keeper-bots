@@ -97,5 +97,28 @@ forking({ bscmainnet: 34341800 } as const, addresses => {
         );
       await expect(tx).to.emit(busd, "Transfer").withArgs(moveDebtDelegate.address, addresses.vBUSD, repayAmount);
     });
+
+    it("should work with a multi-hop path from BUSD to USDT", async () => {
+      const path = ethers.utils.hexlify(
+        ethers.utils.concat([addresses.BUSD, "0x0001f4", addresses.WBNB, "0x0001f4", addresses.USDT]),
+      );
+      await usdt.connect(admin).approve(moveDebtOperator.address, parseUnits("300", 18));
+      const repayAmount = parseUnits("30000", 18);
+      const maxUsdtToSpend = parseUnits("300", 18);
+      const tx = await moveDebtOperator
+        .connect(admin)
+        .moveDebt(BUSD_BORROWER, repayAmount, addresses.vUSDT, maxUsdtToSpend, path);
+      await expect(tx)
+        .to.emit(moveDebtDelegate, "DebtMoved")
+        .withArgs(
+          BUSD_BORROWER,
+          addresses.vBUSD,
+          repayAmount,
+          BNB_EXPLOITER,
+          addresses.vUSDT,
+          parseUnits("30020.438638269452250292", 18),
+        );
+      await expect(tx).to.emit(busd, "Transfer").withArgs(moveDebtDelegate.address, addresses.vBUSD, repayAmount);
+    });
   });
 });
