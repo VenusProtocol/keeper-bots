@@ -150,6 +150,7 @@ abstract contract ExactOutputFlashSwap is IPancakeV3SwapCallback {
     ///   Note that msg.sender is the pool that called the callback, not the original caller
     ///   of the transaction where _flashSwap was invoked.
     /// @param data Application-specific data
+    // solhint-disable-next-line no-empty-blocks
     function _onFlashSwapCompleted(bytes memory data) internal virtual {}
 
     /// @dev Ensures that the caller of a callback is a legitimate PancakeSwap pool
