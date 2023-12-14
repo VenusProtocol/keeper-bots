@@ -48,7 +48,7 @@ contract MoveDebtOperator is ExactOutputFlashSwap {
         _flashSwap(FlashSwapParams({ amountOut: repayAmount, path: path, data: data }));
     }
 
-    function _onMoneyReceived(bytes memory data) internal override returns (uint256 maxAmountIn) {
+    function _onMoneyReceived(bytes memory data) internal override returns (IERC20 tokenIn, uint256 maxAmountIn) {
         MoveDebtParams memory params = abi.decode(data, (MoveDebtParams));
         IERC20 repayToken = _repayToken();
         IERC20 borrowToken = _borrowToken(params);
@@ -64,7 +64,7 @@ contract MoveDebtOperator is ExactOutputFlashSwap {
         }
 
         uint256 balanceAfter = borrowToken.balanceOf(address(this));
-        return balanceAfter - balanceBefore;
+        return (borrowToken, balanceAfter - balanceBefore);
     }
 
     function _onFlashSwapCompleted(bytes memory data) internal override {

@@ -97,11 +97,11 @@ abstract contract ExactOutputFlashSwap is IPancakeV3SwapCallback {
             amountToPay = uint256(amount1Delta);
         }
 
-        uint256 maxAmountIn = _onMoneyReceived(envelope.data);
+        (IERC20 tokenIn, uint256 maxAmountIn) = _onMoneyReceived(envelope.data);
 
         if (envelope.path.hasMultiplePools()) {
             bytes memory remainingPath = envelope.path.skipToken();
-            approveOrRevert(tokenToPay, address(SWAP_ROUTER), maxAmountIn);
+            approveOrRevert(tokenIn, address(SWAP_ROUTER), maxAmountIn);
             SWAP_ROUTER.exactOutput(
                 ISmartRouter.ExactOutputParams({
                     path: remainingPath,
@@ -110,7 +110,7 @@ abstract contract ExactOutputFlashSwap is IPancakeV3SwapCallback {
                     amountInMaximum: maxAmountIn
                 })
             );
-            approveOrRevert(tokenToPay, address(SWAP_ROUTER), 0);
+            approveOrRevert(tokenIn, address(SWAP_ROUTER), 0);
         } else {
             // If the path had just one pool, tokenToPay should be tokenX, so we can just repay the debt.
             tokenToPay.safeTransfer(msg.sender, amountToPay);
@@ -143,8 +143,9 @@ abstract contract ExactOutputFlashSwap is IPancakeV3SwapCallback {
     ///   Note that msg.sender is the pool that called the callback, not the original caller
     ///   of the transaction where _flashSwap was invoked.
     /// @param data Application-specific data
+    /// @return tokenIn Token X
     /// @return maxAmountIn Maximum amount of token X to be used to repay the flash swap
-    function _onMoneyReceived(bytes memory data) internal virtual returns (uint256 maxAmountIn);
+    function _onMoneyReceived(bytes memory data) internal virtual returns (IERC20 tokenIn, uint256 maxAmountIn);
 
     /// @dev Called when the flash swap is completed and was paid for. By default, does nothing.
     ///   Note that msg.sender is the pool that called the callback, not the original caller
