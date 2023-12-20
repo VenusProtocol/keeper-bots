@@ -8,6 +8,7 @@ import { MoveDebtDelegate } from "@venusprotocol/venus-protocol/contracts/Delega
 import { ensureNonzeroAddress } from "@venusprotocol/solidity-utilities/contracts/validators.sol";
 
 import { approveOrRevert } from "../util/approveOrRevert.sol";
+import { transferAll } from "../util/transferAll.sol";
 import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
 import { ExactOutputFlashSwap } from "../flash-swap/ExactOutputFlashSwap.sol";
 
@@ -70,15 +71,8 @@ contract MoveDebtOperator is ExactOutputFlashSwap {
     function _onFlashSwapCompleted(bytes memory data) internal override {
         MoveDebtParams memory params = abi.decode(data, (MoveDebtParams));
 
-        _transferAll(_borrowToken(params), params.originalSender);
-        _transferAll(_repayToken(), params.originalSender);
-    }
-
-    function _transferAll(IERC20 token, address to) internal {
-        uint256 balance = token.balanceOf(address(this));
-        if (balance > 0) {
-            token.safeTransfer(to, balance);
-        }
+        transferAll(_borrowToken(params), address(this), params.originalSender);
+        transferAll(_repayToken(), address(this), params.originalSender);
     }
 
     function _repayToken() internal view returns (IERC20) {
