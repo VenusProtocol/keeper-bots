@@ -18,8 +18,9 @@ contract MoveDebtOperator is ExactOutputFlashSwap {
     struct MoveDebtParams {
         uint256 maxExtraAmount;
         address originalSender;
-        address originalBorrower;
-        uint256 repayAmount;
+        address[] originalBorrowers;
+        uint256[] repayAmounts;
+        uint256 totalRepayAmount;
         IVBep20 vTokenToBorrow;
     }
 
@@ -37,16 +38,50 @@ contract MoveDebtOperator is ExactOutputFlashSwap {
         uint256 maxExtraAmount,
         bytes memory path
     ) external {
+        address[] memory originalBorrowers = new address[](1);
+        uint256[] memory repayAmounts = new uint256[](1);
+        originalBorrowers[0] = originalBorrower;
+        repayAmounts[0] = repayAmount;
+        _moveDebts(originalBorrowers, repayAmounts, repayAmount, vTokenToBorrow, maxExtraAmount, path);
+    }
+
+    function moveAllDebts(
+        address[] memory originalBorrowers,
+        IVBep20 vTokenToBorrow,
+        uint256 maxExtraAmount,
+        bytes memory path
+    ) external {
+        uint256 borrowersCount = originalBorrowers.length;
+        IVBep20 vTokenToRepay = DELEGATE.vTokenToRepay();
+
+        uint256[] memory repayAmounts = new uint256[](borrowersCount);
+        uint256 totalRepayAmount = 0;
+        for (uint256 i = 0; i < borrowersCount; ++i) {
+            uint256 amount = vTokenToRepay.borrowBalanceCurrent(originalBorrowers[i]);
+            repayAmounts[i] = amount;
+            totalRepayAmount += amount;
+        }
+        _moveDebts(originalBorrowers, repayAmounts, totalRepayAmount, vTokenToBorrow, maxExtraAmount, path);
+    }
+
+    function _moveDebts(
+        address[] memory originalBorrowers,
+        uint256[] memory repayAmounts,
+        uint256 totalRepayAmount,
+        IVBep20 vTokenToBorrow,
+        uint256 maxExtraAmount,
+        bytes memory path
+    ) internal {
         MoveDebtParams memory params = MoveDebtParams({
             maxExtraAmount: maxExtraAmount,
             originalSender: msg.sender,
-            originalBorrower: originalBorrower,
-            repayAmount: repayAmount,
+            originalBorrowers: originalBorrowers,
+            repayAmounts: repayAmounts,
+            totalRepayAmount: totalRepayAmount,
             vTokenToBorrow: vTokenToBorrow
         });
-
         bytes memory data = abi.encode(params);
-        _flashSwap(FlashSwapParams({ amountOut: repayAmount, path: path, data: data }));
+        _flashSwap(FlashSwapParams({ amountOut: totalRepayAmount, path: path, data: data }));
     }
 
     function _onMoneyReceived(bytes memory data) internal override returns (IERC20 tokenIn, uint256 maxAmountIn) {
@@ -56,8 +91,11 @@ contract MoveDebtOperator is ExactOutputFlashSwap {
 
         uint256 balanceBefore = borrowToken.balanceOf(address(this));
 
-        approveOrRevert(repayToken, address(DELEGATE), params.repayAmount);
-        DELEGATE.moveDebt(params.originalBorrower, params.repayAmount, params.vTokenToBorrow);
+        approveOrRevert(repayToken, address(DELEGATE), params.totalRepayAmount);
+        uint256 borrowersCount = params.originalBorrowers.length;
+        for (uint256 i = 0; i < borrowersCount; ++i) {
+            DELEGATE.moveDebt(params.originalBorrowers[i], params.repayAmounts[i], params.vTokenToBorrow);
+        }
         approveOrRevert(repayToken, address(DELEGATE), 0);
 
         if (params.maxExtraAmount > 0) {
