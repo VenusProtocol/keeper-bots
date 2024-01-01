@@ -18,39 +18,33 @@ import { forking, initMainnetUser } from "./utils";
 interface MoveDebtOperatorFixture {
   moveDebtOperator: MoveDebtOperator;
   usdt: IERC20;
-  busd: IERC20;
+  btc: IERC20;
 }
 
-forking({ bscmainnet: 34341800 } as const, addresses => {
-  const executeVip215 = async () => {
+forking({ bscmainnet: 34841800 } as const, addresses => {
+  const SHORTFALL_BORROWER = "0xEF044206Db68E40520BfA82D45419d498b4bc7Bf";
+  const MOVE_DEBT_DELEGATE = "0x89621C48EeC04A85AfadFD37d32077e65aFe2226";
+
+  const executeVip225 = async () => {
     const timelock = await initMainnetUser(addresses.NormalTimelock, parseEther("1"));
-    const comptrollerAbi = [
-      "function _setPendingImplementation(address) external",
-      "function _become(address) external",
-      "function setDelegateForBNBHacker(address) external",
-      "function comptrollerImplementation() external view returns (address)",
-      "function approvedDelegates(address, address) external view returns (bool)",
-    ];
+    const proxyAdminAbi = ["function upgrade(address proxy, address newImplementation) external"];
 
-    const comptroller = await ethers.getContractAt(comptrollerAbi, "0xfD36E2c2a6789Db23113685031d7F16329158384");
-    const intermediateImpl = await ethers.getContractAt(comptrollerAbi, "0xAE37464537fDa217258Bb2Cd70e4f8ffC7E95790");
-    const currentImpl = await ethers.getContractAt(comptrollerAbi, "0xD93bFED40466c9A9c3E7381ab335a08807318a1b");
+    const proxyAdmin = await ethers.getContractAt(proxyAdminAbi, "0x1BB765b741A5f3C2A338369DAb539385534E3343");
+    const moveDebtDelegate = await ethers.getContractAt("MoveDebtDelegate", MOVE_DEBT_DELEGATE);
 
-    await comptroller.connect(timelock)._setPendingImplementation("0xAE37464537fDa217258Bb2Cd70e4f8ffC7E95790");
-    await intermediateImpl.connect(timelock)._become("0xfD36E2c2a6789Db23113685031d7F16329158384");
-    await comptroller.connect(timelock).setDelegateForBNBHacker("0x89621C48EeC04A85AfadFD37d32077e65aFe2226");
-    await comptroller.connect(timelock)._setPendingImplementation("0xD93bFED40466c9A9c3E7381ab335a08807318a1b");
-    await currentImpl.connect(timelock)._become("0xfD36E2c2a6789Db23113685031d7F16329158384");
+    await proxyAdmin.connect(timelock).upgrade(MOVE_DEBT_DELEGATE, "0x8439932C45e646FcC1009690417A65BF48f68Ce7");
+    await moveDebtDelegate.connect(timelock).setBorrowAllowed(addresses.vBTC, true);
+    await moveDebtDelegate.connect(timelock).setRepaymentAllowed(addresses.vBTC, SHORTFALL_BORROWER, true);
   };
 
   const moveDebtOperatorFixture = async (): Promise<MoveDebtOperatorFixture> => {
     const USDT_HOLDER = "0x8894E0a0c962CB723c1976a4421c95949bE2D4E3";
     const [admin] = await ethers.getSigners();
 
-    await executeVip215();
+    await executeVip225();
 
     const usdt = IERC20__factory.connect(addresses.USDT, admin);
-    const busd = IERC20__factory.connect(addresses.BUSD, admin);
+    const btc = IERC20__factory.connect(addresses.BTCB, admin);
 
     const usdtHolder = await initMainnetUser(USDT_HOLDER, parseEther("1"));
     await usdt.connect(usdtHolder).transfer(admin.address, parseUnits("1000", 18));
@@ -60,49 +54,51 @@ forking({ bscmainnet: 34341800 } as const, addresses => {
       addresses.PancakeSwapRouter,
       addresses.MoveDebtDelegate,
     );
-    return { moveDebtOperator, usdt, busd };
+    return { moveDebtOperator, usdt, btc };
   };
 
   describe("MoveDebtOperator", () => {
-    const BUSD_BORROWER = "0x1F6D66bA924EBF554883Cf84d482394013eD294B";
     const BNB_EXPLOITER = "0x489A8756C18C0b8B24EC2a2b9FF3D4d447F79BEc";
 
     let admin: SignerWithAddress;
-    let busd: IERC20;
+    let btc: IERC20;
     let usdt: IERC20;
-    let vBUSD: IVBep20;
+    let vBTC: IVBep20;
     let moveDebtOperator: MoveDebtOperator;
     let moveDebtDelegate: MoveDebtDelegate;
 
     beforeEach(async () => {
       [admin] = await ethers.getSigners();
-      ({ moveDebtOperator, busd, usdt } = await loadFixture(moveDebtOperatorFixture));
+      ({ moveDebtOperator, btc, usdt } = await loadFixture(moveDebtOperatorFixture));
       moveDebtDelegate = await ethers.getContractAt("MoveDebtDelegate", addresses.MoveDebtDelegate);
-      vBUSD = await ethers.getContractAt("IVBep20", addresses.vBUSD);
+      vBTC = await ethers.getContractAt("IVBep20", addresses.vBTC);
     });
 
-    it("should work with a single-hop path from BUSD to USDT", async () => {
-      const path = ethers.utils.hexlify(ethers.utils.concat([addresses.BUSD, "0x000064", addresses.USDT]));
-      await usdt.connect(admin).approve(moveDebtOperator.address, parseUnits("100", 18));
-      const repayAmount = parseUnits("30000", 18);
-      const maxUsdtToSpend = parseUnits("30", 18);
+    it("should work with a single-hop path from BTC to USDT", async () => {
+      const path = ethers.utils.hexlify(ethers.utils.concat([addresses.BTCB, "0x0001f4", addresses.USDT]));
+      await usdt.connect(admin).approve(moveDebtOperator.address, parseUnits("1000", 18));
+      const repayAmount = parseUnits("0.001", 18);
+      const maxUsdtToSpend = parseUnits("1000", 18);
       const tx = await moveDebtOperator
         .connect(admin)
-        .moveDebt(BUSD_BORROWER, repayAmount, addresses.vUSDT, maxUsdtToSpend, path);
+        .moveDebt(addresses.vBTC, SHORTFALL_BORROWER, repayAmount, addresses.vUSDT, maxUsdtToSpend, path);
       await expect(tx)
         .to.emit(moveDebtDelegate, "DebtMoved")
         .withArgs(
-          BUSD_BORROWER,
-          addresses.vBUSD,
+          SHORTFALL_BORROWER,
+          addresses.vBTC,
           repayAmount,
           BNB_EXPLOITER,
           addresses.vUSDT,
-          parseUnits("30020.438638269452250292", 18),
+          parseUnits("42.582032813125250100", 18),
         );
-      await expect(tx).to.emit(busd, "Transfer").withArgs(moveDebtDelegate.address, addresses.vBUSD, repayAmount);
+      await expect(tx).to.emit(btc, "Transfer").withArgs(moveDebtDelegate.address, addresses.vBTC, repayAmount);
     });
 
-    it("should repay all debts of a list of borrowers", async () => {
+    //
+    // TODO: Make these compatible with VIP-225 version of MoveDebtDelegate
+    //
+    /*it("should repay all debts of a list of borrowers", async () => {
       const path = ethers.utils.hexlify(ethers.utils.concat([addresses.BUSD, "0x000064", addresses.USDT]));
       const borrowers = [
         "0x6b69d62616633d71d36cf253021ae717db2e09c7",
@@ -188,6 +184,6 @@ forking({ bscmainnet: 34341800 } as const, addresses => {
           parseUnits("30020.438638269452250292", 18),
         );
       await expect(tx).to.emit(busd, "Transfer").withArgs(moveDebtDelegate.address, addresses.vBUSD, repayAmount);
-    });
+    });*/
   });
 });

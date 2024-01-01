@@ -3125,7 +3125,7 @@ __metadata:
     "@venusprotocol/oracle": ^1.7.3
     "@venusprotocol/protocol-reserve": 1.0.0-converters.1
     "@venusprotocol/solidity-utilities": ^1.1.0
-    "@venusprotocol/venus-protocol": 6.1.0-dev.8
+    "@venusprotocol/venus-protocol": 7.0.0-move-debt.1
     chai: ^4.3.10
     dotenv: ^16.3.1
     eslint: ^7.32.0
@@ -3214,6 +3214,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@venusprotocol/solidity-utilities@npm:^1.2.0-dev.1":
+  version: 1.2.0
+  resolution: "@venusprotocol/solidity-utilities@npm:1.2.0"
+  checksum: b3d17a6747330da2e24a27dc0741e26a5def95307136abbcba5231fa7d9104d47458e4f0e436846aa83f6f968f67251fb6e0a8f71f4257b4151dffb6cf19810a
+  languageName: node
+  linkType: hard
+
 "@venusprotocol/venus-protocol@npm:0.7.0":
   version: 0.7.0
   resolution: "@venusprotocol/venus-protocol@npm:0.7.0"
@@ -3226,19 +3233,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/venus-protocol@npm:6.1.0-dev.8":
-  version: 6.1.0-dev.8
-  resolution: "@venusprotocol/venus-protocol@npm:6.1.0-dev.8"
+"@venusprotocol/venus-protocol@npm:7.0.0-move-debt.1":
+  version: 7.0.0-move-debt.1
+  resolution: "@venusprotocol/venus-protocol@npm:7.0.0-move-debt.1"
   dependencies:
     "@openzeppelin/contracts": 4.9.3
     "@openzeppelin/contracts-upgradeable": ^4.8.0
     "@venusprotocol/governance-contracts": ^1.4.0-dev.2
     "@venusprotocol/protocol-reserve": 1.2.0-dev.2
-    "@venusprotocol/solidity-utilities": ^1.1.0
+    "@venusprotocol/solidity-utilities": ^1.2.0-dev.1
     bignumber.js: ^9.1.2
     dotenv: ^16.0.1
     module-alias: ^2.2.2
-  checksum: 61e9d61128ea36aed3781d7373ec874233e9c2b2267ca1774f39139fb6a7c0844836be447084b36404fead74dc1efcae71330c081a4cca7563a061a73cb803c2
+  checksum: 913235664d8fa5d511b8e38d639e5203d5ac3deb205fb80e4c314cde6f3a4e70b1f0a9f33f9e059cf7bdbcf7aff5040caa72d4ecbc204c81e65df92dbdd12f58
   languageName: node
   linkType: hard
 
