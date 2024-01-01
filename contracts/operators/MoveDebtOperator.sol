@@ -10,9 +10,9 @@ import { ensureNonzeroAddress } from "@venusprotocol/solidity-utilities/contract
 import { approveOrRevert } from "../util/approveOrRevert.sol";
 import { transferAll } from "../util/transferAll.sol";
 import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
-import { ExactOutputFlashSwap } from "../flash-swap/ExactOutputFlashSwap.sol";
+import { ExactOutputFlash } from "../flash-swap/ExactOutputFlash.sol";
 
-contract MoveDebtOperator is ExactOutputFlashSwap {
+contract MoveDebtOperator is ExactOutputFlash {
     using SafeERC20 for IERC20;
 
     struct MoveDebtParams {
@@ -27,7 +27,7 @@ contract MoveDebtOperator is ExactOutputFlashSwap {
 
     MoveDebtDelegate public immutable DELEGATE;
 
-    constructor(ISmartRouter swapRouter_, MoveDebtDelegate delegate_) ExactOutputFlashSwap(swapRouter_) {
+    constructor(ISmartRouter swapRouter_, MoveDebtDelegate delegate_) ExactOutputFlash(swapRouter_) {
         ensureNonzeroAddress(address(delegate_));
         DELEGATE = delegate_;
     }
@@ -93,7 +93,12 @@ contract MoveDebtOperator is ExactOutputFlashSwap {
             vTokenToBorrow: vTokenToBorrow
         });
         bytes memory data = abi.encode(params);
-        _flashSwap(FlashSwapParams({ amountOut: totalRepayAmount, path: path, data: data }));
+        FlashParams memory flashParams = FlashParams({ amountOut: totalRepayAmount, path: path, data: data });
+        if (_underlying(vTokenToRepay) == _underlying(vTokenToBorrow)) {
+            _flashLoan(flashParams);
+        } else {
+            _flashSwap(flashParams);
+        }
     }
 
     function _onMoneyReceived(bytes memory data) internal override returns (IERC20 tokenIn, uint256 maxAmountIn) {
@@ -123,7 +128,7 @@ contract MoveDebtOperator is ExactOutputFlashSwap {
         return (borrowToken, balanceAfter - balanceBefore);
     }
 
-    function _onFlashSwapCompleted(bytes memory data) internal override {
+    function _onFlashCompleted(bytes memory data) internal override {
         MoveDebtParams memory params = abi.decode(data, (MoveDebtParams));
 
         transferAll(_underlying(params.vTokenToBorrow), address(this), params.originalSender);

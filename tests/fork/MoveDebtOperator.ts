@@ -39,6 +39,7 @@ forking({ bscmainnet: 34841800 } as const, addresses => {
 
   const moveDebtOperatorFixture = async (): Promise<MoveDebtOperatorFixture> => {
     const USDT_HOLDER = "0x8894E0a0c962CB723c1976a4421c95949bE2D4E3";
+    const BTC_HOLDER = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
     const [admin] = await ethers.getSigners();
 
     await executeVip225();
@@ -48,6 +49,9 @@ forking({ bscmainnet: 34841800 } as const, addresses => {
 
     const usdtHolder = await initMainnetUser(USDT_HOLDER, parseEther("1"));
     await usdt.connect(usdtHolder).transfer(admin.address, parseUnits("1000", 18));
+
+    const btcHolder = await initMainnetUser(BTC_HOLDER, parseEther("1"));
+    await btc.connect(btcHolder).transfer(admin.address, parseUnits("100", 18));
 
     const moveDebtOperatorFactory = await ethers.getContractFactory<MoveDebtOperator__factory>("MoveDebtOperator");
     const moveDebtOperator = await moveDebtOperatorFactory.deploy(
@@ -91,6 +95,27 @@ forking({ bscmainnet: 34841800 } as const, addresses => {
           BNB_EXPLOITER,
           addresses.vUSDT,
           parseUnits("42.582032813125250100", 18),
+        );
+      await expect(tx).to.emit(btc, "Transfer").withArgs(moveDebtDelegate.address, addresses.vBTC, repayAmount);
+    });
+
+    it("should work with in-kind debt moves with flash-loan", async () => {
+      const path = ethers.utils.hexlify(ethers.utils.concat([addresses.BTCB, "0x0001f4", addresses.USDT]));
+      await btc.connect(admin).approve(moveDebtOperator.address, parseUnits("0.1", 18));
+      const repayAmount = parseUnits("1", 18);
+      const maxBtcToSpend = parseUnits("0.1", 18);
+      const tx = await moveDebtOperator
+        .connect(admin)
+        .moveDebt(addresses.vBTC, SHORTFALL_BORROWER, repayAmount, addresses.vBTC, maxBtcToSpend, path);
+      await expect(tx)
+        .to.emit(moveDebtDelegate, "DebtMoved")
+        .withArgs(
+          SHORTFALL_BORROWER,
+          addresses.vBTC,
+          repayAmount,
+          BNB_EXPLOITER,
+          addresses.vBTC,
+          parseUnits("1.0", 18),
         );
       await expect(tx).to.emit(btc, "Transfer").withArgs(moveDebtDelegate.address, addresses.vBTC, repayAmount);
     });
