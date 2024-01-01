@@ -162,6 +162,8 @@ abstract contract ExactOutputFlash is IPancakeV3SwapCallback, IPancakeV3FlashCal
         }
 
         envelope.token.safeTransfer(msg.sender, envelope.amountOut + fee);
+
+        _onFlashCompleted(envelope.data);
     }
 
     /// @dev Initiates a flash swap
