@@ -9,11 +9,36 @@ import * as dotenv from "dotenv";
 import { parseUnits } from "ethers/lib/utils";
 import "hardhat-deploy";
 import "hardhat-gas-reporter";
-import { HardhatUserConfig } from "hardhat/config";
+import { HardhatUserConfig, extendConfig } from "hardhat/config";
+import { HardhatConfig } from "hardhat/types";
 import "solidity-coverage";
 import "solidity-docgen";
 
 dotenv.config();
+
+extendConfig((config: HardhatConfig) => {
+  if (process.env.EXPORT !== "true") {
+    config.external = {
+      ...config.external,
+      deployments: {
+        bsctestnet: [
+          "node_modules/@venusprotocol/governance-contracts/deployments/bsctestnet",
+          "node_modules/@venusprotocol/venus-protocol/deployments/bsctestnet",
+          "node_modules/@venusprotocol/oracle/deployments/bsctestnet",
+        ],
+        bscmainnet: [
+          "node_modules/@venusprotocol/governance-contracts/deployments/bscmainnet",
+          "node_modules/@venusprotocol/venus-protocol/deployments/bscmainnet",
+          "node_modules/@venusprotocol/oracle/deployments/bscmainnet",
+        ],
+        sepolia: [
+          "node_modules/@venusprotocol/governance-contracts/deployments/sepolia",
+          "node_modules/@venusprotocol/oracle/deployments/sepolia",
+        ],
+      },
+    };
+  }
+});
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -140,22 +165,7 @@ const config: HardhatUserConfig = {
     templates: "./docgen-templates",
   },
   external: {
-    deployments: {
-      bsctestnet: [
-        "node_modules/@venusprotocol/governance-contracts/deployments/bsctestnet",
-        "node_modules/@venusprotocol/venus-protocol/deployments/bsctestnet",
-        "node_modules/@venusprotocol/oracle/deployments/bsctestnet",
-      ],
-      bscmainnet: [
-        "node_modules/@venusprotocol/governance-contracts/deployments/bscmainnet",
-        "node_modules/@venusprotocol/venus-protocol/deployments/bscmainnet",
-        "node_modules/@venusprotocol/oracle/deployments/bscmainnet",
-      ],
-      sepolia: [
-        "node_modules/@venusprotocol/governance-contracts/deployments/sepolia",
-        "node_modules/@venusprotocol/oracle/deployments/sepolia",
-      ],
-    },
+    deployments: {},
   },
 };
 
