@@ -31,7 +31,6 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       NODE_OPTIONS: --max-old-space-size=4096
-    continue-on-error: ${{ matrix.experimental }}
     steps:
       - uses: actions/checkout@v2
 
@@ -113,7 +112,6 @@ jobs:
         run: YARN_CHECKSUM_BEHAVIOR=update yarn
 
       - name: Export deployments
-        continue-on-error: true
         run: |
           set -e
           for NETWORK in bsctestnet bscmainnet ethereum sepolia opbnbtestnet opbnbmainnet; do
