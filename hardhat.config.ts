@@ -71,9 +71,7 @@ const config: HardhatUserConfig = {
     bsctestnet: {
       url: process.env.ARCHIVE_NODE_bsctestnet || "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
-      accounts: {
-        mnemonic: process.env.MNEMONIC || "",
-      },
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [`0x${process.env.DEPLOYER_PRIVATE_KEY}`] : [],
       gasPrice: parseUnits("10", "gwei").toNumber(),
       gasMultiplier: 10,
       timeout: 12000000,
@@ -88,9 +86,7 @@ const config: HardhatUserConfig = {
     sepolia: {
       url: process.env.ARCHIVE_NODE_sepolia || "https://ethereum-sepolia.blockpi.network/v1/rpc/public",
       chainId: 11155111,
-      accounts: {
-        mnemonic: process.env.MNEMONIC || "",
-      },
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [`0x${process.env.DEPLOYER_PRIVATE_KEY}`] : [],
     },
     ethereum: {
       url: process.env.ARCHIVE_NODE_ethereum || "https://ethereum.blockpi.network/v1/rpc/public",
@@ -172,24 +168,24 @@ const config: HardhatUserConfig = {
 function isFork() {
   return process.env.FORK === "true"
     ? {
-        allowUnlimitedContractSize: false,
-        loggingEnabled: false,
-        forking: {
-          url:
-            process.env[`ARCHIVE_NODE_${process.env.FORKED_NETWORK}`] ||
-            "https://data-seed-prebsc-1-s1.binance.org:8545",
-          blockNumber: 21068448,
-        },
-        accounts: {
-          accountsBalance: "1000000000000000000",
-        },
-        live: false,
-      }
+      allowUnlimitedContractSize: false,
+      loggingEnabled: false,
+      forking: {
+        url:
+          process.env[`ARCHIVE_NODE_${process.env.FORKED_NETWORK}`] ||
+          "https://data-seed-prebsc-1-s1.binance.org:8545",
+        blockNumber: 21068448,
+      },
+      accounts: {
+        accountsBalance: "1000000000000000000",
+      },
+      live: false,
+    }
     : {
-        allowUnlimitedContractSize: true,
-        loggingEnabled: false,
-        live: false,
-      };
+      allowUnlimitedContractSize: true,
+      loggingEnabled: false,
+      live: false,
+    };
 }
 
 export default config;
