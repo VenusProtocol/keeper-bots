@@ -38,12 +38,17 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
     struct ConversionParameters {
         /// @notice The receiver of the arbitrage income
         address beneficiary;
-        /// @notice The amount (in `tokenToReceiveFromConverter` tokens) to receive as a result of conversion
-        uint256 amount;
-        /// @notice The token the TokenConverter would get
-        IERC20 tokenToSendToConverter;
         /// @notice The token currently in the TokenConverter
         IERC20 tokenToReceiveFromConverter;
+        /// @notice The amount (in `tokenToReceiveFromConverter` tokens) to receive as a result of conversion
+        uint256 amount;
+        /// @notice Minimal income to get from the arbitrage transaction (in `tokenToReceiveFromConverter`).
+        ///   This value can be negative to indicate that the sender is willing to pay for the transaction
+        ///   execution. In this case, abs(minIncome) will be withdrawn from the sender's wallet, the
+        ///   arbitrage will be executed, and the excess  (if any) will be sent to the beneficiary.
+        int256 minIncome;
+        /// @notice The token the TokenConverter would get
+        IERC20 tokenToSendToConverter;
         /// @notice Address of the token converter contract to arbitrage
         IAbstractTokenConverter converter;
         /// @notice Reversed (exact output) path to trade from `tokenToReceiveFromConverter`
@@ -65,6 +70,8 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         IERC20 tokenToReceiveFromConverter;
         /// @notice The amount (in `tokenToReceiveFromConverter` tokens) to receive
         uint256 amountToReceiveFromConverter;
+        /// @notice Minimal income to get from the arbitrage transaction (in `amountToReceiveFromConverter`).
+        int256 minIncome;
         /// @notice Address of the token converter contract to arbitrage
         IAbstractTokenConverter converter;
     }
@@ -86,6 +93,12 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
 
     /// @notice Thrown if the deadline has passed
     error DeadlinePassed(uint256 currentTimestamp, uint256 deadline);
+
+    /// @notice Thrown on math underflow
+    error Underflow();
+
+    /// @notice Thrown on math overflow
+    error Overflow();
 
     /// @param swapRouter_ PancakeSwap SmartRouter contract
     // solhint-disable-next-line no-empty-blocks
@@ -109,12 +122,17 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
             revert InsufficientLiquidity(params.amount, amountToReceive);
         }
 
+        if (params.minIncome < 0) {
+            params.tokenToReceiveFromConverter.safeTransferFrom(msg.sender, address(this), _u(-params.minIncome));
+        }
+
         ConversionData memory data = ConversionData({
             beneficiary: params.beneficiary,
             tokenToSendToConverter: params.tokenToSendToConverter,
             amountToSendToConverter: amountToPay,
             tokenToReceiveFromConverter: params.tokenToReceiveFromConverter,
             amountToReceiveFromConverter: amountToReceive,
+            minIncome: params.minIncome,
             converter: params.converter
         });
 
@@ -143,7 +161,7 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
             decoded.amountToReceiveFromConverter
         );
 
-        return (decoded.tokenToReceiveFromConverter, receivedAmount);
+        return (decoded.tokenToReceiveFromConverter, _u(_i(receivedAmount) - decoded.minIncome));
     }
 
     function _onFlashSwapCompleted(bytes memory data) internal override {
@@ -175,5 +193,19 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         approveOrRevert(tokenToPay, address(converter), 0);
         uint256 tokensReceived = tokenToReceive.balanceOf(address(this)) - balanceBefore;
         return tokensReceived;
+    }
+
+    function _u(int256 value) private pure returns (uint256) {
+        if (value < 0) {
+            revert Underflow();
+        }
+        return uint256(value);
+    }
+
+    function _i(uint256 value) private pure returns (int256) {
+        if (value > uint256(type(int256).max)) {
+            revert Overflow();
+        }
+        return int256(value);
     }
 }
