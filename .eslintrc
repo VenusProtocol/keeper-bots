@@ -3,19 +3,19 @@
     "browser": false,
     "es2021": true,
     "mocha": true,
-    "node": true,
+    "node": true
   },
   "plugins": ["@typescript-eslint"],
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
-    "prettier",
+    "prettier"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 12,
-    "project": ".eslint-tsconfig",
+    "project": ".eslint-tsconfig"
   },
   "root": true,
   "rules": {
@@ -23,16 +23,16 @@
       "error",
       {
         "ignoreIIFE": true,
-        "ignoreVoid": true,
-      },
+        "ignoreVoid": true
+      }
     ],
     "@typescript-eslint/no-inferrable-types": "off",
     "@typescript-eslint/no-unused-vars": [
       "error",
       {
         "argsIgnorePattern": "_",
-        "varsIgnorePattern": "_",
-      },
+        "varsIgnorePattern": "_"
+      }
     ],
     "spaced-comment": [
       "error",
@@ -40,7 +40,7 @@
       {
         "line": {
           "exceptions": ["-", "+"],
-          "markers": ["=", "!", "/"],
+          "markers": ["=", "!", "/"]
         },
         "block": {
           "exceptions": ["-", "+"],
