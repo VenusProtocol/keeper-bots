@@ -1,6 +1,6 @@
 {
   "name": "@venusprotocol/keeper-bots",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Keeper bots for Venus Protocol",
   "files": [
     "artifacts",
