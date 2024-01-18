@@ -88,7 +88,9 @@
   },
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "4.9.3",
+    "@venusprotocol/governance-contracts": "^1.4.0",
     "@venusprotocol/protocol-reserve": "^1.4.0",
-    "@venusprotocol/venus-protocol": "^7.1.0"
+    "@venusprotocol/venus-protocol": "^7.1.0",
+    "viem": "^2.1.1"
   }
 }
