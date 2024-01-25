@@ -1,10 +1,10 @@
-import { Address, parseAbi, parseUnits } from "viem";
+import { Address, parseAbi } from "viem";
 
 import TokenConverterOperator from "../config/abis/TokenConverterOperator";
 import addresses, { HasAddressFor } from "../config/addresses";
 import { chains } from "../config/chains";
 import { getPublicClient, getWalletClient } from "../config/clients";
-import { Path, parsePath } from "./path";
+import { Path } from "./path";
 
 type SupportedConverters =
   | "BTCBPrimeConverter"
@@ -89,28 +89,4 @@ class Bot {
   }
 }
 
-const main = async () => {
-  const bot = new Bot("bsctestnet");
-  await bot.sanityCheck();
-
-  // Imagine the converter has LTC and wants USDT
-  // tokenToSendToConverter: USDT
-  // tokenToReceiveFromConverter: LTC
-  // We're swapping LTC to USDT on PCS, so
-  // the PCS reversed path should start with
-  // USDT (tokenToSendToConverter) and end
-  // with LTC (tokenToReceiveFromConverter)
-  //
-  // The income is paid out in LTC (if any)
-  await bot.arbitrage(
-    "RiskFundConverter",
-    parsePath([addresses.bsctestnet.USDT as Address, 500, addresses.bsctestnet.LTC as Address]),
-    parseUnits("1", 18), // 1 LTC
-    parseUnits("-0.1", 18), // We're ok with paying 0.1 LTC for this conversion
-  );
-};
-
-main().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+export default Bot;

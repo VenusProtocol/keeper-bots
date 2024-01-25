@@ -3383,6 +3383,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": ^6.13.1
     "@typescript-eslint/parser": ^6.13.1
     "@venusprotocol/governance-contracts": ^1.4.0
+    "@venusprotocol/isolated-pools": ^2.3.0
     "@venusprotocol/oracle": ^1.7.3
     "@venusprotocol/protocol-reserve": ^1.4.0
     "@venusprotocol/solidity-utilities": ^1.1.0
