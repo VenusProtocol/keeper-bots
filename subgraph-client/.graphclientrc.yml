@@ -5,4 +5,4 @@ sources:
         endpoint: https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel
 
 documents:
-  - '../**/*.graphql'
+  - "../**/*.graphql"

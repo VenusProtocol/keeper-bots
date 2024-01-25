@@ -1,9 +1,7 @@
-import { DocumentNode } from 'graphql';
-import { Client as UrqlClient, createClient } from 'urql/core';
+import { DocumentNode } from "graphql";
+import { Client as UrqlClient, createClient } from "urql/core";
 
-import {
-  TokenConvertersDocument,
-} from './.graphclient';
+import { TokenConvertersDocument } from "./.graphclient";
 
 class SubgraphClient {
   urqlClient: UrqlClient;
@@ -11,7 +9,7 @@ class SubgraphClient {
   constructor(url: string) {
     this.urqlClient = createClient({
       url,
-      requestPolicy: 'network-only',
+      requestPolicy: "network-only",
     });
   }
 
@@ -30,5 +28,5 @@ class SubgraphClient {
 }
 
 export default new SubgraphClient(
-  'https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel',
+  "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel",
 );

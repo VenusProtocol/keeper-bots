@@ -1,5 +1,5 @@
 query TokenConverters {
-  tokenConverters {
+  tokenConverters(where: { paused: false} ) {
     id
     converterNetwork {
       id 
@@ -13,6 +13,6 @@ query TokenConverters {
       incentive
       access
     }
-    paused
+    paused(filter: Boolean): true
   }
 }

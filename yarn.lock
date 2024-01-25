@@ -2914,6 +2914,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@telegraf/types@npm:^6.9.1":
+  version: 6.9.1
+  resolution: "@telegraf/types@npm:6.9.1"
+  checksum: bafdded5413bfae9bb1369c311c063b7e210b3f950f7df2dc9acf10510ca5e1f928045264684afd31fe96d0645dc2a3d9b979cdb9c29d8a696a6738dd60fa4f9
+  languageName: node
+  linkType: hard
+
 "@trivago/prettier-plugin-sort-imports@npm:3.4.0":
   version: 3.4.0
   resolution: "@trivago/prettier-plugin-sort-imports@npm:3.4.0"
@@ -3488,6 +3495,14 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@venusprotocol/tg-error-reporter@workspace:packages/tg-error-reporter":
+  version: 0.0.0-use.local
+  resolution: "@venusprotocol/tg-error-reporter@workspace:packages/tg-error-reporter"
+  dependencies:
+    telegraf: ^4.15.3
+  languageName: unknown
+  linkType: soft
+
 "@venusprotocol/token-bridge@npm:1.0.0":
   version: 1.0.0
   resolution: "@venusprotocol/token-bridge@npm:1.0.0"
@@ -3727,6 +3742,15 @@ __metadata:
     zod:
       optional: true
   checksum: de703b58c221395f015c04a8512dde2cff2b9541c577a23cf205204604e624fbfd0e682e82f7954968d5e437cd0d7e630b1c159e73543881a4d0040238bfb13a
+  languageName: node
+  linkType: hard
+
+"abort-controller@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "abort-controller@npm:3.0.0"
+  dependencies:
+    event-target-shim: ^5.0.0
+  checksum: 170bdba9b47b7e65906a28c8ce4f38a7a369d78e2271706f020849c1bfe0ee2067d4261df8bbb66eb84f79208fd5b710df759d64191db58cfba7ce8ef9c54b75
   languageName: node
   linkType: hard
 
@@ -4487,16 +4511,16 @@ __metadata:
   linkType: hard
 
 "browserslist@npm:^4.22.2":
-  version: 4.22.3
-  resolution: "browserslist@npm:4.22.3"
+  version: 4.22.2
+  resolution: "browserslist@npm:4.22.2"
   dependencies:
-    caniuse-lite: ^1.0.30001580
-    electron-to-chromium: ^1.4.648
+    caniuse-lite: ^1.0.30001565
+    electron-to-chromium: ^1.4.601
     node-releases: ^2.0.14
     update-browserslist-db: ^1.0.13
   bin:
     browserslist: cli.js
-  checksum: e62b17348e92143fe58181b02a6a97c4a98bd812d1dc9274673a54f73eec53dbed1c855ebf73e318ee00ee039f23c9a6d0e7629d24f3baef08c7a5b469742d57
+  checksum: 33ddfcd9145220099a7a1ac533cecfe5b7548ffeb29b313e1b57be6459000a1f8fa67e781cf4abee97268ac594d44134fcc4a6b2b4750ceddc9796e3a22076d9
   languageName: node
   linkType: hard
 
@@ -4517,6 +4541,30 @@ __metadata:
     create-hash: ^1.1.0
     safe-buffer: ^5.1.2
   checksum: 43bdf08a5dd04581b78f040bc4169480e17008da482ffe2a6507327bbc4fc5c28de0501f7faf22901cfe57fbca79cbb202ca529003fedb4cb8dccd265b38e54d
+  languageName: node
+  linkType: hard
+
+"buffer-alloc-unsafe@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "buffer-alloc-unsafe@npm:1.1.0"
+  checksum: c5e18bf51f67754ec843c9af3d4c005051aac5008a3992938dda1344e5cfec77c4b02b4ca303644d1e9a6e281765155ce6356d85c6f5ccc5cd21afc868def396
+  languageName: node
+  linkType: hard
+
+"buffer-alloc@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "buffer-alloc@npm:1.2.0"
+  dependencies:
+    buffer-alloc-unsafe: ^1.1.0
+    buffer-fill: ^1.0.0
+  checksum: 560cd27f3cbe73c614867da373407d4506309c62fe18de45a1ce191f3785ec6ca2488d802ff82065798542422980ca25f903db078c57822218182c37c3576df5
+  languageName: node
+  linkType: hard
+
+"buffer-fill@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "buffer-fill@npm:1.0.0"
+  checksum: c29b4723ddeab01e74b5d3b982a0c6828f2ded49cef049ddca3dac661c874ecdbcecb5dd8380cf0f4adbeb8cff90a7de724126750a1f1e5ebd4eb6c59a1315b1
   languageName: node
   linkType: hard
 
@@ -4691,10 +4739,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"caniuse-lite@npm:^1.0.30001580":
-  version: 1.0.30001582
-  resolution: "caniuse-lite@npm:1.0.30001582"
-  checksum: 2fc420cb6e6080a9808781ff81a2f0d37d63897c8c981d477001be18e55c8ec33422cf966e49efdca61d4a5335d16a4d6a09d5bd6da22a8396d0dcd350b9b9da
+"caniuse-lite@npm:^1.0.30001565":
+  version: 1.0.30001580
+  resolution: "caniuse-lite@npm:1.0.30001580"
+  checksum: 8d287d1e2a64348365f55562457b52afc8c5e0e8ddf040e18e53395ca165241a697205611dc209dace5c7f7d1d3ee8d566672cce6f9668d658d7930b7a200875
   languageName: node
   linkType: hard
 
@@ -5715,10 +5763,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron-to-chromium@npm:^1.4.648":
-  version: 1.4.653
-  resolution: "electron-to-chromium@npm:1.4.653"
-  checksum: 5e1fb48e749811f4384cd7a9940585a124f46d2a9f5bdfd2d7e79685d55db448433da303bd0fb6c3665ed052299843b5661319e10119821defbc3be8ff8eb060
+"electron-to-chromium@npm:^1.4.601":
+  version: 1.4.645
+  resolution: "electron-to-chromium@npm:1.4.645"
+  checksum: ac7d23b8123f09e2343016216b1a8f297ccfb4ae9dccefe3716023344cda8a81656916d40a87039fa3d448cac31c2c4147c6b913b22178a3a00d0221a8019513
   languageName: node
   linkType: hard
 
@@ -6498,6 +6546,13 @@ __metadata:
     is-hex-prefixed: 1.0.0
     strip-hex-prefix: 1.0.0
   checksum: 1f42959e78ec6f49889c49c8a98639e06f52a15966387dd39faf2930db48663d026efb7db2702dcffe7f2a99c4a0144b7ce784efdbf733f4077aae95de76d65f
+  languageName: node
+  linkType: hard
+
+"event-target-shim@npm:^5.0.0":
+  version: 5.0.1
+  resolution: "event-target-shim@npm:5.0.1"
+  checksum: 1ffe3bb22a6d51bdeb6bf6f7cf97d2ff4a74b017ad12284cc9e6a279e727dc30a5de6bb613e5596ff4dc3e517841339ad09a7eec44266eccb1aa201a30448166
   languageName: node
   linkType: hard
 
@@ -9635,6 +9690,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"mri@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "mri@npm:1.2.0"
+  checksum: 83f515abbcff60150873e424894a2f65d68037e5a7fcde8a9e2b285ee9c13ac581b63cfc1e6826c4732de3aeb84902f7c1e16b7aff46cd3f897a0f757a894e85
+  languageName: node
+  linkType: hard
+
 "ms@npm:2.1.2":
   version: 2.1.2
   resolution: "ms@npm:2.1.2"
@@ -9760,7 +9822,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-fetch@npm:^2.6.0, node-fetch@npm:^2.6.1":
+"node-fetch@npm:^2.6.0, node-fetch@npm:^2.6.1, node-fetch@npm:^2.6.8":
   version: 2.7.0
   resolution: "node-fetch@npm:2.7.0"
   dependencies:
@@ -10398,6 +10460,13 @@ __metadata:
   version: 3.0.0
   resolution: "p-reduce@npm:3.0.0"
   checksum: 387de355e906c07159d5e6270f3b58b7c7c7349ec7294ba0a9cff2a2e2faa8c602b841b079367685d3fa166a3ee529db7aaa73fadc936987c35e90f0ba64d955
+  languageName: node
+  linkType: hard
+
+"p-timeout@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "p-timeout@npm:4.1.0"
+  checksum: 321fec524c23a754e3f1487f2b0a5516fd32aba960d5610490eac56f8a0114b549a93f9919ffc05aa68956dc52e8330e0519f3ddf951d208d19c845f9cd778de
   languageName: node
   linkType: hard
 
@@ -11420,6 +11489,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"safe-compare@npm:^1.1.4":
+  version: 1.1.4
+  resolution: "safe-compare@npm:1.1.4"
+  dependencies:
+    buffer-alloc: ^1.2.0
+  checksum: 8c0a08f7a2bec1b33400e17bb7cce40ebe0e53902dbba13735e0131fa432140650de2ab4750637623e02e28edab10fa439825b57a7e8b705cae1deb80a58e516
+  languageName: node
+  linkType: hard
+
 "safe-regex-test@npm:^1.0.0":
   version: 1.0.2
   resolution: "safe-regex-test@npm:1.0.2"
@@ -11435,6 +11513,13 @@ __metadata:
   version: 2.1.2
   resolution: "safer-buffer@npm:2.1.2"
   checksum: cab8f25ae6f1434abee8d80023d7e72b598cf1327164ddab31003c51215526801e40b66c5e65d658a0af1e9d6478cadcb4c745f4bd6751f97d8644786c0978b0
+  languageName: node
+  linkType: hard
+
+"sandwich-stream@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "sandwich-stream@npm:2.0.2"
+  checksum: 666d3276e5390786a4ad69f04da472fb69940d1a279a22aebd49ae78ca8f12855503e69d71f77d4b415144a284ffa14efa811a097ad7df501a68c01438b91282
   languageName: node
   linkType: hard
 
@@ -12364,6 +12449,24 @@ __metadata:
     mkdirp: ^1.0.3
     yallist: ^4.0.0
   checksum: db4d9fe74a2082c3a5016630092c54c8375ff3b280186938cfd104f2e089c4fd9bad58688ef6be9cf186a889671bf355c7cda38f09bbf60604b281715ca57f5c
+  languageName: node
+  linkType: hard
+
+"telegraf@npm:^4.15.3":
+  version: 4.15.3
+  resolution: "telegraf@npm:4.15.3"
+  dependencies:
+    "@telegraf/types": ^6.9.1
+    abort-controller: ^3.0.0
+    debug: ^4.3.4
+    mri: ^1.2.0
+    node-fetch: ^2.6.8
+    p-timeout: ^4.1.0
+    safe-compare: ^1.1.4
+    sandwich-stream: ^2.0.2
+  bin:
+    telegraf: lib/cli.mjs
+  checksum: 350fd2928dd813bbeb8d338480556218f4c2fdc2e1f55e73e739f2e7589a76cc44f3a3279f3e56e6e74be0da75c665077a6d46b17c4885e7d19ca5a37463329d
   languageName: node
   linkType: hard
 
