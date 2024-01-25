@@ -1,7 +1,8 @@
 import { Address, parseAbi } from "viem";
 
 import TokenConverterOperator from "../config/abis/TokenConverterOperator";
-import addresses, { HasAddressFor } from "../config/addresses";
+import addresses from "../config/addresses";
+import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
 import { getPublicClient, getWalletClient } from "../config/clients";
 import { Path } from "./path";
@@ -15,8 +16,6 @@ type SupportedConverters =
   | "XVSVaultConverter";
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
-
-export type SUPPORTED_CHAINS = HasAddressFor<"TokenConverterOperator" | SupportedConverters>;
 
 class Bot {
   private chainName: SUPPORTED_CHAINS;

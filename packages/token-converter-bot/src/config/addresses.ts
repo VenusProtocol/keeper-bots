@@ -6,8 +6,7 @@ import bscmainnetProtocolReserve from "@venusprotocol/protocol-reserve/deploymen
 import bsctestnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bsctestnet_addresses.json";
 import bscmainnetCore from "@venusprotocol/venus-protocol/deployments/bscmainnet_addresses.json";
 import bsctestnetCore from "@venusprotocol/venus-protocol/deployments/bsctestnet_addresses.json";
-
-import { SUPPORTED_CHAINS } from "./chains";
+import { SUPPORTED_CHAINS } from './chains';
 
 const addresses = {
   bscmainnet: {
