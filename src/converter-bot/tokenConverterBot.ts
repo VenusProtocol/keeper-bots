@@ -1,8 +1,7 @@
 import { Address, parseAbi, parseUnits } from "viem";
 
 import TokenConverterOperator from "../config/abis/TokenConverterOperator";
-import { type HasAddressFor, addresses } from "../config/addresses";
-import type { SUPPORTED_CHAINS } from "../config/chains";
+import addresses, { HasAddressFor } from "../config/addresses";
 import { chains } from "../config/chains";
 import { getPublicClient, getWalletClient } from "../config/clients";
 import { Path, parsePath } from "./path";
@@ -17,10 +16,12 @@ type SupportedConverters =
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; //seconds
 
+export type SUPPORTED_CHAINS = HasAddressFor<"TokenConverterOperator" | SupportedConverters>;
+
 class Bot {
   private chainName: SUPPORTED_CHAINS;
   private operator: { address: Address; abi: typeof TokenConverterOperator };
-  private addresses: typeof addresses[SupportedChains];
+  private addresses: typeof addresses;
   private _walletClient?: ReturnType<typeof getWalletClient>;
   private _publicClient?: ReturnType<typeof getPublicClient>;
 
@@ -28,7 +29,7 @@ class Bot {
     this.chainName = chainName;
     this.addresses = addresses[chainName];
     this.operator = {
-      address: addresses[chainName].TokenConverterOperator,
+      address: addresses.TokenConverterOperator,
       abi: TokenConverterOperator,
     };
   }
