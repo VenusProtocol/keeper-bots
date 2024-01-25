@@ -1,0 +1,18 @@
+query TokenConverters {
+  tokenConverters {
+    id
+    converterNetwork {
+      id 
+    }
+    destinationAddress
+    baseAsset
+    configs {
+      id
+      tokenAddressIn
+      tokenAddressOut
+      incentive
+      access
+    }
+    paused
+  }
+}
