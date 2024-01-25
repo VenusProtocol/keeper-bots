@@ -1,6 +1,6 @@
 import { Address, parseAbi } from "viem";
 
-import TokenConverterOperator from "../config/abis/TokenConverterOperator";
+import { tokenConverterOperatorAbi } from "../config/abis/generated";
 import addresses from "../config/addresses";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
@@ -19,7 +19,7 @@ const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 
 class Bot {
   private chainName: SUPPORTED_CHAINS;
-  private operator: { address: Address; abi: typeof TokenConverterOperator };
+  private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
   private addresses: typeof addresses;
   private _walletClient?: ReturnType<typeof getWalletClient>;
   private _publicClient?: ReturnType<typeof getPublicClient>;
@@ -29,7 +29,7 @@ class Bot {
     this.addresses = addresses[chainName];
     this.operator = {
       address: addresses.TokenConverterOperator,
-      abi: TokenConverterOperator,
+      abi: tokenConverterOperatorAbi,
     };
   }
 
