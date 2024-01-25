@@ -23,7 +23,9 @@
     "prettier:check": "prettier --check \"**/*.{js,json,md,sol,ts,yaml,yml}\"",
     "build": "rm -rf dist && hardhat compile && tsc --declaration",
     "docgen": "hardhat docgen",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "generate-abis": "yarn wagmi generate",
+    "postinstall": "yarn generate-abis"
   },
   "keywords": [],
   "author": "Venus",
@@ -55,6 +57,7 @@
     "@typescript-eslint/parser": "^6.13.1",
     "@venusprotocol/oracle": "^1.7.3",
     "@venusprotocol/solidity-utilities": "^1.1.0",
+    "@wagmi/cli": "^2.0.4",
     "chai": "^4.3.10",
     "dotenv": "^16.3.1",
     "eslint": "^7.32.0",
