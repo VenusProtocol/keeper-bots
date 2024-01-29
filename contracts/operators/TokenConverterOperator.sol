@@ -139,18 +139,6 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         _flashSwap(FlashSwapParams({ amountOut: amountToPay, path: params.path, data: abi.encode(data) }));
     }
 
-    function _validatePath(bytes calldata path, address expectedPathStart, address expectedPathEnd) internal pure {
-        address swapStart = path.toAddress(0);
-        if (swapStart != expectedPathStart) {
-            revert InvalidSwapStart(expectedPathStart, swapStart);
-        }
-
-        address swapEnd = path.toAddress(path.length - 20);
-        if (swapEnd != expectedPathEnd) {
-            revert InvalidSwapEnd(expectedPathEnd, swapEnd);
-        }
-    }
-
     function _onMoneyReceived(bytes memory data) internal override returns (IERC20 tokenIn, uint256 maxAmountIn) {
         ConversionData memory decoded = abi.decode(data, (ConversionData));
 
@@ -193,6 +181,18 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         approveOrRevert(tokenToPay, address(converter), 0);
         uint256 tokensReceived = tokenToReceive.balanceOf(address(this)) - balanceBefore;
         return tokensReceived;
+    }
+
+    function _validatePath(bytes calldata path, address expectedPathStart, address expectedPathEnd) internal pure {
+        address swapStart = path.toAddress(0);
+        if (swapStart != expectedPathStart) {
+            revert InvalidSwapStart(expectedPathStart, swapStart);
+        }
+
+        address swapEnd = path.toAddress(path.length - 20);
+        if (swapEnd != expectedPathEnd) {
+            revert InvalidSwapEnd(expectedPathEnd, swapEnd);
+        }
     }
 
     function _u(int256 value) private pure returns (uint256) {
