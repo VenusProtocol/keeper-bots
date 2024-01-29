@@ -185,12 +185,16 @@ const main = async () => {
     functionName: "getCash",
   });
 
-  await wallet.writeContract({
-    address: addresses.VBNBAdmin as Address,
-    abi: vBnbAdminAbi,
-    functionName: "reduceReserves",
-    args: [totalReserves < cash ? totalReserves : cash],
-  });
+  if (cash > 0) {
+    await wallet.writeContract({
+      address: addresses.VBNBAdmin as Address,
+      abi: vBnbAdminAbi,
+      functionName: "reduceReserves",
+      args: [totalReserves < cash ? totalReserves : cash],
+    });
+  } else {
+    console.error("Unable to reduce reservers vBnb Admin is out of cash");
+  }
 
   const tokenConverterConfigs = formatTokenConverterConfigs(tokenConverters);
   const results = await Promise.allSettled(
