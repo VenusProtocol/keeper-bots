@@ -57,6 +57,14 @@ export type HasAddressFor<ContractName extends string> = {
   [ChainT in keyof Addresses]: Addresses[ChainT] extends Record<ContractName, string> ? ChainT : never;
 }[keyof Addresses];
 
+export type SupportedConverters =
+  | "BTCBPrimeConverter"
+  | "ETHPrimeConverter"
+  | "RiskFundConverter"
+  | "USDCPrimeConverter"
+  | "USDTPrimeConverter"
+  | "XVSVaultConverter";
+
 const network = process.env.FORKED_NETWORK as SUPPORTED_CHAINS;
 
 export default addresses[network];
