@@ -2,7 +2,7 @@ import { HttpTransport, PublicClient, WalletClient, createPublicClient, createWa
 import { PrivateKeyAccount, privateKeyToAccount } from "viem/accounts";
 
 import { chains } from "./chains";
-import type { SUPPORTED_CHAINS } from './chains';
+import type { SUPPORTED_CHAINS } from "./chains";
 
 export const getPublicClient = (
   chainName: SUPPORTED_CHAINS,

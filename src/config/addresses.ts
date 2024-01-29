@@ -1,12 +1,13 @@
 import bscmainnetGovernance from "@venusprotocol/governance-contracts/deployments/bscmainnet_addresses.json";
 import bsctestnetGovernance from "@venusprotocol/governance-contracts/deployments/bsctestnet_addresses.json";
+import bscmainnetIsolated from "@venusprotocol/isolated-pools/deployments/bscmainnet_addresses.json";
+import bsctestnetIsolated from "@venusprotocol/isolated-pools/deployments/bsctestnet_addresses.json";
 import bscmainnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bscmainnet_addresses.json";
 import bsctestnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bsctestnet_addresses.json";
 import bscmainnetCore from "@venusprotocol/venus-protocol/deployments/bscmainnet_addresses.json";
 import bsctestnetCore from "@venusprotocol/venus-protocol/deployments/bsctestnet_addresses.json";
-import bscmainnetIsolated from "@venusprotocol/isolated-pools/deployments/bscmainnet_addresses.json";
-import bsctestnetIsolated from "@venusprotocol/isolated-pools/deployments/bsctestnet_addresses.json";
-import { SUPPORTED_CHAINS } from './chains';
+
+import { SUPPORTED_CHAINS } from "./chains";
 
 const addresses = {
   bscmainnet: {
@@ -27,7 +28,7 @@ const addresses = {
     USDCPrimeConverter: bscmainnetProtocolReserve.addresses.USDCPrimeConverter,
     USDTPrimeConverter: bscmainnetProtocolReserve.addresses.USDTPrimeConverter,
     XVSVaultConverter: bscmainnetProtocolReserve.addresses.XVSVaultConverter,
-    TokenConverterOperator: '0x',
+    TokenConverterOperator: "0x",
   },
   bsctestnet: {
     ...bsctestnetCore.addresses,
@@ -53,7 +54,7 @@ const addresses = {
 type Addresses = typeof addresses;
 
 export type HasAddressFor<ContractName extends string> = {
-  [ChainT in keyof Addresses]: Addresses[ChainT] extends Record<ContractName, any> ? ChainT : never;
+  [ChainT in keyof Addresses]: Addresses[ChainT] extends Record<ContractName, string> ? ChainT : never;
 }[keyof Addresses];
 
 const network = process.env.FORKED_NETWORK as SUPPORTED_CHAINS;

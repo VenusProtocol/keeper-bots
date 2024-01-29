@@ -14,7 +14,7 @@ type SupportedConverters =
   | "USDTPrimeConverter"
   | "XVSVaultConverter";
 
-const REVERT_IF_NOT_MINED_AFTER = 60n; //seconds
+const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 
 export type SUPPORTED_CHAINS = HasAddressFor<"TokenConverterOperator" | SupportedConverters>;
 

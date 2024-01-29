@@ -34,6 +34,7 @@
         "varsIgnorePattern": "_"
       }
     ],
+    "@typescript-eslint/ban-ts-comment": "warn",
     "spaced-comment": [
       "error",
       "always",

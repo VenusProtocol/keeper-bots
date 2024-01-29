@@ -4,3 +4,5 @@ cache
 coverage
 dist
 typechain
+src/config/abis/generated.ts
+subgraph-client/.graphqlclient

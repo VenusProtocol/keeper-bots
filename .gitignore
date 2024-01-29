@@ -18,5 +18,5 @@ artifacts
 !.yarn/versions
 
 # Generated files
-src/config/abis/generated.typess
+src/config/abis/generated.ts
 subgraph-client/.graphclient
