@@ -3,7 +3,6 @@ import poolLensArtifact from "@venusprotocol/isolated-pools/artifacts/contracts/
 import protocolShareReserveArtifact from "@venusprotocol/protocol-reserve/artifacts/contracts/ProtocolReserve/ProtocolShareReserve.sol/ProtocolShareReserve.json" assert { type: "json" };
 import tokenConverterArtifact from "@venusprotocol/protocol-reserve/artifacts/contracts/TokenConverter/AbstractTokenConverter.sol/AbstractTokenConverter.json" assert { type: "json" };
 import vBnbAdminArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Admin/VBNBAdmin.sol/VBNBAdmin.json" assert { type: "json" };
-import vBNB from "@venusprotocol/venus-protocol/artifacts/contracts/Admin/VBNBAdminStorage.sol/VTokenInterface.json" assert { type: "json" };
 import diamondComptrollerArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Comptroller/Diamond/DiamondConsolidated.sol/DiamondConsolidated.json" assert { type: "json" };
 import coreVTokenArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Tokens/VTokens/VBep20Delegate.sol/VBep20Delegate.json" assert { type: "json" };
 import { defineConfig } from "@wagmi/cli";
@@ -34,10 +33,6 @@ const getExternalContracts = async (): Promise<{ name: string; abi: Abi }[]> => 
   {
     abi: vBnbAdminArtifact.abi as Abi,
     name: "VBnbAdmin",
-  },
-  {
-    abi: vBNB.abi as Abi,
-    name: "vBNB",
   },
   {
     abi: tokenConverterArtifact.abi as Abi,

@@ -1,5 +1,6 @@
-import * as dotenv from "dotenv";
-import { Abi, Address, parseUnits } from "viem";
+import "dotenv/config";
+
+import { Abi, Address } from "viem";
 
 import subgraphClient from "../../subgraph-client";
 import {
@@ -7,17 +8,20 @@ import {
   coreVTokenAbi,
   protocolShareReserveAbi,
   tokenConverterAbi,
-  vBnbAbi,
   vBnbAdminAbi,
 } from "../config/abis/generated";
 import addresses, { underlyingToVTokens } from "../config/addresses";
 import { SUPPORTED_CHAINS } from "../config/chains";
 import { getPublicClient, getWalletClient } from "../config/clients";
+import TokenConverterBot from "./TokenConverterBot";
 import formatTokenConverterConfigs from "./formatTokenConverterConfigs";
 import { parsePath } from "./path";
-import TokenConverterBot from "./tokenConverterBot";
 
-dotenv.config();
+interface BalanceResult {
+  tokenConverter: Address;
+  assetIn: { address: Address; balance: bigint };
+  assetOut: { address: Address; balance: bigint };
+}
 
 const network = process.env.FORKED_NETWORK as SUPPORTED_CHAINS;
 
@@ -71,11 +75,8 @@ const getBalances = async (assetIn: Address, assetOut: Address, tokenConverters:
     contracts: [
       {
         address: addresses.ProtocolShareReserve as Address,
-        // @ts-ignore
         abi: protocolShareReserveAbi,
-        // @ts-ignore
         functionName: "releaseFunds",
-        // @ts-ignore
         args: [addresses.Unitroller, corePoolMarkets],
       },
       ...tokenConverters.reduce((acc, curr) => {
@@ -103,40 +104,32 @@ const getBalances = async (assetIn: Address, assetOut: Address, tokenConverters:
   return formattedResults;
 };
 
-// @todo
-const checkForTrade = async (values: any[]) => {
+const checkForTrade = async (values: { value: BalanceResult }[]) => {
   const trades = values.filter(v => {
     return v.value.assetOut.balance > 0;
   });
   return trades;
 };
 
-// @todo
-const executeTrade = async (t: any) => {
-  // @todo
-  const bot = new TokenConverterBot("bsctestnet");
-  // @ts-ignore
+const executeTrade = async (t: BalanceResult) => {
+  const bot = new TokenConverterBot(network);
+
   const vTokens = underlyingToVTokens[t.assetOut.address];
-  // @ts-ignore
+
   if (vTokens.core) {
     await wallet.writeContract({
       address: addresses.ProtocolShareReserve as Address,
-      // @ts-ignore
       abi: protocolShareReserveAbi,
-      // @ts-ignore
       functionName: "releaseFunds",
-      // @ts-ignore
       args: [addresses.Unitroller, [vTokens.core]],
     });
   }
+
   if (vTokens.isolated) {
     await wallet.writeContract({
       address: addresses.ProtocolShareReserve as Address,
-      // @ts-ignore
       abi: protocolShareReserveAbi,
-      // @ts-ignore
       functionName: "releaseFunds",
-      // @ts-ignore
       args: [vTokens.isolated[0], [vTokens.isolated[1]]],
     });
   }
@@ -150,12 +143,13 @@ const executeTrade = async (t: any) => {
 
   await bot.sanityCheck();
 
-  await bot.arbitrage(
-    t.tokenConverter,
-    parsePath([t.assetIn.address as Address, 500n, t.assetOut.address as Address]),
-    amountIn[1],
-    parseUnits("-0.1", 18), // @todo
-  );
+  const trade = await bot.getBestTrade(t.assetIn.address, t.assetOut.address, amountIn[1]);
+
+  const fee = BigInt(trade.routes[0].pools[0].fee);
+  const flashPayment = trade.inputAmount.numerator * (fee / 100000n + 1n);
+  const minIncome = t.assetOut.balance - flashPayment;
+  const path = parsePath([t.assetIn.address, fee, t.assetOut.address]);
+  await bot.arbitrage(t.tokenConverter, path, amountIn[1], minIncome);
 };
 
 const main = async () => {
@@ -175,13 +169,13 @@ const main = async () => {
 
   const totalReserves = await client.readContract({
     address: addresses.vBNB as Address,
-    abi: vBnbAbi,
+    abi: coreVTokenAbi,
     functionName: "totalReserves",
   });
 
   const cash = await client.readContract({
     address: addresses.vBNB as Address,
-    abi: vBnbAbi,
+    abi: coreVTokenAbi,
     functionName: "getCash",
   });
 
@@ -193,7 +187,7 @@ const main = async () => {
       args: [totalReserves < cash ? totalReserves : cash],
     });
   } else {
-    console.error("Unable to reduce reservers vBnb Admin is out of cash");
+    console.error("Unable to reduce reservers vBNB Admin is out of cash.");
   }
 
   const tokenConverterConfigs = formatTokenConverterConfigs(tokenConverters);
