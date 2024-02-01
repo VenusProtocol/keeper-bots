@@ -16,3 +16,7 @@ artifacts
 !.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
+
+# Generated files
+src/config/abis/generated.ts
+subgraph-client/.graphclient

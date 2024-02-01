@@ -1,10 +1,10 @@
-import { Address, parseAbi, parseUnits } from "viem";
+import { Address, parseAbi } from "viem";
 
 import TokenConverterOperator from "../config/abis/TokenConverterOperator";
-import { type HasAddressFor, addresses } from "../config/addresses";
+import addresses, { HasAddressFor } from "../config/addresses";
 import { chains } from "../config/chains";
 import { getPublicClient, getWalletClient } from "../config/clients";
-import { Path, parsePath } from "./path";
+import { Path } from "./path";
 
 type SupportedConverters =
   | "BTCBPrimeConverter"
@@ -14,22 +14,22 @@ type SupportedConverters =
   | "USDTPrimeConverter"
   | "XVSVaultConverter";
 
-type SupportedChains = HasAddressFor<"TokenConverterOperator" | SupportedConverters>;
+const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 
-const REVERT_IF_NOT_MINED_AFTER = 60n; //seconds
+export type SUPPORTED_CHAINS = HasAddressFor<"TokenConverterOperator" | SupportedConverters>;
 
 class Bot {
-  private chainName: SupportedChains;
+  private chainName: SUPPORTED_CHAINS;
   private operator: { address: Address; abi: typeof TokenConverterOperator };
-  private addresses: typeof addresses[SupportedChains];
-  private _walletClient?: ReturnType<typeof getWalletClient<SupportedChains>>;
-  private _publicClient?: ReturnType<typeof getPublicClient<SupportedChains>>;
+  private addresses: typeof addresses;
+  private _walletClient?: ReturnType<typeof getWalletClient>;
+  private _publicClient?: ReturnType<typeof getPublicClient>;
 
-  constructor(chainName: SupportedChains) {
+  constructor(chainName: SUPPORTED_CHAINS) {
     this.chainName = chainName;
     this.addresses = addresses[chainName];
     this.operator = {
-      address: addresses[chainName].TokenConverterOperator,
+      address: addresses.TokenConverterOperator,
       abi: TokenConverterOperator,
     };
   }
@@ -89,28 +89,4 @@ class Bot {
   }
 }
 
-const main = async () => {
-  const bot = new Bot("bsctestnet");
-  await bot.sanityCheck();
-
-  // Imagine the converter has LTC and wants USDT
-  // tokenToSendToConverter: USDT
-  // tokenToReceiveFromConverter: LTC
-  // We're swapping LTC to USDT on PCS, so
-  // the PCS reversed path should start with
-  // USDT (tokenToSendToConverter) and end
-  // with LTC (tokenToReceiveFromConverter)
-  //
-  // The income is paid out in LTC (if any)
-  await bot.arbitrage(
-    "RiskFundConverter",
-    parsePath([addresses.bsctestnet.USDT as Address, 500, addresses.bsctestnet.LTC as Address]),
-    parseUnits("1", 18), // 1 LTC
-    parseUnits("-0.1", 18), // We're ok with paying 0.1 LTC for this conversion
-  );
-};
-
-main().catch(error => {
-  console.error(error);
-  process.exit(1);
-});
+export default Bot;

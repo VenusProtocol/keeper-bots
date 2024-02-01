@@ -1,8 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "include": [
-    "tests",
+    "./src",
+    "./typechain",
     "docgen-templates",
-    "commitlint.config.js"
+    "commitlint.config.js",
+    "wagmi.config.ts",
+    "src/environment.d.ts"
   ]
 }
