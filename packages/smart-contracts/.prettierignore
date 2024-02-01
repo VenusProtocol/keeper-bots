@@ -7,6 +7,3 @@ dist
 typechain
 contracts/third-party
 *.hbs
-
-src/config/abis/generated.ts
-subgraph-client/.graphqlclient
