@@ -1,34 +1,29 @@
 import { Currency, CurrencyAmount, Token, TradeType } from "@pancakeswap/sdk";
 import { BaseRoute, Pool, QuoteProvider, SmartRouter, SmartRouterTrade, V3Pool } from "@pancakeswap/smart-router/evm";
 import { Client as UrqlClient, createClient } from "urql/core";
-import { Address, parseAbi } from "viem";
-import { Hex, encodePacked } from "viem";
+import { Address, Hex, encodePacked, erc20Abi, parseAbi } from "viem";
 
 import { tokenConverterOperatorAbi } from "../config/abis/generated";
 import addresses from "../config/addresses";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
-import { getPublicClient, getWalletClient } from "../config/clients";
-import { Path } from "./path";
+import publicClient from "../config/clients/publicClient";
+import walletClient from "../config/clients/walletClient";
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
-
-export const NETWORK_IDS: Record<SUPPORTED_CHAINS, number> = {
-  bsctestnet: 97,
-  bscmainnet: 56,
-};
+const MAX_HOPS = 5;
 
 export const getOutputCurrency = (pool: V3Pool, inputToken: Token): Currency => {
   const { token0, token1 } = pool;
   return token0.equals(inputToken) ? token1 : token0;
 };
 
-export class TokenConverterBot {
+export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
   private addresses: typeof addresses;
-  private _walletClient?: ReturnType<typeof getWalletClient>;
-  private _publicClient?: ReturnType<typeof getPublicClient>;
+  private _walletClient?: typeof walletClient;
+  private _publicClient?: typeof publicClient;
   private v3SubgraphClient: UrqlClient;
   private quoteProvider: QuoteProvider;
   private tokens: Map<Address, Currency>;
@@ -49,11 +44,11 @@ export class TokenConverterBot {
   }
 
   get publicClient() {
-    return (this._publicClient ||= getPublicClient(this.chainName));
+    return (this._publicClient ||= publicClient);
   }
 
   get walletClient() {
-    return (this._walletClient ||= getWalletClient(this.chainName));
+    return (this._walletClient ||= walletClient);
   }
 
   getToken = async (address: Address): Promise<Currency> => {
@@ -64,18 +59,18 @@ export class TokenConverterBot {
       contracts: [
         {
           address,
-          abi: parseAbi(["function decimals() external pure returns (uint8)"]),
+          abi: erc20Abi,
           functionName: "decimals",
         },
         {
           address,
-          abi: parseAbi(["function symbol() external pure returns (string memory)"]),
+          abi: erc20Abi,
           functionName: "symbol",
         },
       ],
     });
     if (decimals && symbol) {
-      const token = new Token(NETWORK_IDS[this.chainName], address, decimals, symbol);
+      const token = new Token(chains[this.chainName].id, address, decimals, symbol);
       this.tokens.set(address, token);
       return token;
     }
@@ -113,7 +108,7 @@ export class TokenConverterBot {
       TradeType.EXACT_OUTPUT,
       {
         gasPriceWei: () => this.publicClient.getGasPrice(),
-        maxHops: 1,
+        maxHops: MAX_HOPS,
 
         maxSplits: 0,
         poolProvider: SmartRouter.createStaticPoolProvider(candidatePools),
@@ -163,7 +158,12 @@ export class TokenConverterBot {
     return encodePacked(types.reverse(), path.reverse());
   }
 
-  async arbitrage(converterAddress: Address, path: Path, amount: bigint, minIncome: bigint) {
+  async arbitrage(
+    converterAddress: Address,
+    trade: SmartRouterTrade<TradeType.EXACT_OUTPUT>,
+    amount: bigint,
+    minIncome: bigint,
+  ) {
     const beneficiary = this.walletClient.account.address;
     const chain = chains[this.chainName];
 
@@ -171,11 +171,11 @@ export class TokenConverterBot {
 
     if (minIncome < 0n) {
       await this.walletClient.writeContract({
-        address: path.end,
+        address: trade.outputAmount.address,
         chain,
         abi: parseAbi(["function approve(address,uint256)"]),
         functionName: "approve",
-        args: [this.operator.address, -minIncome], // + amount
+        args: [this.operator.address, -minIncome],
       });
     }
     try {
@@ -186,12 +186,12 @@ export class TokenConverterBot {
         args: [
           {
             beneficiary,
-            tokenToReceiveFromConverter: path.end,
+            tokenToReceiveFromConverter: trade.outputAmount.address,
             amount,
             minIncome,
-            tokenToSendToConverter: path.start,
+            tokenToSendToConverter: trade.inputAmount.address,
             converter: converterAddress,
-            path: path.hex,
+            path: this.encodeExactOutputPath(trade.route),
             deadline: block.timestamp + REVERT_IF_NOT_MINED_AFTER,
           },
         ],
@@ -199,8 +199,7 @@ export class TokenConverterBot {
     } catch (e) {
       console.error("Conversion failed", {
         converterAddress,
-        assetIn: path.start,
-        assetOut: path.end,
+        trade,
         amount,
         minIncome,
       });
@@ -208,4 +207,4 @@ export class TokenConverterBot {
   }
 }
 
-export default TokenConverterBot;
+export default TokenConverter;

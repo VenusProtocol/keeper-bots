@@ -13,6 +13,5 @@ query TokenConverters {
       incentive
       access
     }
-    paused(filter: Boolean): true
   }
 }
