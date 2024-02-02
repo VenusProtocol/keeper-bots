@@ -43,7 +43,7 @@ jobs:
 
       - name: Run hardhat compile and tests coverage
         run: |
-          source .env.example
+          source packages/smart-contracts/.env.example
           yarn workspace @venusprotocol/keeper-bot-contracts run hardhat:compile && yarn workspace @venusprotocol/keeper-bot-contracts run hardhat:coverage
 
       - name: Code Coverage Report
