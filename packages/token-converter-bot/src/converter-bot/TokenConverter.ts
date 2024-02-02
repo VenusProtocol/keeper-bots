@@ -9,6 +9,7 @@ import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
 import publicClient from "../config/clients/publicClient";
 import walletClient from "../config/clients/walletClient";
+import config from '../config';
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 const MAX_HOPS = 5;
@@ -36,7 +37,7 @@ export class TokenConverter {
       abi: tokenConverterOperatorAbi,
     };
     this.v3SubgraphClient = createClient({
-      url: "https://api.thegraph.com/subgraphs/name/pancakeswap/exchange-v3-bsc",
+      url: config.subgraphUrl,
       requestPolicy: "network-only",
     });
     this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => this.publicClient });
