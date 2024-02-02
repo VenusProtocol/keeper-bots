@@ -1,5 +1,5 @@
 import "dotenv/config";
-
+import { Fraction } from "@pancakeswap/sdk";
 import { Address } from "viem";
 
 import { coreVTokenAbi, protocolShareReserveAbi, tokenConverterAbi, vBnbAdminAbi } from "../config/abis/generated";
@@ -64,7 +64,8 @@ const executeTrade = async (t: BalanceResult) => {
 
   const trade = await tokenConverter.getBestTrade(t.assetIn.address, t.assetOut.address, amountIn[1]);
 
-  const minIncome = t.assetOut.balance - trade.inputAmount.numerator;
+
+  const minIncome = BigInt(new Fraction(t.assetOut.balance, 1).subtract(new Fraction(trade.inputAmount.numerator, trade.inputAmount.denominator)).toFixed(0, {}));
 
   await tokenConverter.arbitrage(t.tokenConverter, trade, amountIn[1], minIncome);
 };
