@@ -1,0 +1,50 @@
+{
+  "name": "@venusprotocol/token-converter-bot",
+  "version": "0.0.1",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "lint": "yarn lint:ts && yarn prettier:check",
+    "lint:ts": "eslint --ext .js,.ts .",
+    "lint:ts:fix": "eslint --fix --ext .js,.ts .",
+    "prettier": "prettier --write \"**/*.{js,json,md,ts,yaml,yml}\"",
+    "prettier:check": "prettier --check \"**/*.{js,json,md,ts,yaml,yml}\"",
+    "generate-abis": "yarn wagmi generate",
+    "postinstall": "yarn generate-abis"
+  },
+  "keywords": [],
+  "author": "Venus",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "hardhat": "^2.19.5",
+    "viem": "^2.1.1"
+  },
+  "devDependencies": {
+    "@pancakeswap/v3-core": "^1.0.2",
+    "@typechain/ethers-v5": "^10.1.0",
+    "@typechain/hardhat": "^6.1.2",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.1",
+    "@typescript-eslint/parser": "^6.13.1",
+    "@venusprotocol/oracle": "^1.7.3",
+    "@venusprotocol/solidity-utilities": "^1.1.0",
+    "@wagmi/cli": "^2.0.4",
+    "eslint": "^7.32.0",
+    "prettier": "2.7.1",
+    "ts-node": "^10.9.1",
+    "typechain": "^8.3.2",
+    "typescript": "^5.3.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "_moduleAliases": {
+    "@nomiclabs/hardhat-ethers": "node_modules/hardhat-deploy-ethers"
+  }
+}

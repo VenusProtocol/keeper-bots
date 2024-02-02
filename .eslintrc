@@ -15,7 +15,7 @@
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 12,
-    "project": ".eslint-tsconfig"
+    "project": ["./.eslint-tsconfig", "./packages/*/tsconfig.json"]
   },
   "root": true,
   "rules": {

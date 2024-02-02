@@ -18,5 +18,5 @@ artifacts
 !.yarn/versions
 
 # Generated files
-src/config/abis/generated.ts
-subgraph-client/.graphclient
+packages/token-converter-bot/src/config/abis/generated.ts
+packages/token-converter-bot/subgraph-client/.graphclient

@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig",
+  "compilerOptions": {
+    "paths": {
+      "@nomiclabs/hardhat-ethers": ["./node_modules/hardhat-deploy-ethers"]
+    }
+  },
+  "include": ["./typechain"],
+  "files": ["./hardhat.config.ts"]
+}

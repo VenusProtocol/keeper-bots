@@ -47,7 +47,7 @@ export default defineConfig(async () => {
     contracts: externalContracts,
     plugins: [
       hardhat({
-        project: ".",
+        project: "../smart-contracts",
       }),
     ],
   };
