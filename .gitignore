@@ -20,3 +20,6 @@ artifacts
 # Generated files
 packages/token-converter-bot/src/config/abis/generated.ts
 packages/token-converter-bot/subgraph-client/.graphclient
+
+# Build
+dist

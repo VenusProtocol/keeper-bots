@@ -16,12 +16,11 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2
         with:
-          node-version: 18
+          node-version: 20
           cache: "yarn"
 
       - name: Install dependencies
-        # Hack to get around failing "ethereumjs-abi The remote archive doesn't match the expected checksum" error
-        run: YARN_CHECKSUM_BEHAVIOR=update yarn
+        run: yarn
 
       - name: Check linting of solidity and typescript
         run: yarn lint
@@ -36,7 +35,7 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
-          node-version: 18
+          node-version: 20
           cache: "yarn"
 
       - name: Install deps
@@ -44,8 +43,9 @@ jobs:
 
       - name: Run hardhat compile and tests coverage
         run: |
-          source .env.example
+          source packages/smart-contracts/.env.example
           yarn workspace @venusprotocol/keeper-bot-contracts run hardhat:compile && yarn workspace @venusprotocol/keeper-bot-contracts run hardhat:coverage
+
       - name: Code Coverage Report
         uses: irongut/CodeCoverageSummary@v1.3.0
         continue-on-error: true
@@ -78,12 +78,11 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2
         with:
-          node-version: 18
+          node-version: 20
           cache: "yarn"
 
       - name: Install dependencies
-        # Hack to get around failing "ethereumjs-abi The remote archive doesn't match the expected checksum" error
-        run: YARN_CHECKSUM_BEHAVIOR=update yarn
+        run: yarn
 
       - name: Build
         run: yarn workspace @venusprotocol/keeper-bot-contracts run build
@@ -106,12 +105,11 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v2
         with:
-          node-version: 18
+          node-version: 20
           cache: "yarn"
 
       - name: Install dependencies
-        # Hack to get around failing "ethereumjs-abi The remote archive doesn't match the expected checksum" error
-        run: YARN_CHECKSUM_BEHAVIOR=update yarn
+        run: yarn
 
       - name: Export deployments
         run: |

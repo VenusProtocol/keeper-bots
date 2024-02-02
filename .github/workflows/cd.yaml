@@ -18,11 +18,11 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
+          node-version: 20
           cache: "yarn"
 
       - name: Install dependencies
-        # Hack to get around failing "ethereumjs-abi The remote archive doesn't match the expected checksum" error
-        run: YARN_CHECKSUM_BEHAVIOR=update yarn
+        run: yarn
 
       - name: Build
         run: yarn workspace @venusprotocol/keeper-bot-contracts run build
