@@ -14,7 +14,7 @@ const readPrivateKeyFromEnv = (chainName: string): PrivateKeyAccount => {
 };
 
 export const getWalletClient = (): WalletClient<HttpTransport, typeof chains[SUPPORTED_CHAINS], PrivateKeyAccount> => {
-  const chainName = process.env.FORKED_NETWORK as SUPPORTED_CHAINS;
+  const chainName = process.env.NETWORK as SUPPORTED_CHAINS;
   return createWalletClient({
     chain: chains[chainName],
     transport: http(process.env[`LIVE_NETWORK_${chainName}`]),

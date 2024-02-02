@@ -14,7 +14,7 @@ import readTokenConverterConfigs from "./queries/read/readTokenConverterConfigs"
 import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/read/readTokenConvertersTokenBalances";
 import type { Pool } from "./types";
 
-const network = process.env.FORKED_NETWORK as SUPPORTED_CHAINS;
+const network = process.env.NETWORK as SUPPORTED_CHAINS;
 
 const isFulfilled = <T>(input: PromiseSettledResult<T>): input is PromiseFulfilledResult<T> =>
   input.status === "fulfilled";

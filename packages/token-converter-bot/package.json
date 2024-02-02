@@ -22,10 +22,12 @@
   "dependencies": {
     "@graphprotocol/client-cli": "^3.0.0",
     "@pancakeswap/sdk": "^5.7.5",
+    "@pancakeswap/smart-router": "^4.14.2",
     "abitype": "0.10.0",
     "graphql": "^16.8.1",
     "hardhat": "^2.19.5",
-    "urql": "^3.0.3"
+    "urql": "^3.0.3",
+    "viem": "^2.7.1"
   },
   "devDependencies": {
     "@pancakeswap/v3-core": "^1.0.2",
