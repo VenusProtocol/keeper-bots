@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig",
   "compilerOptions": {
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
-  "files": ["src/module.d.ts", "src/environment.d.ts"],
+  "files": ["src/module.d.ts", "src/environment.d.ts"]
 }

@@ -3,13 +3,13 @@ import { BaseRoute, Pool, QuoteProvider, SmartRouter, SmartRouterTrade, V3Pool }
 import { Client as UrqlClient, createClient } from "urql/core";
 import { Address, Hex, encodePacked, erc20Abi, parseAbi } from "viem";
 
+import config from "../config";
 import { tokenConverterOperatorAbi } from "../config/abis/generated";
 import addresses from "../config/addresses";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
 import publicClient from "../config/clients/publicClient";
 import walletClient from "../config/clients/walletClient";
-import config from '../config';
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 const MAX_HOPS = 5;
