@@ -10,6 +10,7 @@ import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
 import publicClient from "../config/clients/publicClient";
 import walletClient from "../config/clients/walletClient";
+import logger from "./logger";
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 const MAX_HOPS = 5;
@@ -102,21 +103,25 @@ export class TokenConverter {
       currencyA: swapFromToken,
       currencyB: swapToToken,
     });
+    let trade;
+    try {
+      trade = await SmartRouter.getBestTrade(
+        CurrencyAmount.fromRawAmount(swapToToken, amount),
+        swapFromToken,
+        TradeType.EXACT_OUTPUT,
+        {
+          gasPriceWei: () => this.publicClient.getGasPrice(),
+          maxHops: MAX_HOPS,
 
-    const trade = await SmartRouter.getBestTrade(
-      CurrencyAmount.fromRawAmount(swapToToken, amount),
-      swapFromToken,
-      TradeType.EXACT_OUTPUT,
-      {
-        gasPriceWei: () => this.publicClient.getGasPrice(),
-        maxHops: MAX_HOPS,
-
-        maxSplits: 0,
-        poolProvider: SmartRouter.createStaticPoolProvider(candidatePools),
-        quoteProvider: this.quoteProvider,
-        quoterOptimization: true,
-      },
-    );
+          maxSplits: 0,
+          poolProvider: SmartRouter.createStaticPoolProvider(candidatePools),
+          quoteProvider: this.quoteProvider,
+          quoterOptimization: true,
+        },
+      );
+    } catch (e) {
+      logger.error(`Error getting best trade - ${(e as Error).message}`);
+    }
 
     if (!trade) {
       throw new Error("No trade found");
@@ -169,38 +174,39 @@ export class TokenConverter {
     const chain = chains[this.chainName];
 
     const block = await this.publicClient.getBlock();
-
-    if (minIncome < 0n) {
-      await this.walletClient.writeContract({
-        address: trade.outputAmount.address,
-        chain,
-        abi: parseAbi(["function approve(address,uint256)"]),
-        functionName: "approve",
-        args: [this.operator.address, -minIncome],
-      });
-    }
     try {
-      await this.walletClient.writeContract({
+      if (minIncome < 0n) {
+        await this.walletClient.writeContract({
+          address: trade.outputAmount.currency.address,
+          chain,
+          abi: parseAbi(["function approve(address,uint256)"]),
+          functionName: "approve",
+          args: [this.operator.address, -minIncome],
+        });
+      }
+      const trx = await this.walletClient.writeContract({
         ...this.operator,
         chain,
         functionName: "convert",
         args: [
           {
             beneficiary,
-            tokenToReceiveFromConverter: trade.outputAmount.address,
+            tokenToReceiveFromConverter: trade.outputAmount.currency.address,
             amount,
             minIncome,
-            tokenToSendToConverter: trade.inputAmount.address,
+            tokenToSendToConverter: trade.inputAmount.currency.address,
             converter: converterAddress,
             path: this.encodeExactOutputPath(trade.route),
             deadline: block.timestamp + REVERT_IF_NOT_MINED_AFTER,
           },
         ],
       });
+      logger.info(`Successful swap ${trx}`);
     } catch (e) {
-      console.error("Conversion failed", {
+      logger.error("Conversion failed", {
         converterAddress,
-        trade,
+        tokenToSendToConverter: trade.inputAmount.currency.address,
+        tokenToReceiveFromConverter: trade.outputAmount.currency.address,
         amount,
         minIncome,
       });

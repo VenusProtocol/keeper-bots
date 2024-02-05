@@ -9,6 +9,7 @@ import { SUPPORTED_CHAINS } from "../config/chains";
 import publicClient from "../config/clients/publicClient";
 import walletClient from "../config/clients/walletClient";
 import TokenConverter from "./TokenConverter";
+import logger from "./logger";
 import readCoreMarkets from "./queries/read/readCoreMarkets";
 import readIsolatedMarkets from "./queries/read/readIsolatedMarkets";
 import readTokenConverterConfigs from "./queries/read/readTokenConverterConfigs";
@@ -99,7 +100,7 @@ const reduceReserves = async () => {
       args: [totalReserves < cash ? totalReserves : cash],
     });
   } else {
-    console.error("Unable to reduce reservers vBNB Admin is out of cash.");
+    logger.error("Unable to reduce reservers vBNB Admin is out of cash.");
   }
 };
 
@@ -151,6 +152,9 @@ const main = async () => {
     if (isFulfilled<PromiseSettledResult<BalanceResult[]>[]>(r)) {
       const trades = await checkForTrades(r.value);
       for (const t of trades) {
+        logger.info(
+          `Attempting to execute { tokenConverter: ${t.tokenConverter}, assetInAddress: ${t.assetIn.address}, assetInBalance: ${t.assetIn.balance}, assetOutAddress: ${t.assetIn.address}, assetOutBalance: ${t.assetIn.balance},}`,
+        );
         await executeTrade(t);
       }
     }
