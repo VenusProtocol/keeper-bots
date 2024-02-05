@@ -15,11 +15,6 @@ import logger from "./logger";
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 const MAX_HOPS = 5;
 
-export const getOutputCurrency = (pool: V3Pool, inputToken: Token): Currency => {
-  const { token0, token1 } = pool;
-  return token0.equals(inputToken) ? token1 : token0;
-};
-
 export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
@@ -131,7 +126,7 @@ export class TokenConverter {
   }
 
   encodeExactOutputPath(route: BaseRoute): Hex {
-    const firstInputToken: Token = route.input.wrapped;
+    const firstInputToken: Token = route.inputAmount.currency;
 
     const { path, types } = route.pools.reduce(
       (
@@ -144,7 +139,7 @@ export class TokenConverter {
           throw new Error("Undefined fee");
         }
         const pool = pool_ as V3Pool;
-        const outputToken = getOutputCurrency(pool, inputToken).wrapped;
+        const outputToken = route.outputAmount.currency;
         if (index === 0) {
           return {
             inputToken: outputToken,
@@ -161,7 +156,7 @@ export class TokenConverter {
       { inputToken: firstInputToken, path: [], types: [] },
     );
 
-    return encodePacked(types.reverse(), path.reverse());
+    return encodePacked(types, path);
   }
 
   async arbitrage(
@@ -196,7 +191,7 @@ export class TokenConverter {
             minIncome,
             tokenToSendToConverter: trade.inputAmount.currency.address,
             converter: converterAddress,
-            path: this.encodeExactOutputPath(trade.route),
+            path: this.encodeExactOutputPath(trade.routes[0]),
             deadline: block.timestamp + REVERT_IF_NOT_MINED_AFTER,
           },
         ],
