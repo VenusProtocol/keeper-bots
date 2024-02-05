@@ -69,7 +69,7 @@ const executeTrade = async (t: BalanceResult) => {
   const minIncome = BigInt(
     new Fraction(t.assetOut.balance, 1)
       .subtract(new Fraction(trade.inputAmount.numerator, trade.inputAmount.denominator))
-      .toFixed(0, {}),
+      .toFixed(0, { groupSeparator: "" }),
   );
 
   await tokenConverter.arbitrage(t.tokenConverter, trade, amountIn[1], minIncome);
