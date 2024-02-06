@@ -1,19 +1,31 @@
 import { Address } from "viem";
 
-import subgraphClient from "../../../../subgraph-client";
-import { TokenConvertersQuery } from "../../../../subgraph-client/.graphclient";
+import subgraphClient from "../../../subgraph-client";
+import { TokenConvertersQuery } from "../../../subgraph-client/.graphclient";
 
-const formatTokenConverterConfigs = (data: TokenConvertersQuery["tokenConverters"]) =>
-  data.reduce((acc, curr) => {
+export interface TokenConverterConfig {
+  baseAsset: Address;
+  tokenConverter: Address;
+  tokenAddressOut: Address;
+  tokenAddressIn: Address;
+}
+
+const formatTokenConverterConfigs = (data: TokenConvertersQuery["tokenConverters"]) => {
+  const configs = data.reduce((acc, curr) => {
     curr.configs.forEach(c => {
       if (c.access === "ALL" || c.access === "ONLY_FOR_USERS") {
-        acc[curr.baseAsset] ||= {};
-        acc[curr.baseAsset][c.tokenAddressOut] ||= [];
-        acc[curr.baseAsset][c.tokenAddressOut].push(curr.id as Address);
+        acc.push({
+          baseAsset: curr.baseAsset as Address,
+          tokenConverter: curr.id as Address,
+          tokenAddressOut: c.tokenAddressOut as Address,
+          tokenAddressIn: c.tokenAddressIn as Address,
+        });
       }
     });
     return acc;
-  }, {} as Record<Address, Record<Address, Address[]>>);
+  }, [] as TokenConverterConfig[]);
+  return configs;
+};
 
 const readTokenConverterConfigs = async () => {
   const {

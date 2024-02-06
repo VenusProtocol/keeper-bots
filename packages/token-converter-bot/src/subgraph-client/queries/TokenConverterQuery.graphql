@@ -1,0 +1,17 @@
+query TokenConverter ($id: ID!) {
+  tokenConverters(where: { id: $id} ) {
+    id
+    converterNetwork {
+      id 
+    }
+    destinationAddress
+    baseAsset
+    configs {
+      id
+      tokenAddressIn
+      tokenAddressOut
+      incentive
+      access
+    }
+  }
+}

@@ -3,9 +3,9 @@ import "dotenv/config";
 import { Fraction } from "@pancakeswap/sdk";
 import { Address } from "viem";
 
+import config from "../config";
 import { coreVTokenAbi, protocolShareReserveAbi, tokenConverterAbi, vBnbAdminAbi } from "../config/abis/generated";
-import addresses, { underlyingToVTokens } from "../config/addresses";
-import { SUPPORTED_CHAINS } from "../config/chains";
+import addresses from "../config/addresses";
 import publicClient from "../config/clients/publicClient";
 import walletClient from "../config/clients/walletClient";
 import TokenConverter from "./TokenConverter";
@@ -16,63 +16,54 @@ import readTokenConverterConfigs from "./queries/read/readTokenConverterConfigs"
 import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/read/readTokenConvertersTokenBalances";
 import type { Pool } from "./types";
 
-const network = process.env.NETWORK as SUPPORTED_CHAINS;
+const network = config.network;
 
-const isFulfilled = <T>(input: PromiseSettledResult<T>): input is PromiseFulfilledResult<T> =>
-  input.status === "fulfilled";
+const checkForTrades = (values: BalanceResult[]) => {
+  const trades = values.filter(v => v.assetOut.balance > 0);
+  return trades;
+};
 
-const checkForTrades = async (values: PromiseSettledResult<BalanceResult[]>[]) => {
-  const trades = values.reduce((acc, curr) => {
-    if (isFulfilled(curr)) {
-      acc = acc.concat(curr.value.filter(v => v.assetOut.balance > 0));
+const releaseFunds = async (trades: BalanceResult[]) => {
+  const releaseFundsArgs = trades.reduce((acc, curr) => {
+    const { core, isolated } = curr.assetOutVTokens;
+    if (core) {
+      acc[addresses.Unitroller as Address] = [core];
+    }
+    if (isolated) {
+      isolated.forEach(i => {
+        acc[i[0]] = acc[i[0]] ? [...acc[i[0]], i[1]] : [i[1]];
+      });
     }
     return acc;
-  }, [] as BalanceResult[]);
+  }, {} as Record<Address, Address[]>);
 
-  return trades;
+  for (const args of Object.entries(releaseFundsArgs)) {
+    await walletClient.writeContract({
+      address: addresses.ProtocolShareReserve as Address,
+      abi: protocolShareReserveAbi,
+      functionName: "releaseFunds",
+      args,
+    });
+  }
 };
 
 const executeTrade = async (t: BalanceResult) => {
   const tokenConverter = new TokenConverter(network);
 
-  const vTokens = underlyingToVTokens[t.assetOut.address];
-
-  if (vTokens.core) {
-    await walletClient.writeContract({
-      address: addresses.ProtocolShareReserve as Address,
-      abi: protocolShareReserveAbi,
-      functionName: "releaseFunds",
-      args: [addresses.Unitroller as Address, [vTokens.core]],
-    });
-  }
-
-  if (vTokens.isolated) {
-    for (const vToken of vTokens.isolated) {
-      await walletClient.writeContract({
-        address: addresses.ProtocolShareReserve as Address,
-        abi: protocolShareReserveAbi,
-        functionName: "releaseFunds",
-        args: [vToken[0], [vToken[1]]],
-      });
-    }
-  }
-
-  const { result: amountIn } = await publicClient.simulateContract({
+  const { result: updatedAmountIn } = await publicClient.simulateContract({
     address: t.tokenConverter as Address,
     abi: tokenConverterAbi,
     functionName: "getUpdatedAmountIn",
     args: [t.assetOut.balance, t.assetIn.address, t.assetOut.address],
   });
 
-  const trade = await tokenConverter.getBestTrade(t.assetIn.address, t.assetOut.address, amountIn[1]);
+  const trade = await tokenConverter.getBestTrade(t.assetOut.address, t.assetIn.address, updatedAmountIn[1]);
 
   const minIncome = BigInt(
-    new Fraction(t.assetOut.balance, 1)
-      .subtract(new Fraction(trade.inputAmount.numerator, trade.inputAmount.denominator))
-      .toFixed(0, { groupSeparator: "" }),
+    new Fraction(updatedAmountIn[0], 1).subtract(trade.inputAmount).toFixed(0, { groupSeparator: "" }),
   );
 
-  await tokenConverter.arbitrage(t.tokenConverter, trade, amountIn[1], minIncome);
+  await tokenConverter.arbitrage(t.tokenConverter, trade, updatedAmountIn[0], minIncome);
 };
 
 /**
@@ -124,6 +115,7 @@ const accrueInterest = async (allPools: Pool[]) => {
 
 const main = async () => {
   const tokenConverterConfigs = await readTokenConverterConfigs();
+
   const corePoolMarkets = await readCoreMarkets();
   const isolatedPoolsMarkets = await readIsolatedMarkets();
   const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
@@ -131,33 +123,14 @@ const main = async () => {
   await accrueInterest(allPools);
   await reduceReserves();
 
-  const results = await Promise.allSettled(
-    Object.keys(tokenConverterConfigs).map(async tokenIn => {
-      const results = await Promise.allSettled(
-        Object.keys(tokenConverterConfigs[tokenIn as Address]).map(async tokenOut => {
-          const result = await readTokenConvertersTokenBalances(
-            allPools,
-            tokenIn as Address,
-            tokenOut as Address,
-            tokenConverterConfigs[tokenIn as Address][tokenOut as Address],
-          );
-          return result;
-        }),
-      );
-      return results;
-    }),
-  );
+  const results = await readTokenConvertersTokenBalances(allPools, tokenConverterConfigs);
 
-  for (const r of results) {
-    if (isFulfilled<PromiseSettledResult<BalanceResult[]>[]>(r)) {
-      const trades = await checkForTrades(r.value);
-      for (const t of trades) {
-        logger.info(
-          `Attempting to execute { tokenConverter: ${t.tokenConverter}, assetInAddress: ${t.assetIn.address}, assetInBalance: ${t.assetIn.balance}, assetOutAddress: ${t.assetIn.address}, assetOutBalance: ${t.assetIn.balance},}`,
-        );
-        await executeTrade(t);
-      }
-    }
+  const trades = checkForTrades(results);
+
+  await releaseFunds(trades);
+
+  for (const t of trades) {
+    await executeTrade(t);
   }
 };
 

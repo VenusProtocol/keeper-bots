@@ -1,7 +1,8 @@
 import { DocumentNode } from "graphql";
 import { Client as UrqlClient, createClient } from "urql/core";
 
-import { TokenConvertersDocument } from "./.graphclient";
+import config from "../config";
+import { TokenConverterDocument, TokenConvertersDocument } from "./.graphclient";
 
 class SubgraphClient {
   urqlClient: UrqlClient;
@@ -25,8 +26,10 @@ class SubgraphClient {
     const result = await this.query(TokenConvertersDocument, {});
     return result;
   }
+  async getTokenConverter(address: string) {
+    const result = await this.query(TokenConverterDocument, { id: address });
+    return result;
+  }
 }
 
-export default new SubgraphClient(
-  "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel",
-);
+export default new SubgraphClient(config.subgraphUrl);

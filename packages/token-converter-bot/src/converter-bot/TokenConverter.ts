@@ -15,6 +15,11 @@ import logger from "./logger";
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 const MAX_HOPS = 5;
 
+const getOutputCurrency = (pool: V3Pool, inputToken: Token): Token => {
+  const { token0, token1 } = pool;
+  return token0.equals(inputToken) ? token1 : token0;
+};
+
 export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
@@ -33,7 +38,7 @@ export class TokenConverter {
       abi: tokenConverterOperatorAbi,
     };
     this.v3SubgraphClient = createClient({
-      url: config.subgraphUrl,
+      url: config.pancakeSwapSubgraphUrl,
       requestPolicy: "network-only",
     });
     this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => this.publicClient });
@@ -107,7 +112,6 @@ export class TokenConverter {
         {
           gasPriceWei: () => this.publicClient.getGasPrice(),
           maxHops: MAX_HOPS,
-
           maxSplits: 0,
           poolProvider: SmartRouter.createStaticPoolProvider(candidatePools),
           quoteProvider: this.quoteProvider,
@@ -139,7 +143,7 @@ export class TokenConverter {
           throw new Error("Undefined fee");
         }
         const pool = pool_ as V3Pool;
-        const outputToken = route.outputAmount.currency;
+        const outputToken = getOutputCurrency(pool, inputToken);
         if (index === 0) {
           return {
             inputToken: outputToken,
@@ -156,54 +160,66 @@ export class TokenConverter {
       { inputToken: firstInputToken, path: [], types: [] },
     );
 
-    return encodePacked(types, path);
+    return encodePacked(types.reverse(), path.reverse());
   }
 
   async arbitrage(
     converterAddress: Address,
     trade: SmartRouterTrade<TradeType.EXACT_OUTPUT>,
     amount: bigint,
-    minIncome: bigint,
+    expectedMinIncome: bigint,
   ) {
     const beneficiary = this.walletClient.account.address;
     const chain = chains[this.chainName];
+    const slippage = expectedMinIncome / 200n;
+
+    let minIncome = expectedMinIncome - slippage;
 
     const block = await this.publicClient.getBlock();
+
+    const convertTransaction = {
+      ...this.operator,
+      chain,
+      functionName: "convert" as const,
+      args: [
+        {
+          beneficiary,
+          tokenToReceiveFromConverter: trade.inputAmount.currency.address,
+          amount: amount,
+          minIncome,
+          tokenToSendToConverter: trade.outputAmount.currency.address,
+          converter: converterAddress,
+          path: this.encodeExactOutputPath(trade.routes[0]),
+          deadline: block.timestamp + REVERT_IF_NOT_MINED_AFTER,
+        },
+      ] as const,
+    };
+
     try {
-      if (minIncome < 0n) {
+      if (expectedMinIncome < 0n) {
+        minIncome = slippage + expectedMinIncome;
         await this.walletClient.writeContract({
-          address: trade.outputAmount.currency.address,
+          address: trade.inputAmount.currency.address,
           chain,
           abi: parseAbi(["function approve(address,uint256)"]),
           functionName: "approve",
           args: [this.operator.address, -minIncome],
         });
       }
-      const trx = await this.walletClient.writeContract({
-        ...this.operator,
-        chain,
-        functionName: "convert",
-        args: [
-          {
-            beneficiary,
-            tokenToReceiveFromConverter: trade.outputAmount.currency.address,
-            amount,
-            minIncome,
-            tokenToSendToConverter: trade.inputAmount.currency.address,
-            converter: converterAddress,
-            path: this.encodeExactOutputPath(trade.routes[0]),
-            deadline: block.timestamp + REVERT_IF_NOT_MINED_AFTER,
-          },
-        ],
+
+      const gasEstimation = await this.publicClient.estimateContractGas({
+        account: this.walletClient.account,
+        ...convertTransaction,
       });
+      const trx = await this.walletClient.writeContract({ ...convertTransaction, gas: (gasEstimation * 110n) / 100n });
       logger.info(`Successful swap ${trx}`);
     } catch (e) {
+      // @ts-expect-error
+      delete convertTransaction.abi;
       logger.error("Conversion failed", {
-        converterAddress,
-        tokenToSendToConverter: trade.inputAmount.currency.address,
-        tokenToReceiveFromConverter: trade.outputAmount.currency.address,
-        amount,
-        minIncome,
+        ...convertTransaction,
+        stack: (e as Error).stack,
+        message: (e as Error).message,
       });
     }
   }
