@@ -8,6 +8,7 @@ import "@typechain/hardhat";
 import * as dotenv from "dotenv";
 import { parseUnits } from "ethers/lib/utils";
 import "hardhat-deploy";
+import "hardhat-deploy-ethers";
 import "hardhat-gas-reporter";
 import { HardhatUserConfig, extendConfig } from "hardhat/config";
 import { HardhatConfig } from "hardhat/types";
@@ -62,7 +63,11 @@ const config: HardhatUserConfig = {
     ],
   },
   networks: {
-    hardhat: isFork(),
+    hardhat: {
+      allowUnlimitedContractSize: true,
+      loggingEnabled: false,
+      live: false,
+    },
     development: {
       url: "http://127.0.0.1:8545/",
       chainId: 31337,
@@ -164,28 +169,5 @@ const config: HardhatUserConfig = {
     deployments: {},
   },
 };
-
-function isFork() {
-  return process.env.FORK === "true"
-    ? {
-        allowUnlimitedContractSize: false,
-        loggingEnabled: false,
-        forking: {
-          url:
-            process.env[`ARCHIVE_NODE_${process.env.FORKED_NETWORK}`] ||
-            "https://data-seed-prebsc-1-s1.binance.org:8545",
-          blockNumber: 21068448,
-        },
-        accounts: {
-          accountsBalance: "1000000000000000000",
-        },
-        live: false,
-      }
-    : {
-        allowUnlimitedContractSize: true,
-        loggingEnabled: false,
-        live: false,
-      };
-}
 
 export default config;

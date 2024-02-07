@@ -25,6 +25,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@openzeppelin/contracts": "4.9.3",
     "@openzeppelin/contracts-upgradeable": "4.9.3",
     "@venusprotocol/governance-contracts": "^1.4.0",
     "@venusprotocol/isolated-pools": "^2.3.0",
