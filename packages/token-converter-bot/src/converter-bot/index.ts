@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 import { Fraction } from "@pancakeswap/sdk";
-import { Address } from "viem";
+import { Address, erc20Abi } from "viem";
 
 import config from "../config";
 import { coreVTokenAbi, protocolShareReserveAbi, tokenConverterAbi, vBnbAdminAbi } from "../config/abis/generated";
@@ -63,7 +63,25 @@ const executeTrade = async (t: BalanceResult) => {
     new Fraction(updatedAmountIn[0], 1).subtract(trade.inputAmount).toFixed(0, { groupSeparator: "" }),
   );
 
-  await tokenConverter.arbitrage(t.tokenConverter, trade, updatedAmountIn[0], minIncome);
+  let hasIncome = true;
+  if (minIncome < 0) {
+    // Check that we have the income to transfer
+    const balanceOf = await publicClient.readContract({
+      address: t.assetOut.address,
+      abi: erc20Abi,
+      functionName: "balanceOf",
+      args: [walletClient.account.address],
+    });
+    hasIncome = balanceOf > 0;
+  }
+
+  if (hasIncome) {
+    await tokenConverter.arbitrage(t.tokenConverter, trade, updatedAmountIn[0], minIncome);
+  } else {
+    logger.error(
+      `Unable to run conversion because income was negative and wallet doesn't have a positive balance {minIncome: ${minIncome}, asset: ${t.assetOut.address}}`,
+    );
+  }
 };
 
 /**
