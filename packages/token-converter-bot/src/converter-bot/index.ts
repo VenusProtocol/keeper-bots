@@ -148,7 +148,11 @@ const main = async () => {
   await releaseFunds(trades);
 
   for (const t of trades) {
-    await executeTrade(t);
+    try {
+      await executeTrade(t);
+    } catch (e) {
+      logger.error(`Trade execution failed - ${(e as Error).message}`);
+    }
   }
 };
 
