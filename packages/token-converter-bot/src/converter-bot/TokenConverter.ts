@@ -119,7 +119,7 @@ export class TokenConverter {
         },
       );
     } catch (e) {
-      logger.error(`Error getting best trade - ${(e as Error).message}`);
+      logger.error(`Error getting best trade - ${(e as Error).message} swapFrom  - ${swapFrom} swapTo - ${swapTo}`);
     }
 
     if (!trade) {
