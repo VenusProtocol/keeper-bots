@@ -5,7 +5,7 @@ import { Abi, Address } from "viem";
 import { coreVTokenAbi, protocolShareReserveAbi } from "../../../config/abis/generated";
 import addresses, { underlyingToVTokens } from "../../../config/addresses";
 import publicClient from "../../../config/clients/publicClient";
-import { TokenConverterConfig } from "./readTokenConverterConfigs";
+import { TokenConverterConfig } from "./readTokenConverterConfigs/formatTokenConverterConfigs";
 
 export interface BalanceResult {
   tokenConverter: Address;
@@ -56,16 +56,19 @@ const formatResults = (
   return balances;
 };
 
-const readTokenConvertersTokenBalances = async (
+export const readTokenConvertersTokenBalances = async (
   pools: [Address, readonly Address[]][],
   tokenConverterConfigs: TokenConverterConfig[],
+  releaseFunds: boolean,
 ): Promise<BalanceResult[]> => {
-  const releaseFundsCalls = pools.map(pool => ({
-    address: addresses.ProtocolShareReserve as Address,
-    abi: protocolShareReserveAbi,
-    functionName: "releaseFunds",
-    args: pool,
-  }));
+  const releaseFundsCalls = releaseFunds
+    ? pools.map(pool => ({
+        address: addresses.ProtocolShareReserve as Address,
+        abi: protocolShareReserveAbi,
+        functionName: "releaseFunds",
+        args: pool,
+      }))
+    : [];
 
   const results = await publicClient.multicall({
     contracts: [

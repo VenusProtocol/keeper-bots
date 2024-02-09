@@ -1,3 +1,3 @@
 import { Address } from "viem";
 
-export type Pool = [Address, readonly Address[]];
+export type PoolAddressArray = [Address, readonly Address[]];

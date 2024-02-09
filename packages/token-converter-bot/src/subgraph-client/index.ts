@@ -2,7 +2,7 @@ import { DocumentNode } from "graphql";
 import { Client as UrqlClient, createClient } from "urql/core";
 
 import config from "../config";
-import { TokenConverterDocument, TokenConvertersDocument } from "./.graphclient";
+import { TokenConverterByAssetOutDocument, TokenConverterDocument, TokenConvertersDocument } from "./.graphclient";
 
 class SubgraphClient {
   urqlClient: UrqlClient;
@@ -26,8 +26,14 @@ class SubgraphClient {
     const result = await this.query(TokenConvertersDocument, {});
     return result;
   }
+
   async getTokenConverter(address: string) {
     const result = await this.query(TokenConverterDocument, { id: address });
+    return result;
+  }
+
+  async getTokenConverterByAssetOut(tokenAddressOut: string) {
+    const result = await this.query(TokenConverterByAssetOutDocument, { tokenAddressOut });
     return result;
   }
 }

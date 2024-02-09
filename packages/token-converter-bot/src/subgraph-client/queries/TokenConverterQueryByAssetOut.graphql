@@ -1,9 +1,9 @@
-query TokenConverters {
+query TokenConverterByAssetOut ($tokenAddressOut: Bytes!) {
   tokenConverters(where: { paused: false} ) {
     id
     destinationAddress
     baseAsset
-    configs(where:{  or: [{access:ALL}, {access:ONLY_FOR_USERS}]}) {
+    configs(where:{ and: [{tokenAddressOut: $tokenAddressOut,}, { or: [{access:ALL}, {access:ONLY_FOR_USERS}]}]}) {
       id
       tokenAddressIn
       tokenAddressOut

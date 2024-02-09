@@ -1,7 +1,6 @@
 import { Address } from "viem";
 
-import subgraphClient from "../../../subgraph-client";
-import { TokenConvertersQuery } from "../../../subgraph-client/.graphclient";
+import { TokenConvertersQuery } from "../../../../subgraph-client/.graphclient";
 
 export interface TokenConverterConfig {
   baseAsset: Address;
@@ -12,24 +11,16 @@ export interface TokenConverterConfig {
 
 const formatTokenConverterConfigs = (data: TokenConvertersQuery["tokenConverters"]) => {
   const configs = data.reduce((acc, curr) => {
-    const results = curr.configs.map(c => ({
+    const formatted = curr.configs.map(c => ({
       baseAsset: curr.baseAsset as Address,
       tokenConverter: curr.id as Address,
       tokenAddressOut: c.tokenAddressOut as Address,
       tokenAddressIn: c.tokenAddressIn as Address,
     }));
-    acc.concat(results)
+    acc = acc.concat(formatted);
     return acc;
   }, [] as TokenConverterConfig[]);
   return configs;
 };
 
-const readTokenConverterConfigs = async () => {
-  const {
-    data: { tokenConverters },
-  } = await subgraphClient.getTokenConverters();
-  const tokenConverterConfigs = formatTokenConverterConfigs(tokenConverters);
-  return tokenConverterConfigs;
-};
-
-export default readTokenConverterConfigs;
+export default formatTokenConverterConfigs;

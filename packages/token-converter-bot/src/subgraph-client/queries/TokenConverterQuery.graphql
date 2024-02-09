@@ -1,9 +1,6 @@
 query TokenConverter ($id: ID!) {
   tokenConverters(where: { id: $id} ) {
     id
-    converterNetwork {
-      id 
-    }
     destinationAddress
     baseAsset
     configs(where:{  or: [{access:ALL}, {access:ONLY_FOR_USERS}]}) {

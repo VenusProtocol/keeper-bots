@@ -1,16 +1,19 @@
 import { Currency, CurrencyAmount, Token, TradeType } from "@pancakeswap/sdk";
+import { Fraction } from "@pancakeswap/sdk";
 import { BaseRoute, Pool, QuoteProvider, SmartRouter, SmartRouterTrade, V3Pool } from "@pancakeswap/smart-router/evm";
 import { Client as UrqlClient, createClient } from "urql/core";
 import { Address, Hex, encodePacked, erc20Abi, parseAbi } from "viem";
-
 import config from "../config";
-import { tokenConverterOperatorAbi } from "../config/abis/generated";
+import { coreVTokenAbi, protocolShareReserveAbi, tokenConverterAbi, vBnbAdminAbi, tokenConverterOperatorAbi } from "../config/abis/generated";
 import addresses from "../config/addresses";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
+import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/read/readTokenConvertersTokenBalances";
 import publicClient from "../config/clients/publicClient";
 import walletClient from "../config/clients/walletClient";
+import type { PoolAddressArray } from "./types";
 import logger from "./logger";
+import { TokenConverterConfig } from "./queries/read/readTokenConverterConfigs/formatTokenConverterConfigs";
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 const MAX_HOPS = 5;
@@ -163,6 +166,83 @@ export class TokenConverter {
     return encodePacked(types.reverse(), path.reverse());
   }
 
+  async accrueInterest(allPools: PoolAddressArray[]) {
+    const allMarkets = allPools.reduce((acc, curr) => {
+      acc.concat(curr[1]);
+      return acc;
+    }, [] as Address[]);
+
+    // Accrue Interest in all markets
+    await Promise.allSettled(
+      allMarkets.map(async market => {
+        await walletClient.writeContract({
+          address: market,
+          abi: coreVTokenAbi,
+          functionName: "accrueInterest",
+        });
+      }),
+    );
+  };
+
+  /**
+ * Checks total reserves and available cash and then uses the vBNB admin
+ * to send the reserves ProtocolShare Reserve to be distributed
+ */
+  async reduceReserves() {
+    const totalReserves = await publicClient.readContract({
+      address: addresses.vBNB as Address,
+      abi: coreVTokenAbi,
+      functionName: "totalReserves",
+    });
+
+    const cash = await publicClient.readContract({
+      address: addresses.vBNB as Address,
+      abi: coreVTokenAbi,
+      functionName: "getCash",
+    });
+
+    if (cash > 0) {
+      await walletClient.writeContract({
+        address: addresses.VBNBAdmin as Address,
+        abi: vBnbAdminAbi,
+        functionName: "reduceReserves",
+        args: [totalReserves < cash ? totalReserves : cash],
+      });
+    } else {
+      logger.error("Unable to reduce reservers vBNB Admin is out of cash.");
+    }
+  };
+
+  async checkForTrades(allPools: PoolAddressArray[], tokenConverterConfigs: TokenConverterConfig[]) {
+    const results = await readTokenConvertersTokenBalances(allPools, tokenConverterConfigs);
+    const trades = results.filter(v => v.assetOut.balance > 0);
+    return trades;
+  };
+
+  async releaseFunds(trades: BalanceResult[]) {
+    const releaseFundsArgs = trades.reduce((acc, curr) => {
+      const { core, isolated } = curr.assetOutVTokens;
+      if (core) {
+        acc[addresses.Unitroller as Address] = [core];
+      }
+      if (isolated) {
+        isolated.forEach(i => {
+          acc[i[0]] = acc[i[0]] ? [...acc[i[0]], i[1]] : [i[1]];
+        });
+      }
+      return acc;
+    }, {} as Record<Address, Address[]>);
+
+    for (const args of Object.entries(releaseFundsArgs)) {
+      await walletClient.writeContract({
+        address: addresses.ProtocolShareReserve as Address,
+        abi: protocolShareReserveAbi,
+        functionName: "releaseFunds",
+        args,
+      });
+    }
+  };
+
   async arbitrage(
     converterAddress: Address,
     trade: SmartRouterTrade<TradeType.EXACT_OUTPUT>,
@@ -223,6 +303,43 @@ export class TokenConverter {
       });
     }
   }
+
+  async executeTrade(t: BalanceResult) {
+
+    const { result: updatedAmountIn } = await publicClient.simulateContract({
+      address: t.tokenConverter as Address,
+      abi: tokenConverterAbi,
+      functionName: "getUpdatedAmountIn",
+      args: [t.assetOut.balance, t.assetIn.address, t.assetOut.address],
+    });
+
+    const trade = await this.getBestTrade(t.assetOut.address, t.assetIn.address, updatedAmountIn[1]);
+
+    const minIncome = BigInt(
+      new Fraction(updatedAmountIn[0], 1).subtract(trade.inputAmount).toFixed(0, { groupSeparator: "" }),
+    );
+
+    let hasIncome = true;
+    if (minIncome < 0) {
+      // Check that we have the income to transfer
+      const balanceOf = await publicClient.readContract({
+        address: t.assetOut.address,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [walletClient.account.address],
+      });
+
+      hasIncome = balanceOf >= (minIncome * -1n);
+    }
+
+    if (hasIncome) {
+      await this.arbitrage(t.tokenConverter, trade, updatedAmountIn[0], minIncome);
+    } else {
+      logger.error(
+        `Unable to run conversion because income was negative and wallet doesn't have a positive balance {minIncome: ${minIncome}, asset: ${t.assetOut.address}}`,
+      );
+    }
+  };
 }
 
 export default TokenConverter;
