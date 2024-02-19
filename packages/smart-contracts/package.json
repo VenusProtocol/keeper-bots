@@ -70,8 +70,5 @@
   "publishConfig": {
     "access": "public",
     "provenance": true
-  },
-  "_moduleAliases": {
-    "@nomiclabs/hardhat-ethers": "node_modules/hardhat-deploy-ethers"
   }
 }

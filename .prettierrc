@@ -2,7 +2,7 @@
   "arrowParens": avoid,
   "bracketSpacing": true,
   "endOfLine": "auto",
-  "importOrder": ["dotenv/config", "module-alias/register", "<THIRD_PARTY_MODULES>", "^[./]"],
+  "importOrder": ["dotenv/config", "<THIRD_PARTY_MODULES>", "^[./]"],
   "importOrderParserPlugins": ["typescript", "importAssertions"],
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
