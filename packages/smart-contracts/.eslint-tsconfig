@@ -3,6 +3,7 @@
   "include": [
     "./typechain",
     "docgen-templates",
-    "commitlint.config.js"
+    "commitlint.config.js",
+    "./fork-tests"
   ]
 }

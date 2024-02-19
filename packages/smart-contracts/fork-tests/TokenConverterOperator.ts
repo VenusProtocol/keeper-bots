@@ -37,7 +37,6 @@ forking({ bsctestnet: 37472590, bscmainnet: 35878500 } as const, network => {
     let operator: TokenConverterOperator;
     let root: SignerWithAddress;
     let beneficiary: SignerWithAddress;
-    let liquidityProvider: SignerWithAddress;
 
     const tokenConverterOperatorFixture = async (): Promise<TokenConverterOperatorFixture> => {
       const [root] = await ethers.getSigners();
@@ -48,7 +47,7 @@ forking({ bsctestnet: 37472590, bscmainnet: 35878500 } as const, network => {
     };
 
     beforeEach(async () => {
-      [root, beneficiary, liquidityProvider] = await ethers.getSigners();
+      [root, beneficiary] = await ethers.getSigners();
       ({ operator } = await loadFixture(tokenConverterOperatorFixture));
     });
 
