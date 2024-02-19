@@ -136,8 +136,8 @@ export class TokenConverter {
     let trade;
     try {
       trade = await SmartRouter.getBestTrade(
-        CurrencyAmount.fromRawAmount(swapToToken, amount),
-        swapFromToken,
+        CurrencyAmount.fromRawAmount(swapFromToken, amount),
+        swapToToken,
         TradeType.EXACT_OUTPUT,
         {
           gasPriceWei: () => this.publicClient.getGasPrice(),
