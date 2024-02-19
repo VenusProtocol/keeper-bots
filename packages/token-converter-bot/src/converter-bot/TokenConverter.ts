@@ -1,7 +1,17 @@
 import { Currency, CurrencyAmount, Fraction, Percent, Token, TradeType } from "@pancakeswap/sdk";
 import { BaseRoute, Pool, QuoteProvider, SmartRouter, SmartRouterTrade, V3Pool } from "@pancakeswap/smart-router/evm";
 import { Client as UrqlClient, createClient } from "urql/core";
-import { Address, Hex, encodePacked, erc20Abi, parseAbi } from "viem";
+import {
+  Address,
+  BaseError,
+  ContractFunctionRevertedError,
+  Hex,
+  HttpTransport,
+  PublicClient,
+  encodePacked,
+  erc20Abi,
+  parseAbi,
+} from "viem";
 
 import config from "../config";
 import {
@@ -29,6 +39,64 @@ const getOutputCurrency = (pool: V3Pool, inputToken: Token): Token => {
   return token0.equals(inputToken) ? token1 : token0;
 };
 
+export interface ArbitrageMessage {
+  action: "Arbitrage";
+  trx: string | undefined;
+  error: string | undefined;
+  context: {
+    beneficiary: Address;
+    tokenToReceiveFromConverter: Address;
+    amount: bigint;
+    minIncome: bigint;
+    tokenToSendToConverter: Address;
+    converter: string;
+    path: Address;
+    deadline: bigint;
+  };
+}
+
+interface GetBestTradeMessage {
+  action: "GetBestTrade";
+  trx: string | undefined;
+  error: string | undefined;
+  context: {
+    converter: string;
+    tradeAmount: { amountIn: bigint | undefined; amountOut: bigint | undefined };
+    tokenToReceiveFromConverter: string;
+    tokenToSendToConverter: string;
+  };
+}
+
+interface ExecuteTradeMessage {
+  action: "ExecuteTrade";
+  trx: string | undefined;
+  error: string | undefined;
+  context: {
+    converter: string;
+    tokenToReceiveFromConverter: string;
+    tokenToSendToConverter: string;
+    amount: bigint;
+    minIncome: bigint;
+  };
+}
+
+export type Message =
+  | {
+      action: "AccrueInterest" | "ReduceReserves" | "ReleaseFunds";
+      trx: string | undefined;
+      error: string | undefined;
+      context: undefined;
+    }
+  | {
+      action: "PotentialTrades";
+      trx: undefined;
+      error: string | undefined;
+      context: { trades: BalanceResult[] };
+    }
+  | ArbitrageMessage
+  | GetBestTradeMessage
+  | ExecuteTradeMessage;
+
 export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
@@ -38,9 +106,21 @@ export class TokenConverter {
   private v3SubgraphClient: UrqlClient;
   private quoteProvider: QuoteProvider;
   private tokens: Map<Address, Currency>;
+  private subscriber: undefined | ((msg: Message) => void);
+  private simulate: boolean;
+  private verbose: boolean;
 
-  constructor(chainName: SUPPORTED_CHAINS) {
-    this.chainName = chainName;
+  constructor({
+    subscriber,
+    simulate,
+    verbose = false,
+  }: {
+    subscriber?: (msg: Message) => void;
+    simulate: boolean;
+    verbose: boolean;
+  }) {
+    this.chainName = config.network;
+    this.subscriber = subscriber;
     this.addresses = addresses;
     this.operator = {
       address: addresses.TokenConverterOperator,
@@ -52,6 +132,8 @@ export class TokenConverter {
     });
     this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => this.publicClient });
     this.tokens = new Map();
+    this.simulate = simulate;
+    this.verbose = verbose;
   }
 
   get publicClient(): PublicClient<HttpTransport, typeof chains[SUPPORTED_CHAINS]> {
@@ -60,6 +142,25 @@ export class TokenConverter {
 
   get walletClient() {
     return (this._walletClient ||= walletClient);
+  }
+
+  private sendMessage({
+    action,
+    trx = undefined,
+    error = undefined,
+    context = undefined,
+  }: Partial<Message> & Pick<Message, "action">) {
+    if (this.subscriber) {
+      this.subscriber({ action, trx, error, context } as Message);
+    }
+
+    if (this.verbose) {
+      if (error) {
+        logger.error(error, context);
+      } else {
+        logger.info(`${action} - ${trx}`, context);
+      }
+    }
   }
 
   getToken = async (address: Address): Promise<Currency> => {
@@ -80,6 +181,7 @@ export class TokenConverter {
         },
       ],
     });
+
     if (decimals && symbol) {
       const token = new Token(chains[this.chainName].id, address, decimals, symbol);
       this.tokens.set(address, token);
@@ -110,6 +212,14 @@ export class TokenConverter {
     return new Percent(priceImpact.numerator, priceImpact.denominator);
   }
 
+  /**
+   *
+   * @param tokenConverter Token converter to use
+   * @param swapFrom Token we want to receive to the converter
+   * @param swapTo Token we want to send to the converter
+   * @param amount The amount we will receive from the converter of swapFrom
+   * @returns [SmartRouterTrade, [amount transferred out of converter, amount transferred In]]
+   */
   async getBestTrade(
     tokenConverter: Address,
     swapFrom: Address,
@@ -134,6 +244,7 @@ export class TokenConverter {
       currencyB: swapToToken,
     });
     let trade;
+    let error;
     try {
       trade = await SmartRouter.getBestTrade(
         CurrencyAmount.fromRawAmount(swapFromToken, amount),
@@ -148,17 +259,20 @@ export class TokenConverter {
           quoterOptimization: true,
         },
       );
-      if (this.getPriceImpact(trade).greaterThan(new Percent(1n, 1000n))) {
-        return this.getBestTrade(tokenConverter, swapFrom, swapTo, (amount * 75n) / 100n);
-      }
     } catch (e) {
-      logger.error(`Error getting best trade - ${(e as Error).message} swapFrom  - ${swapFrom} swapTo - ${swapTo}`);
+      error = `Error getting best trade - ${(e as Error).message}`;
     }
 
     if (!trade) {
-      throw new Error("No trade found");
+      error = "No trade found";
+    }
+    if (error) {
+      throw new Error(error);
     }
 
+    if (this.getPriceImpact(trade).greaterThan(new Percent(1n, 1000n))) {
+      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (amount * 75n) / 100n);
+    }
     return [trade as SmartRouterTrade<TradeType.EXACT_OUTPUT>, updatedAmountIn];
   }
 
@@ -197,21 +311,36 @@ export class TokenConverter {
   }
 
   async accrueInterest(allPools: PoolAddressArray[]) {
-    const allMarkets = allPools.reduce((acc, curr) => {
-      acc.concat(curr[1]);
-      return acc;
-    }, [] as Address[]);
+    let error;
+    try {
+      const allMarkets = allPools.reduce((acc, curr) => {
+        acc.concat(curr[1]);
+        return acc;
+      }, [] as Address[]);
 
-    // Accrue Interest in all markets
-    await Promise.allSettled(
-      allMarkets.map(async market => {
-        await walletClient.writeContract({
-          address: market,
-          abi: coreVTokenAbi,
-          functionName: "accrueInterest",
-        });
-      }),
-    );
+      // Accrue Interest in all markets
+      await Promise.allSettled(
+        allMarkets.map(async market => {
+          if (this.simulate) {
+            await publicClient.simulateContract({
+              account: walletClient.account.address,
+              address: market,
+              abi: coreVTokenAbi,
+              functionName: "accrueInterest",
+            });
+          } else {
+            await walletClient.writeContract({
+              address: market,
+              abi: coreVTokenAbi,
+              functionName: "accrueInterest",
+            });
+          }
+        }),
+      );
+    } catch (e) {
+      error = (e as Error).message;
+    }
+    this.sendMessage({ action: "AccrueInterest", error });
   }
 
   /**
@@ -219,33 +348,49 @@ export class TokenConverter {
    * to send the reserves ProtocolShare Reserve to be distributed
    */
   async reduceReserves() {
-    const totalReserves = await publicClient.readContract({
-      address: addresses.vBNB as Address,
-      abi: coreVTokenAbi,
-      functionName: "totalReserves",
-    });
-
-    const cash = await publicClient.readContract({
-      address: addresses.vBNB as Address,
-      abi: coreVTokenAbi,
-      functionName: "getCash",
-    });
-
-    if (cash > 0) {
-      await walletClient.writeContract({
-        address: addresses.VBNBAdmin as Address,
-        abi: vBnbAdminAbi,
-        functionName: "reduceReserves",
-        args: [totalReserves < cash ? totalReserves : cash],
+    let error;
+    let trx;
+    try {
+      const totalReserves = await publicClient.readContract({
+        address: addresses.vBNB as Address,
+        abi: coreVTokenAbi,
+        functionName: "totalReserves",
       });
-    } else {
-      logger.error("Unable to reduce reservers vBNB Admin is out of cash.");
+
+      const cash = await publicClient.readContract({
+        address: addresses.vBNB as Address,
+        abi: coreVTokenAbi,
+        functionName: "getCash",
+      });
+
+      if (cash > 0) {
+        if (this.simulate) {
+          await publicClient.simulateContract({
+            account: walletClient.account.address,
+            address: addresses.VBNBAdmin as Address,
+            abi: vBnbAdminAbi,
+            functionName: "reduceReserves",
+            args: [totalReserves < cash ? totalReserves : cash],
+          });
+        } else {
+          trx = await walletClient.writeContract({
+            address: addresses.VBNBAdmin as Address,
+            abi: vBnbAdminAbi,
+            functionName: "reduceReserves",
+            args: [totalReserves < cash ? totalReserves : cash],
+          });
+        }
+      }
+    } catch (e) {
+      error = (e as Error).message;
     }
+    this.sendMessage({ action: "ReduceReserves", error, trx });
   }
 
   async checkForTrades(allPools: PoolAddressArray[], tokenConverterConfigs: TokenConverterConfig[]) {
-    const results = await readTokenConvertersTokenBalances(allPools, tokenConverterConfigs);
+    const results = await readTokenConvertersTokenBalances(allPools, tokenConverterConfigs, false);
     const trades = results.filter(v => v.assetOut.balance > 0);
+    this.sendMessage({ action: "PotentialTrades", context: { trades } });
     return trades;
   }
 
@@ -264,15 +409,39 @@ export class TokenConverter {
     }, {} as Record<Address, Address[]>);
 
     for (const args of Object.entries(releaseFundsArgs)) {
-      await walletClient.writeContract({
-        address: addresses.ProtocolShareReserve as Address,
-        abi: protocolShareReserveAbi,
-        functionName: "releaseFunds",
-        args,
-      });
+      let trx;
+      let error;
+      try {
+        if (this.simulate) {
+          await publicClient.simulateContract({
+            account: walletClient.account.address,
+            address: addresses.ProtocolShareReserve as Address,
+            abi: protocolShareReserveAbi,
+            functionName: "releaseFunds",
+            args: args as [`0x${string}`, readonly `0x${string}`[]],
+          });
+        } else {
+          trx = await walletClient.writeContract({
+            address: addresses.ProtocolShareReserve as Address,
+            abi: protocolShareReserveAbi,
+            functionName: "releaseFunds",
+            args,
+          });
+        }
+      } catch (e) {
+        error = (e as Error).message;
+      }
+      this.sendMessage({ action: "ReleaseFunds", trx, error });
     }
   }
 
+  /**
+   *
+   * @param converterAddress Address of converter to use
+   * @param trade Swap trade which starts with token to receive and ends with token to deposit
+   * @param amount Amount of token to receive from converter
+   * @param expectedMinIncome Profitability or cost of conversion in token to receive
+   */
   async arbitrage(
     converterAddress: Address,
     trade: SmartRouterTrade<TradeType.EXACT_OUTPUT>,
@@ -286,7 +455,6 @@ export class TokenConverter {
     let minIncome = expectedMinIncome - slippage;
 
     const block = await this.publicClient.getBlock();
-
     const convertTransaction = {
       ...this.operator,
       chain,
@@ -294,76 +462,129 @@ export class TokenConverter {
       args: [
         {
           beneficiary,
-          tokenToReceiveFromConverter: trade.inputAmount.currency.address,
-          amount: amount,
+          tokenToReceiveFromConverter: trade.inputAmount.currency.address as Address,
+          amount,
           minIncome,
-          tokenToSendToConverter: trade.outputAmount.currency.address,
+          tokenToSendToConverter: trade.outputAmount.currency.address as Address,
           converter: converterAddress,
           path: this.encodeExactOutputPath(trade.routes[0]),
           deadline: block.timestamp + REVERT_IF_NOT_MINED_AFTER,
         },
       ] as const,
     };
-
+    let trx;
+    let error;
     try {
       if (expectedMinIncome < 0n) {
         minIncome = slippage + expectedMinIncome;
-        await this.walletClient.writeContract({
-          address: trade.inputAmount.currency.address,
-          chain,
-          abi: parseAbi(["function approve(address,uint256)"]),
-          functionName: "approve",
-          args: [this.operator.address, -minIncome],
-        });
+        if (this.simulate) {
+          await this.publicClient.simulateContract({
+            address: trade.inputAmount.currency.address,
+            chain,
+            abi: parseAbi(["function approve(address,uint256)"]),
+            functionName: "approve",
+            args: [this.operator.address, -minIncome],
+          });
+        } else {
+          await this.walletClient.writeContract({
+            address: trade.inputAmount.currency.address,
+            chain,
+            abi: parseAbi(["function approve(address,uint256)"]),
+            functionName: "approve",
+            args: [this.operator.address, -minIncome],
+          });
+        }
       }
 
       const gasEstimation = await this.publicClient.estimateContractGas({
         account: this.walletClient.account,
         ...convertTransaction,
       });
-      const trx = await this.walletClient.writeContract({ ...convertTransaction, gas: (gasEstimation * 110n) / 100n });
-      logger.info(`Successful swap ${trx}`);
+
+      if (this.simulate) {
+        await this.publicClient.simulateContract({
+          account: this.walletClient.account.address,
+          ...convertTransaction,
+          gas: (gasEstimation * 110n) / 100n,
+        });
+        trx = "success";
+      } else {
+        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: (gasEstimation * 120n) / 100n });
+      }
     } catch (e) {
-      // @ts-expect-error
-      delete convertTransaction.abi;
-      logger.error("Conversion failed", {
-        ...convertTransaction,
-        stack: (e as Error).stack,
-        message: (e as Error).message,
-      });
+      if (e instanceof BaseError) {
+        const revertError = e.walk(err => err instanceof ContractFunctionRevertedError);
+        if (revertError instanceof ContractFunctionRevertedError) {
+          // writeContract || simulateContract shapes
+          error = revertError.reason || revertError.shortMessage;
+        }
+      } else {
+        error = (e as Error).message;
+      }
     }
+    this.sendMessage({ action: "Arbitrage", error, trx, context: convertTransaction.args[0] });
   }
 
   async executeTrade(t: BalanceResult) {
-    const [trade, tradeAmount] = await this.getBestTrade(
-      t.tokenConverter,
-      t.assetOut.address,
-      t.assetIn.address,
-      t.assetOut.balance,
-    );
-    const minIncome = BigInt(
-      new Fraction(tradeAmount[0], 1).subtract(trade.inputAmount).toFixed(0, { groupSeparator: "" }),
-    );
-
-    let hasIncome = true;
-    if (minIncome < 0) {
-      // Check that we have the income to transfer
-      const balanceOf = await publicClient.readContract({
-        address: t.assetOut.address,
-        abi: erc20Abi,
-        functionName: "balanceOf",
-        args: [walletClient.account.address],
+    let error;
+    let trade;
+    let tradeAmount;
+    try {
+      [trade, tradeAmount] = await this.getBestTrade(
+        t.tokenConverter,
+        t.assetOut.address,
+        t.assetIn.address,
+        t.assetOut.balance,
+      );
+    } catch (e) {
+      error = e as Error;
+    } finally {
+      this.sendMessage({
+        action: "GetBestTrade",
+        error: error?.message,
+        context: {
+          tradeAmount: { amountOut: tradeAmount && tradeAmount[0], amountIn: tradeAmount && tradeAmount[1] },
+          converter: t.tokenConverter,
+          tokenToReceiveFromConverter: t.assetOut.address,
+          tokenToSendToConverter: t.assetIn.address,
+        },
       });
-
-      hasIncome = balanceOf >= minIncome * -1n;
     }
 
-    if (hasIncome) {
-      await this.arbitrage(t.tokenConverter, trade, tradeAmount[0], minIncome);
-    } else {
-      logger.error(
-        `Unable to run conversion because income was negative and wallet doesn't have a positive balance {minIncome: ${minIncome}, asset: ${t.assetOut.address}}`,
+    if (trade && tradeAmount) {
+      // the difference between the token you get from TokenConverter and the token you pay to PCS
+      const minIncome = BigInt(
+        new Fraction(tradeAmount[0], 1).subtract(trade.inputAmount).toFixed(0, { groupSeparator: "" }),
       );
+
+      let hasIncome = true;
+      if (minIncome < 0) {
+        // Check that we have the income to transfer
+        const balanceOf = await publicClient.readContract({
+          address: t.assetOut.address,
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [walletClient.account.address],
+        });
+
+        hasIncome = balanceOf >= minIncome * -1n;
+      }
+      if (hasIncome) {
+        await this.arbitrage(t.tokenConverter, trade, tradeAmount[0], minIncome);
+      } else {
+        error = `Unable to run conversion because income was negative and wallet doesn't have a positive balance {minIncome: ${minIncome}, asset: ${t.assetOut.address}}`;
+        this.sendMessage({
+          action: "ExecuteTrade",
+          error,
+          context: {
+            converter: t.tokenConverter,
+            tokenToReceiveFromConverter: t.assetOut.address,
+            tokenToSendToConverter: t.assetIn.address,
+            amount: tradeAmount[0],
+            minIncome,
+          },
+        });
+      }
     }
   }
 }
