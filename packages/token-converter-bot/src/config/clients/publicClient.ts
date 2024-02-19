@@ -12,4 +12,6 @@ export const getPublicClient = (): PublicClient<HttpTransport, typeof chains[SUP
   });
 };
 
-export default getPublicClient();
+const client: PublicClient<HttpTransport, typeof chains[SUPPORTED_CHAINS]> = getPublicClient();
+
+export default client;

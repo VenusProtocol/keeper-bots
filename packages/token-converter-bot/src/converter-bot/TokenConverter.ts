@@ -54,7 +54,7 @@ export class TokenConverter {
     this.tokens = new Map();
   }
 
-  get publicClient() {
+  get publicClient(): PublicClient<HttpTransport, typeof chains[SUPPORTED_CHAINS]> {
     return (this._publicClient ||= publicClient);
   }
 
