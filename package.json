@@ -9,9 +9,11 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "workspaces": [
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
   "scripts": {
     "lint": "yarn workspaces foreach run lint",
     "prettier": "yarn workspaces foreach run prettier"

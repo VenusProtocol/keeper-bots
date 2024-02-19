@@ -2,12 +2,12 @@
   "name": "@venusprotocol/token-converter-bot",
   "version": "0.0.1",
   "description": "",
-  "private": true,
   "scripts": {
     "lint": "yarn lint:ts && yarn prettier:check",
     "lint:ts": "eslint --ext .js,.ts .",
     "lint:ts:fix": "eslint --fix --ext .js,.ts .",
     "prettier": "prettier --write \"**/*.{js,json,md,ts,yaml,yml}\"",
+    "build": "tsc",
     "prettier:check": "prettier --check \"**/*.{js,json,md,ts,yaml,yml}\"",
     "generate-abis": "yarn wagmi generate",
     "postinstall": "yarn generate-abis",
@@ -18,6 +18,12 @@
   "license": "ISC",
   "engines": {
     "node": ">=18.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./dist/converter-bot/index.js"
   },
   "dependencies": {
     "@graphprotocol/client-cli": "^3.0.0",
