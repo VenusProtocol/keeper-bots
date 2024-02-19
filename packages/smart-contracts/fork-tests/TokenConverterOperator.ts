@@ -1,17 +1,13 @@
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SingleTokenConverter__factory } from "@venusprotocol/protocol-reserve/dist/typechain/factories/SingleTokenConverter__factory";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { concat, hexlify, parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 
-import {
-  IERC20__factory,
-  SingleTokenConverter__factory,
-  TokenConverterOperator,
-  TokenConverterOperator__factory,
-} from "../typechain";
+import { IERC20__factory, TokenConverterOperator, TokenConverterOperator__factory } from "../typechain";
 import ADDRESSES from "./config/addresses";
 import { connect, deploy, faucet, forking, getBlockTimestamp, initUser } from "./framework";
 

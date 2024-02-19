@@ -29,7 +29,7 @@
     "@openzeppelin/contracts-upgradeable": "4.9.3",
     "@venusprotocol/governance-contracts": "^1.4.0",
     "@venusprotocol/isolated-pools": "^2.3.0",
-    "@venusprotocol/protocol-reserve": "^1.4.0",
+    "@venusprotocol/protocol-reserve": "^1.5.0-dev.3",
     "@venusprotocol/venus-protocol": "^7.1.0"
   },
   "devDependencies": {
