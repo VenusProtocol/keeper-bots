@@ -80,19 +80,27 @@ interface ExecuteTradeMessage {
   };
 }
 
+export interface AccrueInterestMessage {
+  action: "AccrueInterest";
+  trx: string | undefined;
+  error: string | string[] | undefined;
+  context: undefined;
+}
+
 export type Message =
   | {
-      action: "AccrueInterest" | "ReduceReserves" | "ReleaseFunds";
-      trx: string | undefined;
-      error: string | undefined;
-      context: undefined;
-    }
+    action: "ReduceReserves" | "ReleaseFunds";
+    trx: string | undefined;
+    error: string | undefined;
+    context: undefined;
+  }
   | {
-      action: "PotentialTrades";
-      trx: undefined;
-      error: string | undefined;
-      context: { trades: BalanceResult[] };
-    }
+    action: "PotentialTrades";
+    trx: undefined;
+    error: string | undefined;
+    context: { trades: BalanceResult[] };
+  }
+  | AccrueInterestMessage
   | ArbitrageMessage
   | GetBestTradeMessage
   | ExecuteTradeMessage;
@@ -156,7 +164,7 @@ export class TokenConverter {
 
     if (this.verbose) {
       if (error) {
-        logger.error(error, context);
+        logger.error(Array.isArray(error) ? error.join(",") : error, context);
       } else {
         logger.info(`${action} - ${trx}`, context);
       }
@@ -311,7 +319,7 @@ export class TokenConverter {
   }
 
   async accrueInterest(allPools: PoolAddressArray[]) {
-    let error;
+    let error: string | string[];
     try {
       const allMarkets = allPools.reduce((acc, curr) => {
         acc.concat(curr[1]);
@@ -319,7 +327,7 @@ export class TokenConverter {
       }, [] as Address[]);
 
       // Accrue Interest in all markets
-      await Promise.allSettled(
+      const results = await Promise.allSettled(
         allMarkets.map(async market => {
           if (this.simulate) {
             await publicClient.simulateContract({
@@ -337,6 +345,13 @@ export class TokenConverter {
           }
         }),
       );
+
+      error = results.reduce((acc, curr) => {
+        if (curr.status === "rejected") {
+          acc.push(curr.reason);
+        }
+        return acc;
+      }, [] as string[]);
     } catch (e) {
       error = (e as Error).message;
     }
