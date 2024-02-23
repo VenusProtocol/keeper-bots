@@ -2,7 +2,7 @@ import { DocumentNode } from "graphql";
 import { Client as UrqlClient, createClient } from "urql/core";
 
 import config from "../config";
-import { TokenConverterByAssetOutDocument, TokenConverterDocument, TokenConvertersDocument } from "./.graphclient";
+import { TokenConverterByAssetInDocument, TokenConverterByAssetOutDocument, TokenConverterByAssetInAndAssetOutDocument, TokenConverterDocument, TokenConvertersDocument } from "./.graphclient";
 
 class SubgraphClient {
   urqlClient: UrqlClient;
@@ -28,12 +28,22 @@ class SubgraphClient {
   }
 
   async getTokenConverter(address: string) {
-    const result = await this.query(TokenConverterDocument, { id: address });
+    const result = await this.query(TokenConverterDocument, { id: address.toLowerCase() });
     return result;
   }
 
   async getTokenConverterByAssetOut(tokenAddressOut: string) {
-    const result = await this.query(TokenConverterByAssetOutDocument, { tokenAddressOut });
+    const result = await this.query(TokenConverterByAssetOutDocument, { tokenAddressOut: tokenAddressOut.toLowerCase() });
+    return result;
+  }
+
+  async getTokenConverterByAssetIn(tokenAddressIn: string) {
+    const result = await this.query(TokenConverterByAssetInDocument, { tokenAddressIn: tokenAddressIn.toLowerCase() });
+    return result;
+  }
+
+  async getTokenConverterByAssetInAndAssetOut(tokenAddressIn: string, tokenAddressOut: string) {
+    const result = await this.query(TokenConverterByAssetInAndAssetOutDocument, { tokenAddressIn: tokenAddressIn.toLowerCase(), tokenAddressOut: tokenAddressOut.toLowerCase() });
     return result;
   }
 }
