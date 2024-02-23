@@ -446,13 +446,10 @@ export class TokenConverter {
     converterAddress: Address,
     trade: SmartRouterTrade<TradeType.EXACT_OUTPUT>,
     amount: bigint,
-    expectedMinIncome: bigint,
+    minIncome: bigint,
   ) {
     const beneficiary = this.walletClient.account.address;
     const chain = chains[this.chainName];
-    const slippage = expectedMinIncome / 200n;
-
-    let minIncome = expectedMinIncome - slippage;
 
     const block = await this.publicClient.getBlock();
     const convertTransaction = {
@@ -475,8 +472,7 @@ export class TokenConverter {
     let trx;
     let error;
     try {
-      if (expectedMinIncome < 0n) {
-        minIncome = slippage + expectedMinIncome;
+      if (minIncome < 0n) {
         if (this.simulate) {
           await this.publicClient.simulateContract({
             address: trade.inputAmount.currency.address,
@@ -553,10 +549,9 @@ export class TokenConverter {
 
     if (trade && tradeAmount) {
       // the difference between the token you get from TokenConverter and the token you pay to PCS
-      const minIncome = BigInt(
+      const minIncome = (BigInt(
         new Fraction(tradeAmount[0], 1).subtract(trade.inputAmount).toFixed(0, { groupSeparator: "" }),
-      );
-
+      ) * 1003n) / 1000n || (((tradeAmount[0] * 1003n) / 1000n) - tradeAmount[0]) * -1n;
       let hasIncome = true;
       if (minIncome < 0) {
         // Check that we have the income to transfer
