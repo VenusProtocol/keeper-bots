@@ -270,13 +270,13 @@ export class TokenConverter {
       throw new Error(error);
     }
 
-    if (this.getPriceImpact(trade).greaterThan(new Percent(1n, 1000n))) {
+    if (this.getPriceImpact(trade).greaterThan(new Percent(50n, 100n))) {
       return this.getBestTrade(tokenConverter, swapFrom, swapTo, (amount * 75n) / 100n);
     }
     return [trade as SmartRouterTrade<TradeType.EXACT_OUTPUT>, updatedAmountIn];
   }
 
-  encodeExactOutputPath(route: BaseRoute): Hex {
+  encodeExactInputPath(route: BaseRoute): Hex {
     const firstInputToken: Token = route.inputAmount.currency;
 
     const { path, types } = route.pools.reduce(
@@ -464,7 +464,7 @@ export class TokenConverter {
           minIncome,
           tokenToSendToConverter: trade.outputAmount.currency.address as Address,
           converter: converterAddress,
-          path: this.encodeExactOutputPath(trade.routes[0]),
+          path: this.encodeExactInputPath(trade.routes[0]),
           deadline: block.timestamp + REVERT_IF_NOT_MINED_AFTER,
         },
       ] as const,
