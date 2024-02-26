@@ -221,7 +221,7 @@ export class TokenConverter {
   }
 
   /**
-   *
+   * Create a trade that will provide required amount in for exact output
    * @param tokenConverter Token converter to use
    * @param swapFrom Token we want to receive to the converter
    * @param swapTo Token we want to send to the converter
@@ -255,8 +255,8 @@ export class TokenConverter {
     let error;
     try {
       trade = await SmartRouter.getBestTrade(
-        CurrencyAmount.fromRawAmount(swapFromToken, amount),
-        swapToToken,
+        CurrencyAmount.fromRawAmount(swapToToken, updatedAmountIn[1]),
+        swapFromToken,
         TradeType.EXACT_OUTPUT,
         {
           gasPriceWei: () => this.publicClient.getGasPrice(),
@@ -279,7 +279,7 @@ export class TokenConverter {
     }
 
     if (this.getPriceImpact(trade).greaterThan(new Percent(50n, 100n))) {
-      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (amount * 75n) / 100n);
+      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[0] * 75n) / 100n);
     }
     return [trade as SmartRouterTrade<TradeType.EXACT_OUTPUT>, updatedAmountIn];
   }
@@ -564,9 +564,10 @@ export class TokenConverter {
 
     if (trade && tradeAmount) {
       // the difference between the token you get from TokenConverter and the token you pay to PCS
-      const minIncome = (BigInt(
+      const minIncome = BigInt(
         new Fraction(tradeAmount[0], 1).subtract(trade.inputAmount).toFixed(0, { groupSeparator: "" }),
-      ) * 1003n) / 1000n || (((tradeAmount[0] * 1003n) / 1000n) - tradeAmount[0]) * -1n;
+      );
+
       let hasIncome = true;
       if (minIncome < 0) {
         // Check that we have the income to transfer
@@ -579,8 +580,10 @@ export class TokenConverter {
 
         hasIncome = balanceOf >= minIncome * -1n;
       }
+
+      const amount = tradeAmount[0];
       if (hasIncome) {
-        await this.arbitrage(t.tokenConverter, trade, tradeAmount[0], minIncome);
+        await this.arbitrage(t.tokenConverter, trade, amount, minIncome);
       } else {
         error = `Unable to run conversion because income was negative and wallet doesn't have a positive balance {minIncome: ${minIncome}, asset: ${t.assetOut.address}}`;
         this.sendMessage({
@@ -590,7 +593,7 @@ export class TokenConverter {
             converter: t.tokenConverter,
             tokenToReceiveFromConverter: t.assetOut.address,
             tokenToSendToConverter: t.assetIn.address,
-            amount: tradeAmount[0],
+            amount,
             minIncome,
           },
         });
