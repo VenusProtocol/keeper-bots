@@ -550,22 +550,15 @@ export class TokenConverter {
     let blockNumber = await publicClient.getBlockNumber();
     try {
       if (minIncome < 0n) {
-        if (this.simulate) {
-          await this.publicClient.simulateContract({
+        if (!this.simulate) {
+          const trx = await this.walletClient.writeContract({
             address: trade.inputAmount.currency.address,
             chain,
             abi: parseAbi(["function approve(address,uint256)"]),
             functionName: "approve",
             args: [this.operator.address, -minIncome],
           });
-        } else {
-          await this.walletClient.writeContract({
-            address: trade.inputAmount.currency.address,
-            chain,
-            abi: parseAbi(["function approve(address,uint256)"]),
-            functionName: "approve",
-            args: [this.operator.address, -minIncome],
-          });
+          await publicClient.waitForTransactionReceipt({ hash: trx });
         }
       }
 
@@ -574,15 +567,16 @@ export class TokenConverter {
         ...convertTransaction,
       });
 
-      if (this.simulate) {
-        await this.publicClient.simulateContract({
-          account: this.walletClient.account.address,
-          ...convertTransaction,
-          gas: (gasEstimation * 110n) / 100n,
-        });
-        trx = "success";
-      } else {
-        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: (gasEstimation * 120n) / 100n });
+      await this.publicClient.simulateContract({
+        blockNumber,
+        account: this.walletClient.account.address,
+        ...convertTransaction,
+        gas: (gasEstimation * 110n) / 100n,
+      });
+
+      if (!this.simulate) {
+        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: (gasEstimation * 110n) / 100n });
+        ({ blockNumber } = await publicClient.waitForTransactionReceipt({ hash: trx }));
       }
     } catch (e) {
       if (e instanceof BaseError) {
