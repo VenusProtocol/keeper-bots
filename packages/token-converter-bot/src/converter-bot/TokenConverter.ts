@@ -45,6 +45,7 @@ export interface ArbitrageMessage {
   type: "Arbitrage";
   trx: string | undefined;
   error: string | undefined;
+  blockNumber?: bigint | undefined;
   context: {
     beneficiary: Address;
     tokenToReceiveFromConverter: Address;
@@ -61,9 +62,14 @@ interface GetBestTradeMessage {
   type: "GetBestTrade";
   trx: string | undefined;
   error: string | undefined;
+  blockNumber?: bigint | undefined;
   context: {
     converter: string;
     tradeAmount: { amountIn: bigint | undefined; amountOut: bigint | undefined };
+    pancakeSwapTrade?: {
+      inputToken: { amount: string; token: string };
+      outputToken: { amount: string; token: string };
+    };
     tokenToReceiveFromConverter: string;
     tokenToSendToConverter: string;
   };
@@ -73,6 +79,7 @@ export interface ExecuteTradeMessage {
   type: "ExecuteTrade";
   trx: string | undefined;
   error: string | undefined;
+  blockNumber?: bigint | undefined;
   context: {
     converter: string;
     tokenToReceiveFromConverter: string;
@@ -86,22 +93,25 @@ export interface AccrueInterestMessage {
   type: "AccrueInterest";
   trx: string | undefined;
   error: string | string[] | undefined;
+  blockNumber?: bigint | undefined;
   context: undefined;
 }
 
 export type Message =
   | {
-    type: "ReduceReserves" | "ReleaseFunds";
-    trx: string | undefined;
-    error: string | undefined;
-    context: undefined;
-  }
+      type: "ReduceReserves" | "ReleaseFunds";
+      trx: string | undefined;
+      error: string | undefined;
+      blockNumber?: bigint | undefined;
+      context: undefined;
+    }
   | {
-    type: "PotentialTrades";
-    trx: undefined;
-    error: string | undefined;
-    context: { trades: BalanceResult[] };
-  }
+      type: "PotentialTrades";
+      trx: undefined;
+      error: string | undefined;
+      blockNumber?: bigint | undefined;
+      context: { trades: BalanceResult[] };
+    }
   | AccrueInterestMessage
   | ArbitrageMessage
   | GetBestTradeMessage
@@ -159,9 +169,10 @@ export class TokenConverter {
     trx = undefined,
     error = undefined,
     context = undefined,
+    blockNumber = undefined,
   }: Partial<Message> & Pick<Message, "type">) {
     if (this.subscriber) {
-      this.subscriber({ type, trx, error, context } as Message);
+      this.subscriber({ type, trx, error, context, blockNumber } as Message);
     }
 
     if (this.verbose) {
@@ -404,10 +415,18 @@ export class TokenConverter {
     this.sendMessage({ type: "ReduceReserves", error, trx });
   }
 
-  async checkForTrades(allPools: PoolAddressArray[], tokenConverterConfigs: TokenConverterConfig[]) {
-    const results = await readTokenConvertersTokenBalances(allPools, tokenConverterConfigs, false);
+  async checkForTrades(
+    allPools: PoolAddressArray[],
+    tokenConverterConfigs: TokenConverterConfig[],
+    releaseFunds: boolean,
+  ) {
+    const { results, blockNumber } = await readTokenConvertersTokenBalances(
+      allPools,
+      tokenConverterConfigs,
+      releaseFunds,
+    );
     const trades = results.filter(v => v.assetOut.balance > 0);
-    this.sendMessage({ type: "PotentialTrades", context: { trades } });
+    this.sendMessage({ type: "PotentialTrades", context: { trades }, blockNumber });
     return trades;
   }
 
@@ -518,6 +537,7 @@ export class TokenConverter {
     };
     let trx;
     let error;
+    let blockNumber = await publicClient.getBlockNumber();
     try {
       if (minIncome < 0n) {
         if (this.simulate) {
@@ -588,6 +608,16 @@ export class TokenConverter {
         error: error?.message,
         context: {
           tradeAmount: { amountOut: tradeAmount && tradeAmount[0], amountIn: tradeAmount && tradeAmount[1] },
+          pancakeSwapTrade: {
+            inputToken: {
+              amount: trade.inputAmount.toFixed(trade.inputAmount.currency.decimals, { groupSeparator: "" }),
+              token: trade.inputAmount.currency.address,
+            },
+            outputToken: {
+              amount: trade.outputAmount.toFixed(trade.outputAmount.currency.decimals, { groupSeparator: "" }),
+              token: trade.outputAmount.currency.address,
+            },
+          },
           converter: t.tokenConverter,
           tokenToReceiveFromConverter: t.assetOut.address,
           tokenToSendToConverter: t.assetIn.address,

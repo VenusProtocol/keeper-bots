@@ -59,8 +59,8 @@ const formatResults = (
 export const readTokenConvertersTokenBalances = async (
   pools: [Address, readonly Address[]][],
   tokenConverterConfigs: TokenConverterConfig[],
-  releaseFunds: boolean,
-): Promise<BalanceResult[]> => {
+  releaseFunds?: boolean,
+): Promise<{ results: BalanceResult[]; blockNumber: bigint }> => {
   const releaseFundsCalls = releaseFunds
     ? pools.map(pool => ({
         address: addresses.ProtocolShareReserve as Address,
@@ -69,8 +69,9 @@ export const readTokenConvertersTokenBalances = async (
         args: pool,
       }))
     : [];
-
+  const blockNumber = await publicClient.getBlockNumber();
   const results = await publicClient.multicall({
+    blockNumber,
     contracts: [
       ...releaseFundsCalls,
       ...tokenConverterConfigs.reduce((acc, curr) => {
@@ -92,11 +93,10 @@ export const readTokenConvertersTokenBalances = async (
       }, [] as { address: Address; abi: Abi; functionName: string; args?: readonly unknown[] | undefined }[]),
     ],
   });
-
   // Release funds will be empty
   results.splice(0, releaseFundsCalls.length);
   const formattedResults = formatResults(results, tokenConverterConfigs);
-  return formattedResults;
+  return { results: formattedResults, blockNumber };
 };
 
 export default readTokenConvertersTokenBalances;

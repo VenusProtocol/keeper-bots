@@ -2,15 +2,19 @@ import { useEffect, useState, useReducer } from 'react';
 import { Box, Text, useApp } from 'ink';
 import zod from 'zod';
 import { Address, getAddress } from 'viem';
-import { TokenConverter, BalanceResult, readCoreMarkets, readIsolatedMarkets, getAllConverterConfigs, getConverterConfigByAssetOut, getConverterConfigsByConverter, Message, ArbitrageMessage } from '@venusprotocol/token-converter-bot';
-
+import { TokenConverter, BalanceResult, readCoreMarkets, readIsolatedMarkets, getAllConverterConfigs, getConverterConfigByAssetOut, getConverterConfigsByConverter, getConverterConfigByAssetIn, getConverterConfigByAssetInAndAssetOut, Message, ArbitrageMessage, ExecuteTradeMessage } from '@venusprotocol/token-converter-bot';
 
 interface Trade {
 	balance?: BalanceResult,
-	args?: ArbitrageMessage['context']
+	args?: Partial<ArbitrageMessage['context'] & ExecuteTradeMessage['context']>
 	trx?: string
 	error?: string
 	tradeAmount?: { amountIn: bigint | undefined, amountOut: bigint | undefined }
+	blockNumber?: string
+	pancakeSwapTrade?: {
+		inputToken: { amount: string, token: string },
+		outputToken: { amount: string, token: string },
+	}
 }
 
 const address = zod.custom<Address>((val) => {
@@ -43,6 +47,7 @@ interface State {
 	reducedReserves: { done: boolean }
 	releasedFunds: { done: boolean }
 	trades: Record<string, Trade>,
+	estimatedBlockNumber?: string
 }
 
 const defaultState = {
@@ -87,6 +92,7 @@ const reducer = (state: State, action: Message): State => {
 			return {
 				...state,
 				trades: newTrades,
+				estimatedBlockNumber: action.blockNumber?.toString()
 			}
 		}
 
@@ -94,14 +100,21 @@ const reducer = (state: State, action: Message): State => {
 			const id = getConverterConfigId(action.context)
 			return {
 				...state,
-				trades: { ...state.trades, [id]: { ...state.trades[id], tradeAmount: action.context.tradeAmount, error: action.error, } },
+				trades: { ...state.trades, [id]: { ...state.trades[id], tradeAmount: action.context.tradeAmount, error: action.error, pancakeSwapTrade: action.context.pancakeSwapTrade } },
+			}
+		}
+		case 'ExecuteTrade': {
+			const id = getConverterConfigId(action.context)
+			return {
+				...state,
+				trades: { ...state.trades, [id]: { ...state.trades[id], error: action.error, args: { amount: action.context.amount, minIncome: action.context.minIncome } } }
 			}
 		}
 		case 'Arbitrage': {
 			const id = getConverterConfigId(action.context)
 			return {
 				...state,
-				trades: { ...state.trades, [id]: { ...state.trades[id], args: action.context, trx: action.trx, error: action.error } }
+				trades: { ...state.trades, [id]: { ...state.trades[id], args: action.context, trx: action.trx, error: action.error, blockNumber: action.blockNumber?.toString() } }
 			}
 		}
 	}
@@ -206,9 +219,12 @@ export default function Convert({ options = {} }: Props) {
 			{Object.entries(trades).length > 0 &&
 				<Box flexDirection='column' marginTop={1}>
 					<Text bold backgroundColor="#3396FF">Conversions</Text>
-					{Object.entries(trades).map(([id, trade]) => {
+					{estimatedBlockNumber && <Box>
+						<Text bold>Estimated Block Number</Text>
+						<Text>{estimatedBlockNumber.toString()}</Text>
+					</Box>}
+					{Object.entries(trades).map(([id, trade]: any) => {
 						return (
-
 							<Box key={id} flexDirection="row" flexGrow={1} borderStyle="doubleSingle" borderColor="#3396FF">
 								<Box flexDirection="column" marginTop={1} marginLeft={1} flexGrow={1} minWidth={60}>
 									<Box flexGrow={1}>
@@ -229,6 +245,12 @@ export default function Convert({ options = {} }: Props) {
 											<Text>{trade.tradeAmount?.amountOut?.toString()}</Text>
 										</Box>
 									</Box>
+									{trade.blockNumber && <Box flexGrow={1}>
+										<Text bold>Block Number </Text>
+										<Box flexDirection='column'>
+											<Text>{trade.blockNumber}</Text>
+										</Box>
+									</Box>}
 									{(trade.trx || trade.error) && <Box flexGrow={1}>
 										<Text bold>Transaction </Text>
 										<Text color={trade.trx ? 'green' : 'red'}>{trade.trx || trade.error}</Text>
@@ -237,6 +259,9 @@ export default function Convert({ options = {} }: Props) {
 								<Box flexDirection="column" flexGrow={1}>
 									{trade.args && <Box borderTop borderStyle="classic" borderColor="#3396FF">
 										<Text>{JSON.stringify(trade.args || ' ', stringifyBigInt)}</Text>
+									</Box>}
+									{trade.pancakeSwapTrade && <Box borderTop borderStyle="classic" borderColor="#3396FF">
+										<Text>{JSON.stringify(trade.pancakeSwapTrade || ' ', stringifyBigInt)}</Text>
 									</Box>}
 								</Box>
 							</Box>
