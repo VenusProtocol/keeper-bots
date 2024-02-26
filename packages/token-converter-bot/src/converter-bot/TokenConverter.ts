@@ -42,7 +42,7 @@ const getOutputCurrency = (pool: V3Pool, inputToken: Token): Token => {
 };
 
 export interface ArbitrageMessage {
-  action: "Arbitrage";
+  type: "Arbitrage";
   trx: string | undefined;
   error: string | undefined;
   context: {
@@ -58,7 +58,7 @@ export interface ArbitrageMessage {
 }
 
 interface GetBestTradeMessage {
-  action: "GetBestTrade";
+  type: "GetBestTrade";
   trx: string | undefined;
   error: string | undefined;
   context: {
@@ -69,8 +69,8 @@ interface GetBestTradeMessage {
   };
 }
 
-interface ExecuteTradeMessage {
-  action: "ExecuteTrade";
+export interface ExecuteTradeMessage {
+  type: "ExecuteTrade";
   trx: string | undefined;
   error: string | undefined;
   context: {
@@ -83,7 +83,7 @@ interface ExecuteTradeMessage {
 }
 
 export interface AccrueInterestMessage {
-  action: "AccrueInterest";
+  type: "AccrueInterest";
   trx: string | undefined;
   error: string | string[] | undefined;
   context: undefined;
@@ -91,17 +91,17 @@ export interface AccrueInterestMessage {
 
 export type Message =
   | {
-      action: "ReduceReserves" | "ReleaseFunds";
-      trx: string | undefined;
-      error: string | undefined;
-      context: undefined;
-    }
+    type: "ReduceReserves" | "ReleaseFunds";
+    trx: string | undefined;
+    error: string | undefined;
+    context: undefined;
+  }
   | {
-      action: "PotentialTrades";
-      trx: undefined;
-      error: string | undefined;
-      context: { trades: BalanceResult[] };
-    }
+    type: "PotentialTrades";
+    trx: undefined;
+    error: string | undefined;
+    context: { trades: BalanceResult[] };
+  }
   | AccrueInterestMessage
   | ArbitrageMessage
   | GetBestTradeMessage
@@ -155,20 +155,20 @@ export class TokenConverter {
   }
 
   private sendMessage({
-    action,
+    type,
     trx = undefined,
     error = undefined,
     context = undefined,
-  }: Partial<Message> & Pick<Message, "action">) {
+  }: Partial<Message> & Pick<Message, "type">) {
     if (this.subscriber) {
-      this.subscriber({ action, trx, error, context } as Message);
+      this.subscriber({ type, trx, error, context } as Message);
     }
 
     if (this.verbose) {
       if (error) {
         logger.error(Array.isArray(error) ? error.join(",") : error, context);
       } else {
-        logger.info(`${action} - ${trx}`, context);
+        logger.info(`${type} - ${trx}`, context);
       }
     }
   }
@@ -357,7 +357,7 @@ export class TokenConverter {
     } catch (e) {
       error = (e as Error).message;
     }
-    this.sendMessage({ action: "AccrueInterest", error });
+    this.sendMessage({ type: "AccrueInterest", error });
   }
 
   /**
@@ -401,13 +401,13 @@ export class TokenConverter {
     } catch (e) {
       error = (e as Error).message;
     }
-    this.sendMessage({ action: "ReduceReserves", error, trx });
+    this.sendMessage({ type: "ReduceReserves", error, trx });
   }
 
   async checkForTrades(allPools: PoolAddressArray[], tokenConverterConfigs: TokenConverterConfig[]) {
     const results = await readTokenConvertersTokenBalances(allPools, tokenConverterConfigs, false);
     const trades = results.filter(v => v.assetOut.balance > 0);
-    this.sendMessage({ action: "PotentialTrades", context: { trades } });
+    this.sendMessage({ type: "PotentialTrades", context: { trades } });
     return trades;
   }
 
@@ -448,7 +448,8 @@ export class TokenConverter {
       } catch (e) {
         error = (e as Error).message;
       }
-      this.sendMessage({ action: "ReleaseFunds", trx, error });
+      this.sendMessage({ type: "ReleaseFunds", trx, error });
+    }
   }
 
   async getUsdValue(underlyingAddress: Address, vTokenAddress: Address, value: bigint) {
@@ -564,7 +565,8 @@ export class TokenConverter {
         error = (e as Error).message;
       }
     }
-    this.sendMessage({ action: "Arbitrage", error, trx, context: convertTransaction.args[0] });
+
+    this.sendMessage({ type: "Arbitrage", error, trx, context: convertTransaction.args[0], blockNumber });
   }
 
   async executeTrade(t: BalanceResult) {
@@ -582,7 +584,7 @@ export class TokenConverter {
       error = e as Error;
     } finally {
       this.sendMessage({
-        action: "GetBestTrade",
+        type: "GetBestTrade",
         error: error?.message,
         context: {
           tradeAmount: { amountOut: tradeAmount && tradeAmount[0], amountIn: tradeAmount && tradeAmount[1] },
@@ -618,7 +620,7 @@ export class TokenConverter {
       } else {
         error = `Unable to run conversion because income was negative and wallet doesn't have a positive balance {minIncome: ${minIncome}, asset: ${t.assetOut.address}}`;
         this.sendMessage({
-          action: "ExecuteTrade",
+          type: "ExecuteTrade",
           error,
           context: {
             converter: t.tokenConverter,

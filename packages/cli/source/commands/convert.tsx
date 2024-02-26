@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useReducer } from 'react';
 import { Box, Text, useApp } from 'ink';
 import zod from 'zod';
 import { Address, getAddress } from 'viem';
@@ -38,6 +38,75 @@ const getConverterConfigId = ({ converter, tokenToReceiveFromConverter, tokenToS
 	return `${converter}-${tokenToSendToConverter}-${tokenToReceiveFromConverter}`
 }
 
+interface State {
+	accruedInterest: { done: boolean, error?: string }
+	reducedReserves: { done: boolean }
+	releasedFunds: { done: boolean }
+	trades: Record<string, Trade>,
+}
+
+const defaultState = {
+	accruedInterest: { done: false, },
+	reducedReserves: { done: false },
+	releasedFunds: { done: false },
+	trades: {},
+}
+
+const reducer = (state: State, action: Message): State => {
+	switch (action.type) {
+		case 'AccrueInterest': {
+			let error
+			if (Array.isArray(action.error)) {
+				error = action.error.join(',')
+			} else {
+				error = action.error
+			}
+			return {
+				...state,
+				accruedInterest: { done: true, error }
+			}
+		}
+		case 'ReduceReserves': {
+			return {
+				...state,
+				reducedReserves: { done: true }
+			}
+		}
+		case 'ReleaseFunds': {
+			return {
+				...state,
+				releasedFunds: { done: true }
+			}
+		}
+		case 'PotentialTrades': {
+			const newTrades: Record<string, Trade> = {}
+			action.context.trades.forEach((trade) => {
+				const id = getConverterConfigId({ converter: trade.tokenConverter, tokenToReceiveFromConverter: trade.assetOut.address, tokenToSendToConverter: trade.assetIn.address })
+				newTrades[id] = { balance: trade }
+			})
+			return {
+				...state,
+				trades: newTrades,
+			}
+		}
+
+		case 'GetBestTrade': {
+			const id = getConverterConfigId(action.context)
+			return {
+				...state,
+				trades: { ...state.trades, [id]: { ...state.trades[id], tradeAmount: action.context.tradeAmount, error: action.error, } },
+			}
+		}
+		case 'Arbitrage': {
+			const id = getConverterConfigId(action.context)
+			return {
+				...state,
+				trades: { ...state.trades, [id]: { ...state.trades[id], args: action.context, trx: action.trx, error: action.error } }
+			}
+		}
+	}
+	return state
+}
 
 const getConverterConfigs = async (options: Props['options']) => {
 	if ('assetOut' in options && options.assetOut) {
@@ -58,57 +127,12 @@ const stringifyBigInt = (_: string, val: any) => {
 
 export default function Convert({ options = {} }: Props) {
 	const { exit } = useApp()
-
-	const [accruedInterest, setAccruedInterest] = useState(false)
+	const [{ accruedInterest, reducedReserves, releasedFunds, trades, estimatedBlockNumber }, dispatch] = useReducer(reducer, defaultState);
 	const [error, setError] = useState('')
-	const [reducedReserves, setReducedReserves] = useState(false)
-	const [releasedFunds, setReleasedFunds] = useState(false)
-	const [trades, setTrades] = useState<Record<string, Trade>>({})
-
-	const receiveMessage = useCallback((msg: Message) => {
-		switch (msg.action) {
-			case 'AccrueInterest': {
-				setAccruedInterest(true)
-				break;
-			}
-			case 'ReduceReserves': {
-				setReducedReserves(true)
-				break;
-			}
-			case 'ReleaseFunds': {
-				setReleasedFunds(true)
-				break;
-			}
-			case 'PotentialTrades': {
-				const newTrades: Record<string, Trade> = {}
-				msg.context.trades.forEach((trade) => {
-					const id = getConverterConfigId({ converter: trade.tokenConverter, tokenToReceiveFromConverter: trade.assetOut.address, tokenToSendToConverter: trade.assetIn.address })
-					newTrades[id] = { balance: trade }
-				})
-				setTrades(() => newTrades)
-				break;
-			}
-			case 'GetBestTrade': {
-				const id = getConverterConfigId(msg.context)
-				setTrades((prevState) => {
-					return ({ ...prevState, [id]: { ...prevState[id], tradeAmount: msg.context.tradeAmount, error: msg.error } })
-				})
-				break;
-			}
-			case 'Arbitrage': {
-				const id = getConverterConfigId(msg.context)
-				console.log(msg)
-				setTrades((prevState) => {
-					return ({ ...prevState, [id]: { ...prevState[id], args: msg.context, trx: msg.trx, error: msg.error } })
-				})
-				break;
-			}
-		}
-	}, [])
 
 	useEffect(() => {
 		const convert = async () => {
-			const tokenConverter = new TokenConverter({ subscriber: receiveMessage, simulate: !!options.simulate, verbose: false });
+			const tokenConverter = new TokenConverter({ subscriber: dispatch, simulate: !!options.simulate, verbose: false });
 			const corePoolMarkets = await readCoreMarkets();
 			const isolatedPoolsMarkets = await readIsolatedMarkets();
 			const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
@@ -145,9 +169,11 @@ export default function Convert({ options = {} }: Props) {
 						<Text bold color="white">Release Fund Steps</Text>
 					</Box>
 					<Box flexDirection="row" marginRight={2}>
-						<Text color="green">{accruedInterest ? '✔' : ' '}</Text>
+						<Text color="green">{accruedInterest.done ? '✔' : ' '}</Text>
 						<Box marginRight={1} />
 						<Text color="white">Accrue Interest</Text>
+						<Box marginRight={1} />
+						{accruedInterest.error && <Text color="red">{accruedInterest.error}</Text>}
 					</Box>
 					<Box flexDirection="row" marginRight={2}>
 						<Text color="green">{reducedReserves ? '✔' : ' '}</Text>
