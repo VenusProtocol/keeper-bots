@@ -430,21 +430,12 @@ export class TokenConverter {
     return trades;
   }
 
-  async releaseFunds(trades: BalanceResult[]) {
-    const releaseFundsArgs = trades.reduce((acc, curr) => {
-      const { core, isolated } = curr.assetOutVTokens;
-      if (core) {
-        acc[addresses.Unitroller as Address] = [core];
-      }
-      if (isolated) {
-        isolated.forEach(i => {
-          acc[i[0]] = acc[i[0]] ? [...acc[i[0]], i[1]] : [i[1]];
-        });
-      }
-      return acc;
-    }, {} as Record<Address, Address[]>);
-
-    for (const args of Object.entries(releaseFundsArgs)) {
+  /**
+   *
+   * @param pools Object with address of comptroller as key and an array of underlying assets addresses for the value
+   */
+  async releaseFunds(pools: Record<Address, readonly Address[]>) {
+    for (const args of Object.entries(pools)) {
       let trx;
       let error;
       try {
@@ -469,6 +460,25 @@ export class TokenConverter {
       }
       this.sendMessage({ type: "ReleaseFunds", trx, error });
     }
+  }
+
+  async releaseFundsForTrades(trades: BalanceResult[]) {
+    const releaseFundsArgs = trades.reduce((acc, curr) => {
+      const { core, isolated } = curr.assetOutVTokens;
+      if (core) {
+        acc[addresses.Unitroller as Address] = acc[addresses.Unitroller as Address]
+          ? [...acc[addresses.Unitroller as Address], curr.assetOut.address]
+          : [curr.assetOut.address];
+      }
+      if (isolated) {
+        isolated.forEach(i => {
+          acc[i[0]] = acc[i[0]] ? [...acc[i[0]], curr.assetOut.address] : [curr.assetOut.address];
+        });
+      }
+      return acc;
+    }, {} as Record<Address, Address[]>);
+
+    await this.releaseFunds(releaseFundsArgs);
   }
 
   async getUsdValue(underlyingAddress: Address, vTokenAddress: Address, value: bigint) {
