@@ -30,6 +30,7 @@ const address = zod.custom<Address>((val) => {
 export const options = zod.object({
 	converter: address.transform((val) => val.toLowerCase() as Address).describe('TokenConverter').optional(),
 	assetOut: address.transform((val) => val.toLowerCase() as Address).describe('Asset Out').optional(),
+	assetIn: address.transform((val) => val.toLowerCase() as Address).describe('Asset In').optional(),
 	simulate: zod.boolean().default(false).describe('Simulate transactions').optional(),
 	verbose: zod.boolean().default(false).describe('Verbose logging').optional(),
 	releaseFunds: zod.boolean().default(false).describe('Release funds').optional()
