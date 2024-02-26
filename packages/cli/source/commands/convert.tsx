@@ -2,7 +2,8 @@ import { useEffect, useState, useReducer } from 'react';
 import { Box, Text, useApp } from 'ink';
 import zod from 'zod';
 import { Address, getAddress } from 'viem';
-import { TokenConverter, BalanceResult, readCoreMarkets, readIsolatedMarkets, getAllConverterConfigs, getConverterConfigByAssetOut, getConverterConfigsByConverter, getConverterConfigByAssetIn, getConverterConfigByAssetInAndAssetOut, Message, ArbitrageMessage, ExecuteTradeMessage } from '@venusprotocol/token-converter-bot';
+import { TokenConverter, BalanceResult, readCoreMarkets, readIsolatedMarkets, Message, ArbitrageMessage, ExecuteTradeMessage } from '@venusprotocol/token-converter-bot';
+import { stringifyBigInt, getConverterConfigs, getConverterConfigId } from '../utils/index.js';
 
 interface Trade {
 	balance?: BalanceResult,
@@ -37,10 +38,6 @@ export const options = zod.object({
 interface Props {
 	options: zod.infer<typeof options>;
 };
-
-const getConverterConfigId = ({ converter, tokenToReceiveFromConverter, tokenToSendToConverter }: { converter: string, tokenToReceiveFromConverter: string, tokenToSendToConverter: string }) => {
-	return `${converter}-${tokenToSendToConverter}-${tokenToReceiveFromConverter}`
-}
 
 interface State {
 	accruedInterest: { done: boolean, error?: string }
@@ -121,24 +118,7 @@ const reducer = (state: State, action: Message): State => {
 	return state
 }
 
-const getConverterConfigs = async (options: Props['options']) => {
-	if ('assetOut' in options && options.assetOut) {
-		return await getConverterConfigByAssetOut(options.assetOut)
-	} else if ('converter' in options && options.converter) {
-		return await getConverterConfigsByConverter(options.converter)
-	}
-
-	return await getAllConverterConfigs();
-}
-
-const stringifyBigInt = (_: string, val: any) => {
-	if (typeof val === 'bigint') {
-		return val.toString()
-	}
-	return val
-}
-
-export default function Convert({ options = {} }: Props) {
+export default function Convert({ options }: Props) {
 	const { exit } = useApp()
 	const [{ accruedInterest, reducedReserves, releasedFunds, trades, estimatedBlockNumber }, dispatch] = useReducer(reducer, defaultState);
 	const [error, setError] = useState('')
