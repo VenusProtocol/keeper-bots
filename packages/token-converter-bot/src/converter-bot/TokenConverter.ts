@@ -10,6 +10,7 @@ import {
   PublicClient,
   encodePacked,
   erc20Abi,
+  formatUnits,
   parseAbi,
 } from "viem";
 
@@ -20,6 +21,7 @@ import {
   tokenConverterAbi,
   tokenConverterOperatorAbi,
   vBnbAdminAbi,
+  venusLensAbi,
 } from "../config/abis/generated";
 import addresses from "../config/addresses";
 import type { SUPPORTED_CHAINS } from "../config/chains";
@@ -447,7 +449,36 @@ export class TokenConverter {
         error = (e as Error).message;
       }
       this.sendMessage({ action: "ReleaseFunds", trx, error });
+  }
+
+  async getUsdValue(underlyingAddress: Address, vTokenAddress: Address, value: bigint) {
+    const result = await publicClient.multicall({
+      contracts: [
+        {
+          address: underlyingAddress,
+          abi: erc20Abi,
+          functionName: "decimals",
+          args: [],
+        },
+        {
+          address: addresses.VenusLens as Address,
+          abi: venusLensAbi,
+          functionName: "vTokenUnderlyingPrice",
+          args: [vTokenAddress],
+        },
+      ],
+    });
+    const [{ result: underlyingDecimals = 0 }, { result: { underlyingPrice } = { underlyingPrice: undefined } }] =
+      result;
+    let underlyingUsdValue = "0";
+    if (underlyingPrice && underlyingDecimals) {
+      underlyingUsdValue = formatUnits(value * underlyingPrice, 36);
     }
+    return {
+      underlyingPriceUsd: formatUnits(underlyingPrice || 0n, 36 - underlyingDecimals) || "0",
+      underlyingUsdValue,
+      underlyingDecimals,
+    };
   }
 
   /**

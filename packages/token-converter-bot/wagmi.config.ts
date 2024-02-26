@@ -4,6 +4,7 @@ import protocolShareReserveArtifact from "@venusprotocol/protocol-reserve/artifa
 import tokenConverterArtifact from "@venusprotocol/protocol-reserve/artifacts/contracts/TokenConverter/AbstractTokenConverter.sol/AbstractTokenConverter.json" assert { type: "json" };
 import vBnbAdminArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Admin/VBNBAdmin.sol/VBNBAdmin.json" assert { type: "json" };
 import diamondComptrollerArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Comptroller/Diamond/DiamondConsolidated.sol/DiamondConsolidated.json" assert { type: "json" };
+import venusLensArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Lens/VenusLens.sol/VenusLens.json" assert { type: "json" };
 import coreVTokenArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Tokens/VTokens/VBep20Delegate.sol/VBep20Delegate.json" assert { type: "json" };
 import { defineConfig } from "@wagmi/cli";
 import { hardhat } from "@wagmi/cli/plugins";
@@ -37,6 +38,10 @@ const getExternalContracts = async (): Promise<{ name: string; abi: Abi }[]> => 
   {
     abi: tokenConverterArtifact.abi as Abi,
     name: "TokenConverter",
+  },
+  {
+    abi: venusLensArtifact.abi as Abi,
+    name: "VenusLens",
   },
 ];
 
