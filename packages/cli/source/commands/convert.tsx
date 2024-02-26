@@ -1,7 +1,7 @@
 import { useEffect, useState, useReducer } from 'react';
 import { Box, Text, useApp } from 'ink';
 import zod from 'zod';
-import { Address, getAddress } from 'viem';
+import { Address, getAddress, parseUnits } from 'viem';
 import { TokenConverter, BalanceResult, readCoreMarkets, readIsolatedMarkets, Message, ArbitrageMessage, ExecuteTradeMessage } from '@venusprotocol/token-converter-bot';
 import { stringifyBigInt, getConverterConfigs, getConverterConfigId } from '../utils/index.js';
 
@@ -31,9 +31,11 @@ export const options = zod.object({
 	converter: address.transform((val) => val.toLowerCase() as Address).describe('TokenConverter').optional(),
 	assetOut: address.transform((val) => val.toLowerCase() as Address).describe('Asset Out').optional(),
 	assetIn: address.transform((val) => val.toLowerCase() as Address).describe('Asset In').optional(),
-	simulate: zod.boolean().default(false).describe('Simulate transactions').optional(),
-	verbose: zod.boolean().default(false).describe('Verbose logging').optional(),
-	releaseFunds: zod.boolean().default(false).describe('Release funds').optional()
+	simulate: zod.boolean().describe('Simulate transactions').optional().default(false),
+	verbose: zod.boolean().describe('Verbose logging').optional().default(false),
+	releaseFunds: zod.boolean().describe('Release funds').optional().default(false),
+	minTradeUsd: zod.number().describe('Minimum value of tokens to try and convert').optional().default(500),
+	maxTradeUsd: zod.number().describe('Maximum value of tokens to try and convert').optional().default(5000)
 })
 
 interface Props {
@@ -123,6 +125,7 @@ export default function Convert({ options }: Props) {
 	const { exit } = useApp()
 	const [{ accruedInterest, reducedReserves, releasedFunds, trades, estimatedBlockNumber }, dispatch] = useReducer(reducer, defaultState);
 	const [error, setError] = useState('')
+	const [tradeUsdValues, setTradeUsdValues] = useState<Record<string, { underlyingPriceUsd: string, underlyingUsdValue: string }>>({})
 
 	useEffect(() => {
 		const convert = async () => {
@@ -136,15 +139,31 @@ export default function Convert({ options }: Props) {
 			await tokenConverter.reduceReserves();
 
 			const tokenConverterConfigs = await getConverterConfigs(options);
-			const potentialTrades = await tokenConverter.checkForTrades(allPools, tokenConverterConfigs);
 
-			await tokenConverter.releaseFunds(potentialTrades);
+			const potentialTrades = await tokenConverter.checkForTrades(allPools, tokenConverterConfigs, !!options.releaseFunds);
+			if (potentialTrades.length === 0) {
+				setError("No Potential Trades Found")
+			}
+			if (options.releaseFunds) {
+				await tokenConverter.releaseFundsForTrades(potentialTrades);
+			}
+			const { minTradeUsd, maxTradeUsd } = options;
 
-			await Promise.all(potentialTrades.map((t) => tokenConverter.executeTrade(t)))
+			await Promise.allSettled(potentialTrades.map(async (t) => {
+				let amount = t.assetOut.balance;
+				const vTokenAddress = t.assetOutVTokens.core || (t.assetOutVTokens.isolated && t.assetOutVTokens.isolated[0] && t.assetOutVTokens.isolated[0][1]) as Address
+				const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(t.assetOut.address, vTokenAddress, amount)
+				setTradeUsdValues((prevState) => ({ ...prevState, [getConverterConfigId({ converter: t.tokenConverter, tokenToReceiveFromConverter: t.assetOut.address, tokenToSendToConverter: t.assetIn.address })]: { underlyingPriceUsd, underlyingUsdValue } }))
+				if (+underlyingUsdValue > minTradeUsd) {
+					if (+underlyingUsdValue > maxTradeUsd) {
+						amount = parseUnits(BigInt(Math.round(maxTradeUsd / +underlyingPriceUsd.toString())).toString(), underlyingDecimals)
+					}
+					await tokenConverter.executeTrade({ ...t, assetOut: { ...t.assetOut, balance: amount } })
+				}
+			}))
 		}
 		convert().catch((e) => {
 			setError(e.message)
-			exit()
 		}).finally(() => {
 			exit()
 		})
@@ -224,6 +243,7 @@ export default function Convert({ options }: Props) {
 										<Box flexDirection='column'>
 											<Text>{trade.balance?.assetOut.address}</Text>
 											<Text>{trade.tradeAmount?.amountOut?.toString()}</Text>
+											{tradeUsdValues[id] && <Text>${tradeUsdValues[id]?.underlyingUsdValue}</Text>}
 										</Box>
 									</Box>
 									{trade.blockNumber && <Box flexGrow={1}>
