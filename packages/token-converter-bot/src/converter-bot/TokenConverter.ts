@@ -89,17 +89,17 @@ export interface AccrueInterestMessage {
 
 export type Message =
   | {
-    action: "ReduceReserves" | "ReleaseFunds";
-    trx: string | undefined;
-    error: string | undefined;
-    context: undefined;
-  }
+      action: "ReduceReserves" | "ReleaseFunds";
+      trx: string | undefined;
+      error: string | undefined;
+      context: undefined;
+    }
   | {
-    action: "PotentialTrades";
-    trx: undefined;
-    error: string | undefined;
-    context: { trades: BalanceResult[] };
-  }
+      action: "PotentialTrades";
+      trx: undefined;
+      error: string | undefined;
+      context: { trades: BalanceResult[] };
+    }
   | AccrueInterestMessage
   | ArbitrageMessage
   | GetBestTradeMessage
