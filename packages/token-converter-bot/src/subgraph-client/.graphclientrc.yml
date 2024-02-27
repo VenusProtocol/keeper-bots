@@ -2,7 +2,7 @@ sources:
   - name: venus-protocol-reserve-chapel
     handler:
       graphql:
-        endpoint: https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel
+        endpoint: https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve
 
 documents:
   - "./queries/*.graphql"

@@ -3,9 +3,9 @@ import { Address } from "viem";
 import { poolLensAbi } from "../../../config/abis/generated";
 import addresses from "../../../config/addresses";
 import publicClient from "../../../config/clients/publicClient";
-import type { Pool } from "../../types";
+import type { PoolAddressArray } from "../../types";
 
-const readIsolatedMarkets = async (): Promise<Pool[]> => {
+export const readIsolatedMarkets = async (): Promise<PoolAddressArray[]> => {
   const markets = await publicClient.readContract({
     address: addresses.PoolLens as Address,
     abi: poolLensAbi,

@@ -1,6 +1,7 @@
 import { HttpTransport, WalletClient, createWalletClient, http } from "viem";
 import { PrivateKeyAccount, privateKeyToAccount } from "viem/accounts";
 
+import config from "../";
 import { chains } from "../chains";
 import type { SUPPORTED_CHAINS } from "../chains";
 
@@ -13,7 +14,7 @@ const readPrivateKeyFromEnv = (chainName: string): PrivateKeyAccount => {
 };
 
 export const getWalletClient = (): WalletClient<HttpTransport, typeof chains[SUPPORTED_CHAINS], PrivateKeyAccount> => {
-  const chainName = process.env.NETWORK as SUPPORTED_CHAINS;
+  const chainName = config.network;
   return createWalletClient({
     chain: chains[chainName],
     transport: http(process.env[`LIVE_NETWORK_${chainName}`]),

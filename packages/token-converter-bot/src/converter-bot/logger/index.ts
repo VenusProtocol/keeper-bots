@@ -10,6 +10,7 @@ const logger = winston.createLogger({
     new TelegramLogger({
       token: config.telegramBotToken,
       chatId: config.telegramChatId,
+      silent: !!process.env.LOCAL,
       formatMessage: ({ level, message }) => {
         if (level === "error") {
           return `❌ ${message}`;

@@ -1,7 +1,10 @@
 {
   "extends": "../../tsconfig",
   "compilerOptions": {
-    "skipLibCheck": true
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "preserveSymlinks": true
   },
+  "include": ["src"],
   "files": ["src/module.d.ts", "src/environment.d.ts"]
 }
