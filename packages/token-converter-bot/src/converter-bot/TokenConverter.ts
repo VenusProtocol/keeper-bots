@@ -511,6 +511,25 @@ export class TokenConverter {
     };
   }
 
+  async checkAndRequestAllowance(token: Address, owner: Address, spender: Address, amount: bigint) {
+    const approvalAmount = await this.publicClient.readContract({
+      address: token,
+      abi: erc20Abi,
+      functionName: "allowance",
+      args: [owner, spender],
+    });
+
+    if (approvalAmount < amount) {
+      const trx = await this.walletClient.writeContract({
+        address: token,
+        abi: erc20Abi,
+        functionName: "approve",
+        args: [this.operator.address, amount],
+      });
+      await publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 });
+    }
+  }
+
   /**
    *
    * @param converterAddress Address of converter to use
@@ -545,21 +564,13 @@ export class TokenConverter {
         },
       ] as const,
     };
+
     let trx;
     let error;
     let blockNumber = await publicClient.getBlockNumber();
     try {
-      if (minIncome < 0n) {
-        if (!this.simulate) {
-          const trx = await this.walletClient.writeContract({
-            address: trade.inputAmount.currency.address,
-            chain,
-            abi: parseAbi(["function approve(address,uint256)"]),
-            functionName: "approve",
-            args: [this.operator.address, -minIncome],
-          });
-          await publicClient.waitForTransactionReceipt({ hash: trx });
-        }
+      if (minIncome < 0n && !this.simulate) {
+        await this.checkAndRequestAllowance(trade.inputAmount.currency.address, this.walletClient.account.address, addresses.TokenConverterOperator, -minIncome)
       }
 
       const gasEstimation = await this.publicClient.estimateContractGas({
