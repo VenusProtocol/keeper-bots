@@ -553,12 +553,10 @@ export class TokenConverter {
     minIncome: bigint,
   ) {
     const beneficiary = this.walletClient.account.address;
-    const chain = chains[this.chainName];
 
     const block = await this.publicClient.getBlock();
     const convertTransaction = {
       ...this.operator,
-      chain,
       functionName: "convert" as const,
       args: [
         {
