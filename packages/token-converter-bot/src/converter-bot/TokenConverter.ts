@@ -574,27 +574,23 @@ export class TokenConverter {
 
     let trx;
     let error;
-    let blockNumber = await publicClient.getBlockNumber();
+    let blockNumber
+
     try {
       if (minIncome < 0n && !this.simulate) {
         await this.checkAndRequestAllowance(trade.inputAmount.currency.address, this.walletClient.account.address, addresses.TokenConverterOperator, -minIncome)
       }
+
+      blockNumber = await publicClient.getBlockNumber();
 
       const gasEstimation = await this.publicClient.estimateContractGas({
         account: this.walletClient.account,
         ...convertTransaction,
       });
 
-      await this.publicClient.simulateContract({
-        blockNumber,
-        account: this.walletClient.account.address,
-        ...convertTransaction,
-        gas: (gasEstimation * 110n) / 100n,
-      });
-
       if (!this.simulate) {
         trx = await this.walletClient.writeContract({ ...convertTransaction, gas: (gasEstimation * 110n) / 100n });
-        ({ blockNumber } = await publicClient.waitForTransactionReceipt({ hash: trx }));
+        ({ blockNumber } = await publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 }));
       }
     } catch (e) {
       if (e instanceof BaseError) {
