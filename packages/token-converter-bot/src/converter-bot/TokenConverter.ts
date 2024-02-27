@@ -65,7 +65,7 @@ interface GetBestTradeMessage {
   blockNumber?: bigint | undefined;
   context: {
     converter: string;
-    tradeAmount: { amountIn: bigint | undefined; amountOut: bigint | undefined };
+    tradeAmount?: { amountIn: bigint | undefined; amountOut: bigint | undefined };
     pancakeSwapTrade?: {
       inputToken: { amount: string; token: string };
       outputToken: { amount: string; token: string };
@@ -292,6 +292,15 @@ export class TokenConverter {
     }
 
     if (this.getPriceImpact(trade).greaterThan(new Percent(50n, 100n))) {
+      this.sendMessage({
+        type: "GetBestTrade",
+        error: 'High price impact',
+        context: {
+          converter: tokenConverter,
+          tokenToReceiveFromConverter: swapFrom,
+          tokenToSendToConverter: swapTo,
+        },
+      });
       return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[0] * 75n) / 100n);
     }
     return [trade as SmartRouterTrade<TradeType.EXACT_OUTPUT>, updatedAmountIn];
@@ -618,10 +627,9 @@ export class TokenConverter {
     } catch (e) {
       error = e as Error;
     } finally {
-      this.sendMessage({
-        type: "GetBestTrade",
-        error: error?.message,
-        context: {
+      let tradeContext: Pick<GetBestTradeMessage['context'], 'tradeAmount' | 'pancakeSwapTrade'> = {};
+      if (trade && tradeAmount) {
+        tradeContext = {
           tradeAmount: { amountOut: tradeAmount && tradeAmount[0], amountIn: tradeAmount && tradeAmount[1] },
           pancakeSwapTrade: {
             inputToken: {
@@ -632,7 +640,14 @@ export class TokenConverter {
               amount: trade.outputAmount.toFixed(trade.outputAmount.currency.decimals, { groupSeparator: "" }),
               token: trade.outputAmount.currency.address,
             },
-          },
+          }
+        }
+      }
+      this.sendMessage({
+        type: "GetBestTrade",
+        error: error?.message,
+        context: {
+          ...tradeContext,
           converter: t.tokenConverter,
           tokenToReceiveFromConverter: t.assetOut.address,
           tokenToSendToConverter: t.assetIn.address,
