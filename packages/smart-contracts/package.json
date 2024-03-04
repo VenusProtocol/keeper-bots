@@ -4,8 +4,7 @@
   "description": "Smart contracts to support keeper bot tasks",
   "scripts": {
     "test": "hardhat test",
-    "test:integration": "hardhat test tests/integration/index.ts",
-    "test:fork": "hardhat test tests/hardhat/Fork/*",
+    "test:fork": "hardhat test fork-tests/index.ts",
     "hardhat:compile": "hardhat compile",
     "hardhat:coverage": "hardhat coverage",
     "lint": "yarn lint:sol && yarn lint:ts && yarn prettier:check",
