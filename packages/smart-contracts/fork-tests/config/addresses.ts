@@ -1,5 +1,7 @@
 import bscmainnetGovernance from "@venusprotocol/governance-contracts/deployments/bscmainnet_addresses.json";
 import bsctestnetGovernance from "@venusprotocol/governance-contracts/deployments/bsctestnet_addresses.json";
+import bscmainnetIL from "@venusprotocol/isolated-pools/deployments/bscmainnet_addresses.json";
+import bsctestnetIL from "@venusprotocol/isolated-pools/deployments/bsctestnet_addresses.json";
 import bscmainnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bscmainnet_addresses.json";
 import bsctestnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bsctestnet_addresses.json";
 import bscmainnetCore from "@venusprotocol/venus-protocol/deployments/bscmainnet_addresses.json";
@@ -10,6 +12,8 @@ export default {
     ...bscmainnetCore.addresses,
     ...bscmainnetProtocolReserve.addresses,
     ...bscmainnetGovernance.addresses,
+    ...bscmainnetIL.addresses,
+    BSW: "0x965F527D9159dCe6288a2219DB51fc6Eef120dD1",
     BUSD: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
     USDT: "0x55d398326f99059fF775485246999027B3197955",
     USDC: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
@@ -29,6 +33,7 @@ export default {
     ...bsctestnetCore.addresses,
     ...bsctestnetProtocolReserve.addresses,
     ...bsctestnetGovernance.addresses,
+    ...bsctestnetIL.addresses,
     PancakeSwapRouter: "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
     XVSVaultConverter: "0x258f49254C758a0E37DAb148ADDAEA851F4b02a2",
     xvsHolder: "0x2Ce1d0ffD7E869D9DF33e28552b12DdDed326706",
