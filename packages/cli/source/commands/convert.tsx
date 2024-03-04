@@ -1,277 +1,387 @@
-import { useEffect, useState, useReducer } from 'react';
-import { Box, Text, useApp } from 'ink';
+import {useEffect, useState, useReducer} from 'react';
+import {Box, Text} from 'ink';
 import zod from 'zod';
-import { Address, getAddress, parseUnits } from 'viem';
-import { TokenConverter, BalanceResult, readCoreMarkets, readIsolatedMarkets, Message, ArbitrageMessage, ExecuteTradeMessage } from '@venusprotocol/token-converter-bot';
-import { stringifyBigInt, getConverterConfigs, getConverterConfigId } from '../utils/index.js';
+import {Address, getAddress, parseUnits} from 'viem';
+import {
+	TokenConverter,
+	readCoreMarkets,
+	readIsolatedMarkets,
+} from '@venusprotocol/token-converter-bot';
+import {
+	stringifyBigInt,
+	getConverterConfigs,
+	getConverterConfigId,
+} from '../utils/index.js';
+import {
+	Options,
+	Title,
+	StaticElements,
+	BorderBox,
+} from '../components/index.js';
+import {reducer, defaultState} from '../state/convert.js';
 
-interface Trade {
-	balance?: BalanceResult,
-	args?: Partial<ArbitrageMessage['context'] & ExecuteTradeMessage['context']>
-	trx?: string
-	error?: string
-	tradeAmount?: { amountIn: bigint | undefined, amountOut: bigint | undefined }
-	blockNumber?: string
-	pancakeSwapTrade?: {
-		inputToken: { amount: string, token: string },
-		outputToken: { amount: string, token: string },
-	}
-}
-
-const address = zod.custom<Address>((val) => {
-	try {
-		getAddress(val as string)
-		return true
-	} catch (e) {
-		return val === undefined
-	}
-});
+const address = zod
+	.custom<Address>(val => {
+		try {
+			getAddress(val as string);
+			return true;
+		} catch (e) {
+			return val === undefined;
+		}
+	})
+	.transform(val => val.toLowerCase() as Address);
 
 export const options = zod.object({
-	converter: address.transform((val) => val.toLowerCase() as Address).describe('TokenConverter').optional(),
-	assetOut: address.transform((val) => val.toLowerCase() as Address).describe('Asset Out').optional(),
-	assetIn: address.transform((val) => val.toLowerCase() as Address).describe('Asset In').optional(),
-	simulate: zod.boolean().describe('Simulate transactions').optional().default(false),
-	verbose: zod.boolean().describe('Verbose logging').optional().default(false),
-	releaseFunds: zod.boolean().describe('Release funds').optional().default(false),
-	minTradeUsd: zod.number().describe('Minimum value of tokens to try and convert').optional().default(500),
-	maxTradeUsd: zod.number().describe('Maximum value of tokens to try and convert').optional().default(5000)
-})
+	converter: address.describe('TokenConverter').optional(),
+	profitable: zod
+		.boolean()
+		.describe('Require trade be profitable')
+		.optional()
+		.default(true),
+	assetOut: address.describe('Asset Out').optional(),
+	assetIn: address.describe('Asset In').optional(),
+	simulate: zod
+		.boolean()
+		.describe('Simulate transactions')
+		.optional()
+		.default(false),
+	debug: zod.boolean().describe('Add debug logging').optional().default(false),
+	releaseFunds: zod
+		.boolean()
+		.describe('Release funds')
+		.optional()
+		.default(false),
+	minTradeUsd: zod
+		.number()
+		.describe('Minimum value of tokens to try and convert')
+		.optional()
+		.default(500),
+	maxTradeUsd: zod
+		.number()
+		.describe('Maximum value of tokens to try and convert')
+		.optional()
+		.default(5000),
+	loop: zod.boolean().describe('Loop').optional().default(false),
+});
 
 interface Props {
 	options: zod.infer<typeof options>;
-};
-
-interface State {
-	accruedInterest: { done: boolean, error?: string }
-	reducedReserves: { done: boolean }
-	releasedFunds: { done: boolean }
-	trades: Record<string, Trade>,
-	estimatedBlockNumber?: string
 }
 
-const defaultState = {
-	accruedInterest: { done: false, },
-	reducedReserves: { done: false },
-	releasedFunds: { done: false },
-	trades: {},
-}
+export default function Convert({options}: Props) {
+	const {
+		minTradeUsd,
+		maxTradeUsd,
+		simulate,
+		releaseFunds,
+		assetIn,
+		assetOut,
+		converter,
+		profitable,
+		loop,
+		debug,
+	} = options;
 
-const reducer = (state: State, action: Message): State => {
-	switch (action.type) {
-		case 'AccrueInterest': {
-			let error
-			if (Array.isArray(action.error)) {
-				error = action.error.join(',')
-			} else {
-				error = action.error
-			}
-			return {
-				...state,
-				accruedInterest: { done: true, error }
-			}
-		}
-		case 'ReduceReserves': {
-			return {
-				...state,
-				reducedReserves: { done: true }
-			}
-		}
-		case 'ReleaseFunds': {
-			return {
-				...state,
-				releasedFunds: { done: true }
-			}
-		}
-		case 'PotentialTrades': {
-			const newTrades: Record<string, Trade> = {}
-			action.context.trades.forEach((trade) => {
-				const id = getConverterConfigId({ converter: trade.tokenConverter, tokenToReceiveFromConverter: trade.assetOut.address, tokenToSendToConverter: trade.assetIn.address })
-				newTrades[id] = { balance: trade }
-			})
-			return {
-				...state,
-				trades: newTrades,
-				estimatedBlockNumber: action.blockNumber?.toString()
-			}
-		}
-
-		case 'GetBestTrade': {
-			const id = getConverterConfigId(action.context)
-			return {
-				...state,
-				trades: { ...state.trades, [id]: { ...state.trades[id], tradeAmount: action.context.tradeAmount, error: action.error, pancakeSwapTrade: action.context.pancakeSwapTrade } },
-			}
-		}
-		case 'ExecuteTrade': {
-			const id = getConverterConfigId(action.context)
-			return {
-				...state,
-				trades: { ...state.trades, [id]: { ...state.trades[id], error: action.error, args: { amount: action.context.amount, minIncome: action.context.minIncome } } }
-			}
-		}
-		case 'Arbitrage': {
-			const id = getConverterConfigId(action.context)
-			return {
-				...state,
-				trades: { ...state.trades, [id]: { ...state.trades[id], args: action.context, trx: action.trx, error: action.error, blockNumber: action.blockNumber?.toString() } }
-			}
-		}
-	}
-	return state
-}
-
-export default function Convert({ options }: Props) {
-	const { exit } = useApp()
-	const [{ accruedInterest, reducedReserves, releasedFunds, trades, estimatedBlockNumber }, dispatch] = useReducer(reducer, defaultState);
-	const [error, setError] = useState('')
-	const [tradeUsdValues, setTradeUsdValues] = useState<Record<string, { underlyingPriceUsd: string, underlyingUsdValue: string }>>({})
+	const [
+		{accruedInterest, reducedReserves, releasedFunds, completed, messages},
+		dispatch,
+	] = useReducer(reducer, defaultState);
+	const [error, setError] = useState('');
+	const [_tradeUsdValues, setTradeUsdValues] = useState<
+		Record<string, {underlyingPriceUsd: string; underlyingUsdValue: string}>
+	>({});
 
 	useEffect(() => {
 		const convert = async () => {
-			const tokenConverter = new TokenConverter({ subscriber: dispatch, simulate: !!options.simulate, verbose: false });
-			const corePoolMarkets = await readCoreMarkets();
-			const isolatedPoolsMarkets = await readIsolatedMarkets();
-			const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
+			do {
+				const tokenConverter = new TokenConverter({
+					subscriber: dispatch,
+					simulate: !!simulate,
+					verbose: debug,
+				});
+				// Update these for if assetIn or assetOut is passed
+				const corePoolMarkets = await readCoreMarkets();
+				const isolatedPoolsMarkets = await readIsolatedMarkets();
+				const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
 
-			await tokenConverter.accrueInterest(allPools);
+				const tokenConverterConfigs = await getConverterConfigs({
+					assetIn,
+					assetOut,
+					converter,
+				});
 
-			await tokenConverter.reduceReserves();
-
-			const tokenConverterConfigs = await getConverterConfigs(options);
-
-			const potentialTrades = await tokenConverter.checkForTrades(allPools, tokenConverterConfigs, !!options.releaseFunds);
-			if (potentialTrades.length === 0) {
-				setError("No Potential Trades Found")
-			}
-			if (options.releaseFunds) {
-				await tokenConverter.releaseFundsForTrades(potentialTrades);
-			}
-			const { minTradeUsd, maxTradeUsd } = options;
-
-			await Promise.allSettled(potentialTrades.map(async (t) => {
-				let amount = t.assetOut.balance;
-				const vTokenAddress = t.assetOutVTokens.core || (t.assetOutVTokens.isolated && t.assetOutVTokens.isolated[0] && t.assetOutVTokens.isolated[0][1]) as Address
-				const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(t.assetOut.address, vTokenAddress, amount)
-				setTradeUsdValues((prevState) => ({ ...prevState, [getConverterConfigId({ converter: t.tokenConverter, tokenToReceiveFromConverter: t.assetOut.address, tokenToSendToConverter: t.assetIn.address })]: { underlyingPriceUsd, underlyingUsdValue } }))
-				if (+underlyingUsdValue > minTradeUsd) {
-					if (+underlyingUsdValue > maxTradeUsd) {
-						amount = parseUnits(BigInt(Math.round(maxTradeUsd / +underlyingPriceUsd.toString())).toString(), underlyingDecimals)
-					}
-					await tokenConverter.executeTrade({ ...t, assetOut: { ...t.assetOut, balance: amount } })
+				const potentialTrades = await tokenConverter.checkForTrades(
+					allPools,
+					tokenConverterConfigs,
+					!!releaseFunds,
+				);
+				if (potentialTrades.length === 0) {
+					setError('No Potential Trades Found');
 				}
-			}))
-		}
-		convert().catch((e) => {
-			setError(e.message)
-		}).finally(() => {
-			exit()
-		})
-	}, [])
+				if (releaseFunds) {
+					await tokenConverter.releaseFundsForTrades(potentialTrades);
+				}
+				await Promise.allSettled(
+					potentialTrades.map(async t => {
+						let amountOut = t.assetOut.balance;
+						const vTokenAddress =
+							t.assetOutVTokens.core ||
+							((t.assetOutVTokens.isolated &&
+								t.assetOutVTokens.isolated[0] &&
+								t.assetOutVTokens.isolated[0][1]) as Address);
+						const {underlyingPriceUsd, underlyingUsdValue, underlyingDecimals} =
+							await tokenConverter.getUsdValue(
+								t.assetOut.address,
+								vTokenAddress,
+								amountOut,
+							);
+
+						setTradeUsdValues(prevState => ({
+							...prevState,
+							[getConverterConfigId({
+								converter: t.tokenConverter,
+								tokenToReceiveFromConverter: t.assetOut.address,
+								tokenToSendToConverter: t.assetIn,
+							})]: {underlyingPriceUsd, underlyingUsdValue},
+						}));
+
+						if (+underlyingUsdValue > minTradeUsd) {
+							if (+underlyingUsdValue > maxTradeUsd) {
+								amountOut = parseUnits(
+									(maxTradeUsd / +underlyingPriceUsd.toString()).toString(),
+									underlyingDecimals,
+								);
+							}
+							const arbitrageArgs = await tokenConverter.prepareTrade(
+								t.tokenConverter,
+								t.assetOut.address,
+								t.assetIn,
+								amountOut,
+							);
+							const {trade, amount, minIncome} = arbitrageArgs || {
+								trade: undefined,
+								amount: 0n,
+								minIncome: 0n,
+							};
+
+							const maxMinIncome = ((amount * 1003n) / 1000n - amount) * -1n;
+							if (t.accountBalanceAssetOut < minIncome * -1n) {
+								dispatch({
+									type: 'ExecuteTrade',
+									error: 'Insufficient wallet balance to pay min income',
+									context: {
+										converter: t.tokenConverter,
+										tokenToReceiveFromConverter: t.assetOut.address,
+										tokenToSendToConverter: t.assetIn,
+										amount,
+										minIncome,
+									},
+								});
+							} else if (minIncome < maxMinIncome) {
+								dispatch({
+									type: 'ExecuteTrade',
+									error: 'Min income too high',
+									context: {
+										converter: t.tokenConverter,
+										tokenToReceiveFromConverter: t.assetOut.address,
+										tokenToSendToConverter: t.assetIn,
+										amount,
+										minIncome,
+									},
+								});
+							} else if (
+								trade &&
+								((profitable && minIncome > 0n) || !profitable)
+							) {
+								dispatch({
+									type: 'ExecuteTrade',
+									context: {
+										converter: t.tokenConverter,
+										tokenToReceiveFromConverter: t.assetOut.address,
+										tokenToSendToConverter: t.assetIn,
+										amount,
+										minIncome,
+									},
+								});
+								await tokenConverter.arbitrage(
+									t.tokenConverter,
+									trade,
+									amount,
+									minIncome,
+								);
+							}
+						}
+					}),
+				);
+			} while (loop);
+		};
+
+		convert().catch(e => {
+			setError(e.message);
+		});
+	}, []);
 
 	return (
-		<Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
-			<Box marginBottom={1} flexDirection='row' borderTop={false} borderLeft={false} borderRight={false} borderStyle="round" borderColor="#3396FF">
-				<Box marginRight={1}>
-					<Text bold>Token Conversions</Text>
-				</Box>
-			</Box>
-			<Box flexDirection="row" marginLeft={1} justifyContent='space-between'>
-				<Box flexDirection="column">
-					<Box flexDirection="row">
-						<Text bold color="white">Release Fund Steps</Text>
-					</Box>
-					<Box flexDirection="row" marginRight={2}>
-						<Text color="green">{accruedInterest.done ? '✔' : ' '}</Text>
-						<Box marginRight={1} />
-						<Text color="white">Accrue Interest</Text>
-						<Box marginRight={1} />
-						{accruedInterest.error && <Text color="red">{accruedInterest.error}</Text>}
-					</Box>
-					<Box flexDirection="row" marginRight={2}>
-						<Text color="green">{reducedReserves ? '✔' : ' '}</Text>
-						<Box marginRight={1} />
-						<Text>Reduce Reserves</Text>
-					</Box>
-					<Box flexDirection="row">
-						<Text color="green">{releasedFunds ? '✔' : ' '}</Text>
-						<Box marginRight={1} />
-						<Text >Release Funds</Text>
-					</Box>
-				</Box>
-				<Box flexDirection="column" borderColor="#3396FF">
-					<Box flexDirection="row">
-						<Text bold color="white">Options</Text>
-					</Box>
-					<Box flexDirection="column">
-						<Box marginRight={1}>
-							<Text bold>Simulate - {(!!options.simulate).toString()}</Text>
-						</Box>
-						<Box marginRight={1}>
-							<Text bold>Verbose - {(!!options.verbose).toString()}</Text>
-						</Box>
-						<Box marginRight={1}>
-							<Text bold>Release Funds - {(!!options.releaseFunds).toString()}</Text>
-						</Box>
-					</Box>
-				</Box>
-			</Box>
-			{Object.entries(trades).length > 0 &&
-				<Box flexDirection='column' marginTop={1}>
-					<Text bold backgroundColor="#3396FF">Conversions</Text>
-					{estimatedBlockNumber && <Box>
-						<Text bold>Estimated Block Number</Text>
-						<Text>{estimatedBlockNumber.toString()}</Text>
-					</Box>}
-					{Object.entries(trades).map(([id, trade]: any) => {
-						return (
-							<Box key={id} flexDirection="row" flexGrow={1} borderStyle="doubleSingle" borderColor="#3396FF">
-								<Box flexDirection="column" marginTop={1} marginLeft={1} flexGrow={1} minWidth={60}>
-									<Box flexGrow={1}>
-										<Text bold>Token Converter </Text>
-										<Text>{trade.balance?.tokenConverter}</Text>
-									</Box>
-									<Box flexGrow={1}>
-										<Text bold>Asset In </Text>
-										<Box flexDirection='column'>
-											<Text>{trade.balance?.assetIn.address}</Text>
-											<Text>{trade.tradeAmount?.amountIn?.toString()}</Text>
-										</Box>
-									</Box>
-									<Box flexGrow={1}>
-										<Text bold>Asset Out </Text>
-										<Box flexDirection='column'>
-											<Text>{trade.balance?.assetOut.address}</Text>
-											<Text>{trade.tradeAmount?.amountOut?.toString()}</Text>
-											{tradeUsdValues[id] && <Text>${tradeUsdValues[id]?.underlyingUsdValue}</Text>}
-										</Box>
-									</Box>
-									{trade.blockNumber && <Box flexGrow={1}>
-										<Text bold>Block Number </Text>
-										<Box flexDirection='column'>
-											<Text>{trade.blockNumber}</Text>
-										</Box>
-									</Box>}
-									{(trade.trx || trade.error) && <Box flexGrow={1}>
-										<Text bold>Transaction </Text>
-										<Text color={trade.trx ? 'green' : 'red'}>{trade.trx || trade.error}</Text>
-									</Box>}
+		<>
+			<StaticElements>
+				<Title />
+				{debug && <Options options={options} />}
+				{releaseFunds && (
+					<Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
+						<Box
+							flexDirection="row"
+							marginLeft={1}
+							justifyContent="space-between"
+						>
+							<Box flexDirection="column">
+								<Box flexDirection="row">
+									<Text bold color="white">
+										Release Funds Steps
+									</Text>
 								</Box>
-								<Box flexDirection="column" flexGrow={1}>
-									{trade.args && <Box borderTop borderStyle="classic" borderColor="#3396FF">
-										<Text>{JSON.stringify(trade.args || ' ', stringifyBigInt)}</Text>
-									</Box>}
-									{trade.pancakeSwapTrade && <Box borderTop borderStyle="classic" borderColor="#3396FF">
-										<Text>{JSON.stringify(trade.pancakeSwapTrade || ' ', stringifyBigInt)}</Text>
-									</Box>}
+								<Box flexDirection="row" marginRight={2}>
+									<Text color="green">{accruedInterest.done ? '✔' : ' '}</Text>
+									<Box marginRight={1} />
+									<Text color="white">Accrue Interest</Text>
+									<Box marginRight={1} />
+									{accruedInterest.error && (
+										<Text color="red">{accruedInterest.error}</Text>
+									)}
+								</Box>
+								<Box flexDirection="row" marginRight={2}>
+									<Text color="green">{reducedReserves.done ? '✔' : ' '}</Text>
+									<Box marginRight={1} />
+									<Text>Reduce Reserves</Text>
+								</Box>
+								<Box flexDirection="row">
+									<Text color="green">{releasedFunds.done ? '✔' : ' '}</Text>
+									<Box marginRight={1} />
+									<Text>Release Funds</Text>
 								</Box>
 							</Box>
-						)
-					})}
-				</Box>}
+						</Box>
+					</Box>
+				)}
+			</StaticElements>
+			<Box flexDirection="column" flexGrow={1}>
+				<Text bold backgroundColor="#3396FF">
+					Conversions
+				</Text>
+				{completed.map((result, idx) => {
+					if ('trx' in result) {
+						return (
+							<Box key={idx} flexDirection="row">
+								<Text color="green">{result.trx as string}</Text>
+								{result.args && (
+									<Box borderTop borderStyle="classic" borderColor="#3396FF">
+										<Text>
+											{JSON.stringify(result.args || ' ', stringifyBigInt)}
+										</Text>
+									</Box>
+								)}
+							</Box>
+						);
+					}
+					if ('error' in result) {
+						return (
+							<Box key={idx} flexDirection="row">
+								<Text color="red">{result.error as string}</Text>
+								{result.args && (
+									<Box borderTop borderStyle="classic" borderColor="#3396FF">
+										<Text>
+											{JSON.stringify(result.args || ' ', stringifyBigInt)}
+										</Text>
+									</Box>
+								)}
+							</Box>
+						);
+					}
+					return null;
+				})}
+				<Text bold>Logs</Text>
+				{messages.map((msg, idx) => {
+					const id =
+						msg.type === 'PotentialTrades'
+							? idx
+							: getConverterConfigId(msg.context);
+					return (
+						<BorderBox
+							key={`${id}-${idx}`}
+							flexDirection="row"
+							borderStyle="doubleSingle"
+							borderColor="#3396FF"
+							borderTop
+						>
+							<Box
+								flexGrow={1}
+								flexDirection="column"
+								minWidth={60}
+								marginRight={1}
+								marginLeft={1}
+							>
+								{msg.type === 'PotentialTrades' ? (
+									<Text>
+										{JSON.stringify(msg.context.trades || ' ', stringifyBigInt)}
+									</Text>
+								) : (
+									<>
+										<Box flexGrow={1}>
+											<Text bold>Token Converter </Text>
+											<Text>{msg.context.converter}</Text>
+										</Box>
+										<Box flexGrow={1}>
+											<Text bold>Asset In </Text>
+											<Box flexDirection="column">
+												<Text>{msg.context.tokenToSendToConverter}</Text>
+											</Box>
+										</Box>
+										<Box flexGrow={1}>
+											<Text bold>Asset Out </Text>
+											<Box flexDirection="column">
+												<Text>{msg.context.tokenToReceiveFromConverter}</Text>
+											</Box>
+										</Box>
+									</>
+								)}
+							</Box>
+							<Box
+								flexGrow={1}
+								flexDirection="column"
+								marginLeft={1}
+								marginRight={1}
+								minWidth={60}
+							>
+								<Text>{msg.type}</Text>
+								{'blockNumber' in msg && msg.blockNumber !== undefined && (
+									<Text bold>Block Number {msg.blockNumber?.toString()}</Text>
+								)}
+								{'pancakeSwapTrade' in msg.context && (
+									<Text>
+										{JSON.stringify(
+											msg.context.pancakeSwapTrade || ' ',
+											stringifyBigInt,
+										)}
+									</Text>
+								)}
+								{(msg.type === 'Arbitrage' || msg.type === 'ExecuteTrade') && (
+									<Text>
+										{JSON.stringify(msg.context || ' ', stringifyBigInt)}
+									</Text>
+								)}
+								{'error' in msg && msg.error && (
+									<>
+										<Text color="red">{msg.error}</Text>
+										<Text color="red">
+											{JSON.stringify(msg.context || ' ', stringifyBigInt)}
+										</Text>
+									</>
+								)}
+							</Box>
+						</BorderBox>
+					);
+				})}
+			</Box>
 			{error ? <Text color="red">Error - {error}</Text> : null}
-		</Box>
+		</>
 	);
 }
-
-

@@ -1,8 +1,8 @@
 const stringifyBigInt = (_: string, val: any) => {
 	if (typeof val === 'bigint') {
-		return val.toString()
+		return val.toString();
 	}
-	return val
-}
+	return val;
+};
 
-export default stringifyBigInt
+export default stringifyBigInt;
