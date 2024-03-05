@@ -71,6 +71,7 @@ interface GetBestTradeMessage {
     };
     tokenToReceiveFromConverter: string;
     tokenToSendToConverter: string;
+    priceImpact?: string;
   };
 }
 
@@ -289,8 +290,8 @@ export class TokenConverter {
     if (error) {
       throw new Error(error);
     }
-
-    if (this.getPriceImpact(trade).greaterThan(new Percent(50n, 100n))) {
+    const priceImpact = this.getPriceImpact(trade)
+    if (priceImpact.greaterThan(new Percent(4n, 1000n))) {
       this.sendMessage({
         type: "GetBestTrade",
         error: 'High price impact',
@@ -298,6 +299,7 @@ export class TokenConverter {
           converter: tokenConverter,
           tokenToReceiveFromConverter: swapFrom,
           tokenToSendToConverter: swapTo,
+          priceImpact: priceImpact.toFixed()
         },
       });
       return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[0] * 75n) / 100n);
