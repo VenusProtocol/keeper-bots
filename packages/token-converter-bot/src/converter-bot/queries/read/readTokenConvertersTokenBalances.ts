@@ -9,12 +9,13 @@ import { TokenConverterConfig } from "./readTokenConverterConfigs/formatTokenCon
 
 export interface BalanceResult {
   tokenConverter: Address;
-  assetIn: { address: Address; balance: bigint };
+  assetIn: Address;
   assetOut: { address: Address; balance: bigint };
   assetOutVTokens: {
     core: `0x${string}` | undefined;
     isolated: [`0x${string}`, `0x${string}`][] | undefined;
   };
+  accountBalanceAssetOut: bigint;
 }
 
 const formatResults = (
@@ -47,8 +48,9 @@ const formatResults = (
     const balance = {
       assetOutVTokens: vToken,
       tokenConverter,
-      assetIn: { address: assetIn, balance: curr[0].result as bigint },
-      assetOut: { address: assetOut, balance: curr[1].result as bigint },
+      assetIn,
+      assetOut: { address: assetOut, balance: curr[0].result as bigint },
+      accountBalanceAssetOut: curr[1].result as bigint
     };
 
     balances.push(balance);
@@ -68,7 +70,7 @@ export const readTokenConvertersTokenBalances = async (
       ...tokenConverterConfigs.reduce((acc, curr) => {
         acc = acc.concat([
           {
-            address: curr.tokenAddressIn,
+            address: curr.tokenAddressOut,
             abi: coreVTokenAbi,
             functionName: "balanceOf",
             args: [curr.tokenConverter],
@@ -77,7 +79,7 @@ export const readTokenConvertersTokenBalances = async (
             address: curr.tokenAddressOut,
             abi: coreVTokenAbi,
             functionName: "balanceOf",
-            args: [curr.tokenConverter],
+            args: [walletAddress],
           },
         ]);
         return acc;

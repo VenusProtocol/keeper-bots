@@ -40,11 +40,23 @@ const getOutputCurrency = (pool: V3Pool, inputToken: Token): Token => {
   return token0.equals(inputToken) ? token1 : token0;
 };
 
-export interface ArbitrageMessage {
-  type: "Arbitrage";
+export interface DefaultMessage {
   trx: string | undefined;
   error: string | undefined;
   blockNumber?: bigint | undefined;
+  context?: unknown;
+}
+
+export interface ReduceReservesMessage extends DefaultMessage {
+  type: "ReduceReserves";
+}
+
+export interface ReleaseFundsMessage extends DefaultMessage {
+  type: "ReleaseFunds";
+}
+
+export interface ArbitrageMessage extends DefaultMessage {
+  type: "Arbitrage";
   context: {
     beneficiary: Address;
     tokenToReceiveFromConverter: Address;
@@ -57,11 +69,8 @@ export interface ArbitrageMessage {
   };
 }
 
-interface GetBestTradeMessage {
+export interface GetBestTradeMessage extends DefaultMessage {
   type: "GetBestTrade";
-  trx: string | undefined;
-  error: string | undefined;
-  blockNumber?: bigint | undefined;
   context: {
     converter: string;
     tradeAmount?: { amountIn: bigint | undefined; amountOut: bigint | undefined };
@@ -75,18 +84,10 @@ interface GetBestTradeMessage {
   };
 }
 
-export interface ExecuteTradeMessage {
-  type: "ExecuteTrade";
-  trx: string | undefined;
-  error: string | undefined;
-  blockNumber?: bigint | undefined;
-  context: {
-    converter: string;
-    tokenToReceiveFromConverter: string;
-    tokenToSendToConverter: string;
-    amount: bigint;
-    minIncome: bigint;
-  };
+export interface PotentialTradesMessage extends DefaultMessage {
+  type: "PotentialTrades";
+  trx: undefined;
+  context: { trades: BalanceResult[] };
 }
 
 export interface AccrueInterestMessage {
@@ -97,25 +98,14 @@ export interface AccrueInterestMessage {
   context: undefined;
 }
 
+
 export type Message =
-  | {
-      type: "ReduceReserves" | "ReleaseFunds";
-      trx: string | undefined;
-      error: string | undefined;
-      blockNumber?: bigint | undefined;
-      context: undefined;
-    }
-  | {
-      type: "PotentialTrades";
-      trx: undefined;
-      error: string | undefined;
-      blockNumber?: bigint | undefined;
-      context: { trades: BalanceResult[] };
-    }
+  | ReduceReservesMessage
+  | ReleaseFundsMessage
+  | PotentialTradesMessage
   | AccrueInterestMessage
   | ArbitrageMessage
-  | GetBestTradeMessage
-  | ExecuteTradeMessage;
+  | GetBestTradeMessage;
 
 export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
@@ -605,16 +595,16 @@ export class TokenConverter {
     this.sendMessage({ type: "Arbitrage", error, trx, context: convertTransaction.args[0], blockNumber });
   }
 
-  async executeTrade(t: BalanceResult) {
+  async prepareTrade(tokenConverter: Address, assetOut: Address, assetIn: Address, amountOut: bigint) {
     let error;
     let trade;
     let tradeAmount;
     try {
       [trade, tradeAmount] = await this.getBestTrade(
-        t.tokenConverter,
-        t.assetOut.address,
-        t.assetIn.address,
-        t.assetOut.balance,
+        tokenConverter,
+        assetOut,
+        assetIn,
+        amountOut,
       );
     } catch (e) {
       error = e as Error;
@@ -635,14 +625,15 @@ export class TokenConverter {
           }
         }
       }
+
       this.sendMessage({
         type: "GetBestTrade",
         error: error?.message,
         context: {
           ...tradeContext,
-          converter: t.tokenConverter,
-          tokenToReceiveFromConverter: t.assetOut.address,
-          tokenToSendToConverter: t.assetIn.address,
+          converter: tokenConverter,
+          tokenToReceiveFromConverter: assetOut,
+          tokenToSendToConverter: assetIn,
         },
       });
     }
@@ -652,36 +643,10 @@ export class TokenConverter {
       const minIncome = BigInt(
         new Fraction(tradeAmount[0], 1).subtract(trade.inputAmount).toFixed(0, { groupSeparator: "" }),
       );
-
-      let hasIncome = true;
-      if (minIncome < 0) {
-        // Check that we have the income to transfer
-        const balanceOf = await publicClient.readContract({
-          address: t.assetOut.address,
-          abi: erc20Abi,
-          functionName: "balanceOf",
-          args: [walletClient.account.address],
-        });
-
-        hasIncome = balanceOf >= minIncome * -1n;
-      }
-
-      const amount = tradeAmount[0];
-      if (hasIncome) {
-        await this.arbitrage(t.tokenConverter, trade, amount, minIncome);
-      } else {
-        error = `Unable to run conversion because income was negative and wallet doesn't have a positive balance {minIncome: ${minIncome}, asset: ${t.assetOut.address}}`;
-        this.sendMessage({
-          type: "ExecuteTrade",
-          error,
-          context: {
-            converter: t.tokenConverter,
-            tokenToReceiveFromConverter: t.assetOut.address,
-            tokenToSendToConverter: t.assetIn.address,
-            amount,
-            minIncome,
-          },
-        });
+      return {
+        trade,
+        amount: tradeAmount[0],
+        minIncome
       }
     }
   }
