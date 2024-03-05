@@ -260,38 +260,19 @@ export default function Convert({ options }: Props) {
 							borderColor="#3396FF"
 							borderTop
 						>
-							<Box
-								flexGrow={1}
-								flexDirection="column"
-								minWidth={60}
-								marginRight={1}
-								marginLeft={1}
-							>
-								{msg.type === 'PotentialTrades' ? (
+							{msg.type === 'PotentialTrades' ? (
+								<Box
+									flexGrow={1}
+									flexDirection="column"
+									minWidth={60}
+									marginRight={1}
+									marginLeft={1}
+								>
 									<Text>
 										{JSON.stringify(msg.context.trades || ' ', stringifyBigInt)}
 									</Text>
-								) : (
-									<>
-										<Box flexGrow={1}>
-											<Text bold>Token Converter </Text>
-											<Text>{msg.context.converter}</Text>
-										</Box>
-										<Box flexGrow={1}>
-											<Text bold>Asset In </Text>
-											<Box flexDirection="column">
-												<Text>{msg.context.tokenToSendToConverter}</Text>
-											</Box>
-										</Box>
-										<Box flexGrow={1}>
-											<Text bold>Asset Out </Text>
-											<Box flexDirection="column">
-												<Text>{msg.context.tokenToReceiveFromConverter}</Text>
-											</Box>
-										</Box>
-									</>
-								)}
-							</Box>
+								</Box>) : null}
+
 							<Box
 								flexGrow={1}
 								flexDirection="column"
@@ -299,7 +280,7 @@ export default function Convert({ options }: Props) {
 								marginRight={1}
 								minWidth={60}
 							>
-								<Text>{msg.type}</Text>
+								<Text bold>{msg.type}</Text>
 								{'blockNumber' in msg && msg.blockNumber !== undefined && (
 									<Text bold>Block Number {msg.blockNumber?.toString()}</Text>
 								)}
