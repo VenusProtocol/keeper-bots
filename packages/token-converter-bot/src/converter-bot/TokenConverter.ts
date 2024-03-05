@@ -577,7 +577,7 @@ export class TokenConverter {
       });
 
       if (!this.simulate) {
-        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: (gasEstimation * 110n) / 100n });
+        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
         ({ blockNumber } = await publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 }));
       }
     } catch (e) {
