@@ -1,11 +1,9 @@
-import {useEffect, useState, useReducer} from 'react';
-import {Box, Text} from 'ink';
+import { useEffect, useState, useReducer } from 'react';
+import { Box, Text } from 'ink';
 import zod from 'zod';
-import {Address, getAddress, parseUnits} from 'viem';
+import { Address, getAddress, parseUnits } from 'viem';
 import {
 	TokenConverter,
-	readCoreMarkets,
-	readIsolatedMarkets,
 } from '@venusprotocol/token-converter-bot';
 import {
 	stringifyBigInt,
@@ -18,7 +16,7 @@ import {
 	StaticElements,
 	BorderBox,
 } from '../components/index.js';
-import {reducer, defaultState} from '../state/convert.js';
+import { reducer, defaultState } from '../state/convert.js';
 
 const address = zod
 	.custom<Address>(val => {
@@ -46,11 +44,6 @@ export const options = zod.object({
 		.optional()
 		.default(false),
 	debug: zod.boolean().describe('Add debug logging').optional().default(false),
-	releaseFunds: zod
-		.boolean()
-		.describe('Release funds')
-		.optional()
-		.default(false),
 	minTradeUsd: zod
 		.number()
 		.describe('Minimum value of tokens to try and convert')
@@ -68,12 +61,11 @@ interface Props {
 	options: zod.infer<typeof options>;
 }
 
-export default function Convert({options}: Props) {
+export default function Convert({ options }: Props) {
 	const {
 		minTradeUsd,
 		maxTradeUsd,
 		simulate,
-		releaseFunds,
 		assetIn,
 		assetOut,
 		converter,
@@ -83,12 +75,12 @@ export default function Convert({options}: Props) {
 	} = options;
 
 	const [
-		{accruedInterest, reducedReserves, releasedFunds, completed, messages},
+		{ completed, messages },
 		dispatch,
 	] = useReducer(reducer, defaultState);
 	const [error, setError] = useState('');
 	const [_tradeUsdValues, setTradeUsdValues] = useState<
-		Record<string, {underlyingPriceUsd: string; underlyingUsdValue: string}>
+		Record<string, { underlyingPriceUsd: string; underlyingUsdValue: string }>
 	>({});
 
 	useEffect(() => {
@@ -99,10 +91,6 @@ export default function Convert({options}: Props) {
 					simulate: !!simulate,
 					verbose: debug,
 				});
-				// Update these for if assetIn or assetOut is passed
-				const corePoolMarkets = await readCoreMarkets();
-				const isolatedPoolsMarkets = await readIsolatedMarkets();
-				const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
 
 				const tokenConverterConfigs = await getConverterConfigs({
 					assetIn,
@@ -111,16 +99,12 @@ export default function Convert({options}: Props) {
 				});
 
 				const potentialTrades = await tokenConverter.checkForTrades(
-					allPools,
 					tokenConverterConfigs,
-					!!releaseFunds,
 				);
 				if (potentialTrades.length === 0) {
 					setError('No Potential Trades Found');
 				}
-				if (releaseFunds) {
-					await tokenConverter.releaseFundsForTrades(potentialTrades);
-				}
+
 				await Promise.allSettled(
 					potentialTrades.map(async t => {
 						let amountOut = t.assetOut.balance;
@@ -226,42 +210,6 @@ export default function Convert({options}: Props) {
 			<StaticElements>
 				<Title />
 				{debug && <Options options={options} />}
-				{releaseFunds && (
-					<Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
-						<Box
-							flexDirection="row"
-							marginLeft={1}
-							justifyContent="space-between"
-						>
-							<Box flexDirection="column">
-								<Box flexDirection="row">
-									<Text bold color="white">
-										Release Funds Steps
-									</Text>
-								</Box>
-								<Box flexDirection="row" marginRight={2}>
-									<Text color="green">{accruedInterest.done ? '✔' : ' '}</Text>
-									<Box marginRight={1} />
-									<Text color="white">Accrue Interest</Text>
-									<Box marginRight={1} />
-									{accruedInterest.error && (
-										<Text color="red">{accruedInterest.error}</Text>
-									)}
-								</Box>
-								<Box flexDirection="row" marginRight={2}>
-									<Text color="green">{reducedReserves.done ? '✔' : ' '}</Text>
-									<Box marginRight={1} />
-									<Text>Reduce Reserves</Text>
-								</Box>
-								<Box flexDirection="row">
-									<Text color="green">{releasedFunds.done ? '✔' : ' '}</Text>
-									<Box marginRight={1} />
-									<Text>Release Funds</Text>
-								</Box>
-							</Box>
-						</Box>
-					</Box>
-				)}
 			</StaticElements>
 			<Box flexDirection="column" flexGrow={1}>
 				<Text bold backgroundColor="#3396FF">

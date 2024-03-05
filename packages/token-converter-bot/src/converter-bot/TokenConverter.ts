@@ -11,7 +11,6 @@ import {
   encodePacked,
   erc20Abi,
   formatUnits,
-  parseAbi,
 } from "viem";
 
 import config from "../config";
@@ -425,14 +424,11 @@ export class TokenConverter {
   }
 
   async checkForTrades(
-    allPools: PoolAddressArray[],
     tokenConverterConfigs: TokenConverterConfig[],
-    releaseFunds: boolean,
   ) {
     const { results, blockNumber } = await readTokenConvertersTokenBalances(
-      allPools,
       tokenConverterConfigs,
-      releaseFunds,
+      this.walletClient.account.address,
     );
     const trades = results.filter(v => v.assetOut.balance > 0);
     this.sendMessage({ type: "PotentialTrades", context: { trades }, blockNumber });

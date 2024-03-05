@@ -2,8 +2,8 @@ import "dotenv/config";
 
 import { Abi, Address } from "viem";
 
-import { coreVTokenAbi, protocolShareReserveAbi } from "../../../config/abis/generated";
-import addresses, { underlyingToVTokens } from "../../../config/addresses";
+import { coreVTokenAbi } from "../../../config/abis/generated";
+import { underlyingToVTokens } from "../../../config/addresses";
 import publicClient from "../../../config/clients/publicClient";
 import { TokenConverterConfig } from "./readTokenConverterConfigs/formatTokenConverterConfigs";
 
@@ -57,23 +57,14 @@ const formatResults = (
 };
 
 export const readTokenConvertersTokenBalances = async (
-  pools: [Address, readonly Address[]][],
   tokenConverterConfigs: TokenConverterConfig[],
-  releaseFunds?: boolean,
+  walletAddress: Address,
 ): Promise<{ results: BalanceResult[]; blockNumber: bigint }> => {
-  const releaseFundsCalls = releaseFunds
-    ? pools.map(pool => ({
-        address: addresses.ProtocolShareReserve as Address,
-        abi: protocolShareReserveAbi,
-        functionName: "releaseFunds",
-        args: pool,
-      }))
-    : [];
+
   const blockNumber = await publicClient.getBlockNumber();
   const results = await publicClient.multicall({
     blockNumber,
     contracts: [
-      ...releaseFundsCalls,
       ...tokenConverterConfigs.reduce((acc, curr) => {
         acc = acc.concat([
           {
@@ -93,8 +84,6 @@ export const readTokenConvertersTokenBalances = async (
       }, [] as { address: Address; abi: Abi; functionName: string; args?: readonly unknown[] | undefined }[]),
     ],
   });
-  // Release funds will be empty
-  results.splice(0, releaseFundsCalls.length);
   const formattedResults = formatResults(results, tokenConverterConfigs);
   return { results: formattedResults, blockNumber };
 };
