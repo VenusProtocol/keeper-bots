@@ -22,9 +22,6 @@ class SubgraphClient {
 
   async query(document: DocumentNode, args: Record<string, string>) {
     const result = await this.urqlClient.query(document, args).toPromise();
-    if (result.error) {
-      console.error(result.error);
-    }
     return result;
   }
 
