@@ -1,5 +1,6 @@
 import { useEffect, useState, useReducer } from 'react';
-import { Box, Text } from 'ink';
+import { option } from 'pastel';
+import { Box, Spacer, Text } from 'ink';
 import zod from 'zod';
 import { Address, getAddress, parseUnits } from 'viem';
 import {
@@ -30,31 +31,58 @@ const address = zod
 	.transform(val => val.toLowerCase() as Address);
 
 export const options = zod.object({
-	converter: address.describe('TokenConverter').optional(),
+	converter: zod.array(address).describe(option({
+		description: 'TokenConverter',
+		alias: 'c',
+	})).optional(),
 	profitable: zod
 		.boolean()
-		.describe('Require trade be profitable')
+		.describe(option({
+			description: 'Require trade be profitable',
+			alias: 'p',
+		}))
 		.optional()
 		.default(true),
-	assetOut: address.describe('Asset Out').optional(),
-	assetIn: address.describe('Asset In').optional(),
+	assetIn: address.describe(option({
+		description: 'Asset In',
+		alias: 'in',
+	})).optional(),
+	assetOut: address.describe(option({
+		description: 'Asset Out',
+		alias: 'out',
+	})).optional(),
 	simulate: zod
 		.boolean()
-		.describe('Simulate transactions')
+		.describe(option({
+			description: 'Simulate transactions',
+			alias: 's',
+		}))
 		.optional()
 		.default(false),
-	debug: zod.boolean().describe('Add debug logging').optional().default(false),
+	debug: zod.boolean().describe(option({
+		description: 'Add debug logging',
+		alias: 'd',
+	})).optional().default(false),
 	minTradeUsd: zod
 		.number()
-		.describe('Minimum value of tokens to try and convert')
+		.describe(option({
+			description: 'Minimum value of tokens to try and convert',
+			alias: 'min',
+		}))
 		.optional()
 		.default(500),
 	maxTradeUsd: zod
 		.number()
-		.describe('Maximum value of tokens to try and convert')
+		.describe(option({
+			description: 'Maximum value of tokens to try and convert',
+			alias: 'max',
+		}))
 		.optional()
 		.default(5000),
-	loop: zod.boolean().describe('Loop').optional().default(false),
+	loop: zod.boolean().describe(option({
+		description: 'Loop',
+		alias: 'l',
+	})).optional().default(false),
 });
 
 interface Props {
@@ -113,7 +141,7 @@ export default function Convert({ options }: Props) {
 							((t.assetOutVTokens.isolated &&
 								t.assetOutVTokens.isolated[0] &&
 								t.assetOutVTokens.isolated[0][1]) as Address);
-						const {underlyingPriceUsd, underlyingUsdValue, underlyingDecimals} =
+						const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } =
 							await tokenConverter.getUsdValue(
 								t.assetOut.address,
 								vTokenAddress,
@@ -126,7 +154,7 @@ export default function Convert({ options }: Props) {
 								converter: t.tokenConverter,
 								tokenToReceiveFromConverter: t.assetOut.address,
 								tokenToSendToConverter: t.assetIn,
-							})]: {underlyingPriceUsd, underlyingUsdValue},
+							})]: { underlyingPriceUsd, underlyingUsdValue },
 						}));
 
 						if (+underlyingUsdValue > minTradeUsd) {
@@ -142,14 +170,15 @@ export default function Convert({ options }: Props) {
 								t.assetIn,
 								amountOut,
 							);
-							const {trade, amount, minIncome} = arbitrageArgs || {
+							const { trade, amount, minIncome } = arbitrageArgs || {
 								trade: undefined,
 								amount: 0n,
 								minIncome: 0n,
 							};
 
 							const maxMinIncome = ((amount * 1003n) / 1000n - amount) * -1n;
-							if (t.accountBalanceAssetOut < minIncome * -1n) {
+
+							if (t.accountBalanceAssetOut < (minIncome * -1n)) {
 								dispatch({
 									type: 'ExecuteTrade',
 									error: 'Insufficient wallet balance to pay min income',
@@ -212,40 +241,42 @@ export default function Convert({ options }: Props) {
 				{debug && <Options options={options} />}
 			</StaticElements>
 			<Box flexDirection="column" flexGrow={1}>
-				<Text bold backgroundColor="#3396FF">
+				{completed.length > 0 && <Text bold backgroundColor="#3396FF">
 					Conversions
-				</Text>
+				</Text>}
 				{completed.map((result, idx) => {
 					if ('trx' in result) {
 						return (
-							<Box key={idx} flexDirection="row">
-								<Text color="green">{result.trx as string}</Text>
+							<BorderBox borderBottom borderStyle="bold" key={idx} flexDirection="column">
+								<Text color="green">Trx: {result.trx as string}</Text>
 								{result.args && (
-									<Box borderTop borderStyle="classic" borderColor="#3396FF">
+									<BorderBox borderTop borderStyle="classic" borderColor="#3396FF">
 										<Text>
 											{JSON.stringify(result.args || ' ', stringifyBigInt)}
 										</Text>
-									</Box>
+									</BorderBox>
 								)}
-							</Box>
+								<Spacer />
+							</BorderBox>
 						);
 					}
 					if ('error' in result) {
 						return (
-							<Box key={idx} flexDirection="row">
-								<Text color="red">{result.error as string}</Text>
+							<BorderBox borderStyle="bold" borderBottom key={idx} flexDirection="column">
+								<Text color="red">Error: {result.error as string}</Text>
 								{result.args && (
-									<Box borderTop borderStyle="classic" borderColor="#3396FF">
+									<BorderBox borderTop borderStyle="classic" borderColor="#3396FF">
 										<Text>
 											{JSON.stringify(result.args || ' ', stringifyBigInt)}
 										</Text>
-									</Box>
+									</BorderBox>
 								)}
-							</Box>
+							</BorderBox>
 						);
 					}
 					return null;
 				})}
+				<Spacer />
 				<Text bold>Logs</Text>
 				{messages.map((msg, idx) => {
 					const id =
