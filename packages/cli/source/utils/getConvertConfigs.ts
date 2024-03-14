@@ -15,7 +15,7 @@ const getConverterConfigs = async ({
 }: {
 	assetOut?: Address;
 	assetIn?: Address;
-	converter?: Address;
+	converter?: Address[];
 }): Promise<TokenConverterConfig[]> => {
 	if (assetOut && assetIn) {
 		return await getConverterConfigByAssetInAndAssetOut(assetIn, assetOut);

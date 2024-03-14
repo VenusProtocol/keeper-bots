@@ -20,7 +20,7 @@ class SubgraphClient {
     });
   }
 
-  async query(document: DocumentNode, args: Record<string, string>) {
+  async query(document: DocumentNode, args: Record<string, string[] | string>) {
     const result = await this.urqlClient.query(document, args).toPromise();
     return result;
   }
@@ -30,8 +30,8 @@ class SubgraphClient {
     return result;
   }
 
-  async getTokenConverter(address: string) {
-    const result = await this.query(TokenConverterDocument, { id: address.toLowerCase() });
+  async getTokenConverter(addresses: string[]) {
+    const result = await this.query(TokenConverterDocument, { id: addresses.map(a => a.toLowerCase()) });
     return result;
   }
 
