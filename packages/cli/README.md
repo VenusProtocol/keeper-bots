@@ -10,8 +10,8 @@ $ yarn install --global @venusprotocol/cli
 
 The Venus cli is a easy way to run tasks and interact with the venus protocol from the command line.
 
-
 ### Token Converter
+
 ```
 $ venus --help
 
@@ -27,4 +27,5 @@ $ venus --help
 ```
 
 ## Environment variables
+
 Environment variables are read from a .env file in the directory where the command is run or can be set inline

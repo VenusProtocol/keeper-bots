@@ -50,7 +50,7 @@ const formatResults = (
       tokenConverter,
       assetIn,
       assetOut: { address: assetOut, balance: curr[0].result as bigint },
-      accountBalanceAssetOut: curr[1].result as bigint
+      accountBalanceAssetOut: curr[1].result as bigint,
     };
 
     balances.push(balance);
@@ -62,7 +62,6 @@ export const readTokenConvertersTokenBalances = async (
   tokenConverterConfigs: TokenConverterConfig[],
   walletAddress: Address,
 ): Promise<{ results: BalanceResult[]; blockNumber: bigint }> => {
-
   const blockNumber = await publicClient.getBlockNumber();
   const results = await publicClient.multicall({
     blockNumber,

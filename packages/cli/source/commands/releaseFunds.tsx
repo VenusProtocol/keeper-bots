@@ -1,13 +1,15 @@
-import { Box, Text } from 'ink';
-import { useEffect, useReducer } from 'react';
+import {Box, Text} from 'ink';
+import {useEffect, useReducer} from 'react';
 import zod from 'zod';
 import {
 	TokenConverter,
-	underlyingByComptroller,
 	readCoreMarkets,
 	readIsolatedMarkets
 } from '@venusprotocol/token-converter-bot';
-import { reducer, defaultState } from '../state/releaseFunds.js';
+import {underlyingByComptroller} from '../constants/index.js';
+import {reducer, defaultState} from '../state/releaseFunds.js';
+import FullScreenBox from '../components/fullScreenBox.js';
+import {useFullScreen} from '../hooks/useFullScreen.js';
 
 export const options = zod.object({
 	simulate: zod
@@ -22,12 +24,9 @@ interface Props {
 	options: zod.infer<typeof options>;
 }
 
-export default function ReleaseFunds({ options = {} }: Props) {
-	const [
-		{ releasedFunds },
-		dispatch,
-	] = useReducer(reducer, defaultState);
-
+function ReleaseFunds({options = {}}: Props) {
+	const [{releasedFunds}, dispatch] = useReducer(reducer, defaultState);
+	useFullScreen();
 	useEffect(() => {
 		const releaseFunds = async () => {
 			const tokenConverter = new TokenConverter({
@@ -45,45 +44,49 @@ export default function ReleaseFunds({ options = {} }: Props) {
 		releaseFunds();
 	}, []);
 	return (
-		<Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
-			<Box
-				marginBottom={1}
-				flexDirection="row"
-				borderTop={false}
-				borderLeft={false}
-				borderRight={false}
-				borderStyle="round"
-				borderColor="#3396FF"
-			>
-				<Box marginRight={1}>
-					<Text bold>Release Funds</Text>
-				</Box>
-				<Box flexDirection="column" borderColor="#3396FF">
-					<Box flexDirection="row">
-						<Text bold color="white">
-							Options
-						</Text>
+		<FullScreenBox flexDirection="column">
+			<Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
+				<Box
+					marginBottom={1}
+					flexDirection="row"
+					borderTop={false}
+					borderLeft={false}
+					borderRight={false}
+					borderStyle="round"
+					borderColor="#3396FF"
+				>
+					<Box marginRight={1}>
+						<Text bold>Release Funds</Text>
 					</Box>
-					<Box flexDirection="column">
-						<Box marginRight={1}>
-							<Text bold>Simulate - {(!!options.simulate).toString()}</Text>
+					<Box flexDirection="column" borderColor="#3396FF">
+						<Box flexDirection="row">
+							<Text bold color="white">
+								Options
+							</Text>
 						</Box>
-						<Box marginRight={1}>
-							<Text bold>Verbose - {(!!options.verbose).toString()}</Text>
+						<Box flexDirection="column">
+							<Box marginRight={1}>
+								<Text bold>Simulate - {(!!options.simulate).toString()}</Text>
+							</Box>
+							<Box marginRight={1}>
+								<Text bold>Verbose - {(!!options.verbose).toString()}</Text>
+							</Box>
 						</Box>
+					</Box>
+				</Box>
+				<Box flexDirection="row">
+					<Text color="green">{releasedFunds.length ? '✔' : ' '}</Text>
+					<Box marginRight={1} />
+					<Text>Release Funds</Text>
+					<Box marginRight={1} flexDirection="column">
+						{releasedFunds.map((t, idx) => (
+							<Text key={idx}>{t}</Text>
+						))}
 					</Box>
 				</Box>
 			</Box>
-			<Box flexDirection="row">
-				<Text color="green">{releasedFunds.length ? '✔' : ' '}</Text>
-				<Box marginRight={1} />
-				<Text>Release Funds</Text>
-				<Box marginRight={1} flexDirection="column">
-					{releasedFunds.map(t => (
-						<Text key={Math.random()}>{t}</Text>
-					))}
-				</Box>
-			</Box>
-		</Box>
+		</FullScreenBox>
 	);
 }
+
+export default ReleaseFunds;

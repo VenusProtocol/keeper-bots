@@ -1,22 +1,16 @@
-import { useEffect, useState, useReducer } from 'react';
-import { option } from 'pastel';
-import { Box, Spacer, Text } from 'ink';
+import {useEffect, useState, useReducer} from 'react';
+import {option} from 'pastel';
+import {Box, Spacer, Text} from 'ink';
 import zod from 'zod';
-import { Address, getAddress, parseUnits } from 'viem';
-import {
-	TokenConverter,
-} from '@venusprotocol/token-converter-bot';
+import {Address, getAddress, parseUnits} from 'viem';
+import {TokenConverter} from '@venusprotocol/token-converter-bot';
 import {
 	stringifyBigInt,
 	getConverterConfigs,
 	getConverterConfigId,
 } from '../utils/index.js';
-import {
-	Options,
-	Title,
-	BorderBox,
-} from '../components/index.js';
-import { reducer, defaultState } from '../state/convert.js';
+import {Options, Title, BorderBox} from '../components/index.js';
+import {reducer, defaultState} from '../state/convert.js';
 import FullScreenBox from '../components/fullScreenBox.js';
 
 const address = zod
@@ -31,65 +25,98 @@ const address = zod
 	.transform(val => val.toLowerCase() as Address);
 
 export const options = zod.object({
-	converter: zod.array(address).describe(option({
-		description: 'TokenConverter',
-		alias: 'c',
-	})).optional(),
+	converter: zod
+		.array(address)
+		.describe(
+			option({
+				description: 'TokenConverter',
+				alias: 'c',
+			}),
+		)
+		.optional(),
 	profitable: zod
 		.boolean()
-		.describe(option({
-			description: 'Require trade be profitable',
-			alias: 'p',
-		}))
+		.describe(
+			option({
+				description: 'Require trade be profitable',
+				alias: 'p',
+			}),
+		)
 		.optional()
 		.default(true),
-	assetIn: address.describe(option({
-		description: 'Asset In',
-		alias: 'in',
-	})).optional(),
-	assetOut: address.describe(option({
-		description: 'Asset Out',
-		alias: 'out',
-	})).optional(),
+	assetIn: address
+		.describe(
+			option({
+				description: 'Asset In',
+				alias: 'in',
+			}),
+		)
+		.optional(),
+	assetOut: address
+		.describe(
+			option({
+				description: 'Asset Out',
+				alias: 'out',
+			}),
+		)
+		.optional(),
 	simulate: zod
 		.boolean()
-		.describe(option({
-			description: 'Simulate transactions',
-			alias: 's',
-		}))
+		.describe(
+			option({
+				description: 'Simulate transactions',
+				alias: 's',
+			}),
+		)
 		.optional()
 		.default(false),
-	debug: zod.boolean().describe(option({
-		description: 'Add debug logging',
-		alias: 'd',
-	})).optional().default(false),
+	debug: zod
+		.boolean()
+		.describe(
+			option({
+				description: 'Add debug logging',
+				alias: 'd',
+			}),
+		)
+		.optional()
+		.default(false),
 	minTradeUsd: zod
 		.number()
-		.describe(option({
-			description: 'Minimum value of tokens to try and convert',
-			alias: 'min',
-		}))
+		.describe(
+			option({
+				description: 'Minimum value of tokens to try and convert',
+				alias: 'min',
+			}),
+		)
 		.optional()
 		.default(500),
 	maxTradeUsd: zod
 		.number()
-		.describe(option({
-			description: 'Maximum value of tokens to try and convert',
-			alias: 'max',
-		}))
+		.describe(
+			option({
+				description: 'Maximum value of tokens to try and convert',
+				alias: 'max',
+			}),
+		)
 		.optional()
 		.default(5000),
-	loop: zod.boolean().describe(option({
-		description: 'Loop',
-		alias: 'l',
-	})).optional().default(false),
+	loop: zod
+		.boolean()
+		.describe(
+			option({
+				description: 'Loop',
+				alias: 'l',
+			}),
+		)
+		.optional()
+		.default(false),
 });
 
 interface Props {
 	options: zod.infer<typeof options>;
 }
 
-export default function Convert({ options }: Props) {
+export default function Convert({options}: Props) {
 	const {
 		minTradeUsd,
 		maxTradeUsd,
@@ -102,46 +129,43 @@ export default function Convert({ options }: Props) {
 		debug,
 	} = options;
 
-	const [
-		{ completed, messages },
-		dispatch,
-	] = useReducer(reducer, defaultState);
+	const [{completed, messages}, dispatch] = useReducer(reducer, defaultState);
 	const [error, setError] = useState('');
 	const [_tradeUsdValues, setTradeUsdValues] = useState<
-		Record<string, { underlyingPriceUsd: string; underlyingUsdValue: string }>
+		Record<string, {underlyingPriceUsd: string; underlyingUsdValue: string}>
 	>({});
 
 	useEffect(() => {
 		const convert = async () => {
+			const tokenConverter = new TokenConverter({
+				subscriber: dispatch,
+				simulate: !!simulate,
+				verbose: debug,
+			});
+			const tokenConverterConfigs = await getConverterConfigs({
+				assetIn,
+				assetOut,
+				converter,
+			});
+
 			do {
-				const tokenConverter = new TokenConverter({
-					subscriber: dispatch,
-					simulate: !!simulate,
-					verbose: debug,
-				});
-
-				const tokenConverterConfigs = await getConverterConfigs({
-					assetIn,
-					assetOut,
-					converter,
-				});
-
 				const potentialTrades = await tokenConverter.checkForTrades(
 					tokenConverterConfigs,
 				);
+
 				if (potentialTrades.length === 0) {
 					setError('No Potential Trades Found');
 				}
 
 				await Promise.allSettled(
-					potentialTrades.map(async t => {
+					potentialTrades.map(async (t: any) => {
 						let amountOut = t.assetOut.balance;
 						const vTokenAddress =
 							t.assetOutVTokens.core ||
 							((t.assetOutVTokens.isolated &&
 								t.assetOutVTokens.isolated[0] &&
 								t.assetOutVTokens.isolated[0][1]) as Address);
-						const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } =
+						const {underlyingPriceUsd, underlyingUsdValue, underlyingDecimals} =
 							await tokenConverter.getUsdValue(
 								t.assetOut.address,
 								vTokenAddress,
@@ -154,7 +178,7 @@ export default function Convert({ options }: Props) {
 								converter: t.tokenConverter,
 								tokenToReceiveFromConverter: t.assetOut.address,
 								tokenToSendToConverter: t.assetIn,
-							})]: { underlyingPriceUsd, underlyingUsdValue },
+							})]: {underlyingPriceUsd, underlyingUsdValue},
 						}));
 
 						if (+underlyingUsdValue > minTradeUsd) {
@@ -170,7 +194,7 @@ export default function Convert({ options }: Props) {
 								t.assetIn,
 								amountOut,
 							);
-							const { trade, amount, minIncome } = arbitrageArgs || {
+							const {trade, amount, minIncome} = arbitrageArgs || {
 								trade: undefined,
 								amount: 0n,
 								minIncome: 0n,
@@ -178,7 +202,7 @@ export default function Convert({ options }: Props) {
 
 							const maxMinIncome = ((amount * 1003n) / 1000n - amount) * -1n;
 
-							if (t.accountBalanceAssetOut < (minIncome * -1n)) {
+							if (t.accountBalanceAssetOut < minIncome * -1n) {
 								dispatch({
 									type: 'ExecuteTrade',
 									error: 'Insufficient wallet balance to pay min income',
@@ -213,7 +237,7 @@ export default function Convert({ options }: Props) {
 										tokenToReceiveFromConverter: t.assetOut.address,
 										tokenToSendToConverter: t.assetIn,
 										amount,
-										minIncome
+										minIncome,
 									},
 								});
 							}
@@ -225,16 +249,17 @@ export default function Convert({ options }: Props) {
 								minIncome,
 							);
 						}
-					}))
+					}),
+				);
 			} while (loop);
-		}
+		};
 		convert().catch(e => {
 			setError(e.message);
 		});
 	}, []);
 
 	return (
-		<FullScreenBox flexDirection='column'>
+		<FullScreenBox flexDirection="column">
 			<Title />
 			{debug && <Options options={options} />}
 			<Box flexDirection="column" flexGrow={1}>
@@ -244,10 +269,19 @@ export default function Convert({ options }: Props) {
 				{completed.map((result, idx) => {
 					if ('trx' in result) {
 						return (
-							<BorderBox borderBottom borderStyle="bold" key={idx} flexDirection="column">
+							<BorderBox
+								borderBottom
+								borderStyle="bold"
+								key={idx}
+								flexDirection="column"
+							>
 								<Text color="green">Trx: {result.trx as string}</Text>
 								{result.args && (
-									<BorderBox borderTop borderStyle="classic" borderColor="#3396FF">
+									<BorderBox
+										borderTop
+										borderStyle="classic"
+										borderColor="#3396FF"
+									>
 										<Text>
 											{JSON.stringify(result.args || ' ', stringifyBigInt)}
 										</Text>
@@ -259,10 +293,19 @@ export default function Convert({ options }: Props) {
 					}
 					if ('error' in result) {
 						return (
-							<BorderBox borderStyle="bold" borderBottom key={idx} flexDirection="column">
+							<BorderBox
+								borderStyle="bold"
+								borderBottom
+								key={idx}
+								flexDirection="column"
+							>
 								<Text color="red">Error: {result.error as string}</Text>
 								{result.args && (
-									<BorderBox borderTop borderStyle="classic" borderColor="#3396FF">
+									<BorderBox
+										borderTop
+										borderStyle="classic"
+										borderColor="#3396FF"
+									>
 										<Text>
 											{JSON.stringify(result.args || ' ', stringifyBigInt)}
 										</Text>
@@ -325,10 +368,9 @@ export default function Convert({ options }: Props) {
 										marginRight={1}
 										marginLeft={1}
 									>
-										<Text>
-											{msg.context.trades.length} Trades found
-										</Text>
-									</Box>) : null}
+										<Text>{msg.context.trades.length} Trades found</Text>
+									</Box>
+								) : null}
 							</Box>
 						</BorderBox>
 					);

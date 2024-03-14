@@ -1,4 +1,4 @@
-import { Address } from 'viem';
+import {Address} from 'viem';
 import {
 	Message,
 	GetBestTradeMessage,
@@ -29,9 +29,9 @@ interface TradeError {
 }
 
 interface State {
-	accruedInterest: { done: boolean; error?: string };
-	reducedReserves: { done: boolean };
-	releasedFunds: { done: boolean };
+	accruedInterest: {done: boolean; error?: string};
+	reducedReserves: {done: boolean};
+	releasedFunds: {done: boolean};
 	completed: (TradeSuccess | TradeError)[];
 	messages: Array<
 		| PotentialTradesMessage
@@ -42,9 +42,9 @@ interface State {
 }
 
 export const defaultState = {
-	accruedInterest: { done: false },
-	reducedReserves: { done: false },
-	releasedFunds: { done: false },
+	accruedInterest: {done: false},
+	reducedReserves: {done: false},
+	releasedFunds: {done: false},
 	trades: {},
 	completed: [],
 	messages: [],
@@ -60,15 +60,15 @@ export const reducer = (
 		case 'ExecuteTrade': {
 			return {
 				...state,
-				messages: [action, ...state.messages.slice(0, 4),],
+				messages: [action, ...state.messages.slice(0, 4)],
 			};
 		}
 		case 'Arbitrage': {
 			let prevState = state;
 			if (action.trx) {
-				prevState.completed.push({ trx: action.trx, args: action.context });
+				prevState.completed.push({trx: action.trx, args: action.context});
 			} else if (action.error) {
-				prevState.completed.push({ error: action.error, args: action.context });
+				prevState.completed.push({error: action.error, args: action.context});
 			}
 
 			return {
