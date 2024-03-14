@@ -14,10 +14,10 @@ import {
 import {
 	Options,
 	Title,
-	StaticElements,
 	BorderBox,
 } from '../components/index.js';
 import { reducer, defaultState } from '../state/convert.js';
+import FullScreenBox from '../components/fullScreenBox.js';
 
 const address = zod
 	.custom<Address>(val => {
@@ -213,37 +213,34 @@ export default function Convert({ options }: Props) {
 										tokenToReceiveFromConverter: t.assetOut.address,
 										tokenToSendToConverter: t.assetIn,
 										amount,
-										minIncome,
+										minIncome
 									},
 								});
-								await tokenConverter.arbitrage(
-									t.tokenConverter,
-									trade,
-									amount,
-									minIncome,
-								);
 							}
-						}
-					}),
-				);
-			} while (loop);
-		};
 
+							await tokenConverter.arbitrage(
+								t.tokenConverter,
+								trade,
+								amount,
+								minIncome,
+							);
+						}
+					}))
+			} while (loop);
+		}
 		convert().catch(e => {
 			setError(e.message);
 		});
 	}, []);
 
 	return (
-		<>
-			<StaticElements>
-				<Title />
-				{debug && <Options options={options} />}
-			</StaticElements>
+		<FullScreenBox flexDirection='column'>
+			<Title />
+			{debug && <Options options={options} />}
 			<Box flexDirection="column" flexGrow={1}>
-				{completed.length > 0 && <Text bold backgroundColor="#3396FF">
+				<Text bold backgroundColor="#3396FF">
 					Conversions
-				</Text>}
+				</Text>
 				{completed.map((result, idx) => {
 					if ('trx' in result) {
 						return (
@@ -291,19 +288,6 @@ export default function Convert({ options }: Props) {
 							borderColor="#3396FF"
 							borderTop
 						>
-							{msg.type === 'PotentialTrades' ? (
-								<Box
-									flexGrow={1}
-									flexDirection="column"
-									minWidth={60}
-									marginRight={1}
-									marginLeft={1}
-								>
-									<Text>
-										{JSON.stringify(msg.context.trades || ' ', stringifyBigInt)}
-									</Text>
-								</Box>) : null}
-
 							<Box
 								flexGrow={1}
 								flexDirection="column"
@@ -314,6 +298,11 @@ export default function Convert({ options }: Props) {
 								<Text bold>{msg.type}</Text>
 								{'blockNumber' in msg && msg.blockNumber !== undefined && (
 									<Text bold>Block Number {msg.blockNumber?.toString()}</Text>
+								)}
+								{'error' in msg && msg.error && (
+									<>
+										<Text color="red">{msg.error}</Text>
+									</>
 								)}
 								{'pancakeSwapTrade' in msg.context && (
 									<Text>
@@ -328,20 +317,24 @@ export default function Convert({ options }: Props) {
 										{JSON.stringify(msg.context || ' ', stringifyBigInt)}
 									</Text>
 								)}
-								{'error' in msg && msg.error && (
-									<>
-										<Text color="red">{msg.error}</Text>
-										<Text color="red">
-											{JSON.stringify(msg.context || ' ', stringifyBigInt)}
+								{msg.type === 'PotentialTrades' ? (
+									<Box
+										flexGrow={1}
+										flexDirection="column"
+										minWidth={60}
+										marginRight={1}
+										marginLeft={1}
+									>
+										<Text>
+											{msg.context.trades.length} Trades found
 										</Text>
-									</>
-								)}
+									</Box>) : null}
 							</Box>
 						</BorderBox>
 					);
 				})}
 			</Box>
 			{error ? <Text color="red">Error - {error}</Text> : null}
-		</>
+		</FullScreenBox>
 	);
 }
