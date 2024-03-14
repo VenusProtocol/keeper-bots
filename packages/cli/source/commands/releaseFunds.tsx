@@ -9,7 +9,6 @@ import {
 import {underlyingByComptroller} from '../constants/index.js';
 import {reducer, defaultState} from '../state/releaseFunds.js';
 import FullScreenBox from '../components/fullScreenBox.js';
-import {useFullScreen} from '../hooks/useFullScreen.js';
 
 export const options = zod.object({
 	simulate: zod
@@ -26,7 +25,6 @@ interface Props {
 
 function ReleaseFunds({options = {}}: Props) {
 	const [{releasedFunds}, dispatch] = useReducer(reducer, defaultState);
-	useFullScreen();
 	useEffect(() => {
 		const releaseFunds = async () => {
 			const tokenConverter = new TokenConverter({

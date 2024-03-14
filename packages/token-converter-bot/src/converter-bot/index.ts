@@ -1,5 +1,8 @@
 import "dotenv/config";
 
+import addresses from "../config/addresses";
+
 export * from "./TokenConverter";
 export * from "./queries/read";
-export { default as addresses, underlyingByComptroller } from "../config/addresses";
+
+export { addresses };
