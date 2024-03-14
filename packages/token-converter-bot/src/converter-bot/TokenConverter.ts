@@ -405,9 +405,7 @@ export class TokenConverter {
     this.sendMessage({ type: "ReduceReserves", error, trx });
   }
 
-  async checkForTrades(
-    tokenConverterConfigs: TokenConverterConfig[],
-  ) {
+  async checkForTrades(tokenConverterConfigs: TokenConverterConfig[]) {
     const { results, blockNumber } = await readTokenConvertersTokenBalances(
       tokenConverterConfigs,
       this.walletClient.account.address,
@@ -552,21 +550,27 @@ export class TokenConverter {
 
     let trx;
     let error;
-    let blockNumber
+    let blockNumber;
 
+    let simulation = "simulation: ";
     try {
       if (minIncome < 0n && !this.simulate) {
-        await this.checkAndRequestAllowance(trade.inputAmount.currency.address, this.walletClient.account.address, addresses.TokenConverterOperator, -minIncome)
+        await this.checkAndRequestAllowance(
+          trade.inputAmount.currency.address,
+          this.walletClient.account.address,
+          addresses.TokenConverterOperator,
+          -minIncome,
+        );
       }
 
       blockNumber = await publicClient.getBlockNumber();
-
       const gasEstimation = await this.publicClient.estimateContractGas({
         account: this.walletClient.account,
         ...convertTransaction,
       });
 
       if (!this.simulate) {
+        simulation = "Execution: ";
         trx = await this.walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
         ({ blockNumber } = await publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 }));
       }
@@ -575,10 +579,10 @@ export class TokenConverter {
         const revertError = e.walk(err => err instanceof ContractFunctionRevertedError);
         if (revertError instanceof ContractFunctionRevertedError) {
           // writeContract || simulateContract shapes
-          error = revertError.reason || revertError.shortMessage;
+          error = `${simulation}${revertError.reason || revertError.shortMessage}`;
         }
       } else {
-        error = (e as Error).message;
+        error = `${simulation}${(e as Error).message}`;
       }
     }
 
@@ -590,16 +594,11 @@ export class TokenConverter {
     let trade;
     let tradeAmount;
     try {
-      [trade, tradeAmount] = await this.getBestTrade(
-        tokenConverter,
-        assetOut,
-        assetIn,
-        amountOut,
-      );
+      [trade, tradeAmount] = await this.getBestTrade(tokenConverter, assetOut, assetIn, amountOut);
     } catch (e) {
-      error = e as Error;
+      error = (e as Error).message;
     } finally {
-      let tradeContext: Pick<GetBestTradeMessage['context'], 'tradeAmount' | 'pancakeSwapTrade'> = {};
+      let tradeContext: Pick<GetBestTradeMessage["context"], "tradeAmount" | "pancakeSwapTrade"> = {};
       if (trade && tradeAmount) {
         tradeContext = {
           tradeAmount: { amountOut: tradeAmount && tradeAmount[0], amountIn: tradeAmount && tradeAmount[1] },
@@ -612,13 +611,13 @@ export class TokenConverter {
               amount: trade.outputAmount.toFixed(trade.outputAmount.currency.decimals, { groupSeparator: "" }),
               token: trade.outputAmount.currency.address,
             },
-          }
-        }
+          },
+        };
       }
 
       this.sendMessage({
         type: "GetBestTrade",
-        error: error?.message,
+        error,
         context: {
           ...tradeContext,
           converter: tokenConverter,
@@ -636,8 +635,8 @@ export class TokenConverter {
       return {
         trade,
         amount: tradeAmount[0],
-        minIncome
-      }
+        minIncome,
+      };
     }
   }
 }
