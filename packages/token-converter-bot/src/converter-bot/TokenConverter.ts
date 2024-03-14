@@ -98,7 +98,6 @@ export interface AccrueInterestMessage {
   context: undefined;
 }
 
-
 export type Message =
   | ReduceReservesMessage
   | ReleaseFundsMessage
@@ -212,17 +211,6 @@ export class TokenConverter {
     }
   }
 
-  getPriceImpact(trade: SmartRouterTrade<TradeType.EXACT_OUTPUT>) {
-    let spotOutputAmount = CurrencyAmount.fromRawAmount(trade.outputAmount.currency.wrapped, 0);
-    for (const route of trade.routes) {
-      const { inputAmount } = route;
-      const midPrice = SmartRouter.getMidPrice(route);
-      spotOutputAmount = spotOutputAmount.add(midPrice.quote(inputAmount.wrapped));
-    }
-    const priceImpact = spotOutputAmount.subtract(trade.outputAmount.wrapped).divide(spotOutputAmount);
-    return new Percent(priceImpact.numerator, priceImpact.denominator);
-  }
-
   /**
    * Create a trade that will provide required amount in for exact output
    * @param tokenConverter Token converter to use
@@ -256,6 +244,7 @@ export class TokenConverter {
     });
     let trade;
     let error;
+
     try {
       trade = await SmartRouter.getBestTrade(
         CurrencyAmount.fromRawAmount(swapToToken, updatedAmountIn[1]),
@@ -280,16 +269,17 @@ export class TokenConverter {
     if (error) {
       throw new Error(error);
     }
-    const priceImpact = this.getPriceImpact(trade)
-    if (priceImpact.greaterThan(new Percent(4n, 1000n))) {
+
+    const priceImpact = SmartRouter.getPriceImpact(trade);
+    if (priceImpact.greaterThan(new Percent(1n, 1n))) {
       this.sendMessage({
         type: "GetBestTrade",
-        error: 'High price impact',
+        error: "High price impact",
         context: {
           converter: tokenConverter,
           tokenToReceiveFromConverter: swapFrom,
           tokenToSendToConverter: swapTo,
-          priceImpact: priceImpact.toFixed()
+          priceImpact: priceImpact.toFixed(),
         },
       });
       return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[0] * 75n) / 100n);
