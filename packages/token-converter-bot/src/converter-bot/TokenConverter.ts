@@ -437,7 +437,7 @@ export class TokenConverter {
             address: addresses.ProtocolShareReserve as Address,
             abi: protocolShareReserveAbi,
             functionName: "releaseFunds",
-            args,
+            args: args as [`0x${string}`, readonly `0x${string}`[]],
           });
         }
       } catch (e) {
