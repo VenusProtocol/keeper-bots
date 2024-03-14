@@ -2,7 +2,6 @@ query TokenConverter($id: [ID!]) {
   tokenConverters(where: { id_in: $id }) {
     id
     destinationAddress
-    baseAsset
     configs(where: { or: [{ access: ALL }, { access: ONLY_FOR_USERS }] }) {
       id
       tokenAddressIn

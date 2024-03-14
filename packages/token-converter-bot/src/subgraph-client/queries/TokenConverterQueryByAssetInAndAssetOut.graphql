@@ -2,7 +2,6 @@ query TokenConverterByAssetInAndAssetOut($tokenAddressIn: Bytes!, $tokenAddressO
   tokenConverters(where: { paused: false }) {
     id
     destinationAddress
-    baseAsset
     configs(
       where: {
         and: [
