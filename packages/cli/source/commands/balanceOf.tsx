@@ -45,6 +45,9 @@ interface Props {
 	options: zod.infer<typeof options>;
 }
 
+/**
+ * Helper command to easily query balance at a specific block
+ */
 export default function BalanceOf({ options }: Props) {
 	const { tokenAddress, contractAddress, blockNumber } = options;
 	const [balance, setBalance] = useState<bigint>();
