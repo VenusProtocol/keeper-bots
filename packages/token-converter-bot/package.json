@@ -23,6 +23,7 @@
   "files": [
     "dist"
   ],
+  "typings": "./index.d.ts",
   "exports": {
     ".": "./dist/converter-bot/index.js"
   },

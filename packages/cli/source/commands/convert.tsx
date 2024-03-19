@@ -1,16 +1,16 @@
-import {useEffect, useState, useReducer} from 'react';
-import {option} from 'pastel';
-import {Box, Spacer, Text} from 'ink';
+import { useEffect, useState, useReducer } from 'react';
+import { option } from 'pastel';
+import { Box, Spacer, Text } from 'ink';
 import zod from 'zod';
-import {Address, getAddress, parseUnits} from 'viem';
-import {TokenConverter} from '@venusprotocol/token-converter-bot';
+import { Address, getAddress, parseUnits } from 'viem';
+import { TokenConverter } from '@venusprotocol/token-converter-bot';
 import {
 	stringifyBigInt,
 	getConverterConfigs,
 	getConverterConfigId,
 } from '../utils/index.js';
-import {Options, Title, BorderBox} from '../components/index.js';
-import {reducer, defaultState} from '../state/convert.js';
+import { Options, Title, BorderBox } from '../components/index.js';
+import { reducer, defaultState } from '../state/convert.js';
 import FullScreenBox from '../components/fullScreenBox.js';
 
 const address = zod
@@ -80,6 +80,15 @@ export const options = zod.object({
 		)
 		.optional()
 		.default(false),
+	releaseFunds: zod
+		.boolean()
+		.describe(option({
+			description: 'Release funds',
+			alias: 'rf',
+		}),
+		)
+		.optional()
+		.default(false),
 	minTradeUsd: zod
 		.number()
 		.describe(
@@ -110,29 +119,44 @@ export const options = zod.object({
 		)
 		.optional()
 		.default(false),
+	minIncomeBP: zod
+		.number()
+		.describe(
+			option({
+				description: 'Min income in basis points as percentage of amount',
+				alias: 'i',
+			}),
+		)
+		.optional()
+		.default(30),
 });
 
 interface Props {
 	options: zod.infer<typeof options>;
 }
 
-export default function Convert({options}: Props) {
+/**
+ * Command to search for and execute token conversions based on parameters
+ */
+export default function Convert({ options }: Props) {
 	const {
 		minTradeUsd,
 		maxTradeUsd,
 		simulate,
+		releaseFunds,
 		assetIn,
 		assetOut,
 		converter,
 		profitable,
 		loop,
 		debug,
+		minIncomeBP,
 	} = options;
 
-	const [{completed, messages}, dispatch] = useReducer(reducer, defaultState);
+	const [{ completed, messages, releasedFunds }, dispatch] = useReducer(reducer, defaultState);
 	const [error, setError] = useState('');
 	const [_tradeUsdValues, setTradeUsdValues] = useState<
-		Record<string, {underlyingPriceUsd: string; underlyingUsdValue: string}>
+		Record<string, { underlyingPriceUsd: string; underlyingUsdValue: string }>
 	>({});
 
 	useEffect(() => {
@@ -151,12 +175,16 @@ export default function Convert({options}: Props) {
 			do {
 				const potentialTrades = await tokenConverter.checkForTrades(
 					tokenConverterConfigs,
+					!!releaseFunds,
 				);
 
 				if (potentialTrades.length === 0) {
 					setError('No Potential Trades Found');
 				}
-
+				if (releaseFunds) {
+					// @todo check if we need to release funds or if there are already enough funds to make our trade
+					await tokenConverter.releaseFundsForTrades(potentialTrades);
+				}
 				await Promise.allSettled(
 					potentialTrades.map(async (t: any) => {
 						let amountOut = t.assetOut.balance;
@@ -165,7 +193,7 @@ export default function Convert({options}: Props) {
 							((t.assetOutVTokens.isolated &&
 								t.assetOutVTokens.isolated[0] &&
 								t.assetOutVTokens.isolated[0][1]) as Address);
-						const {underlyingPriceUsd, underlyingUsdValue, underlyingDecimals} =
+						const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } =
 							await tokenConverter.getUsdValue(
 								t.assetOut.address,
 								vTokenAddress,
@@ -178,7 +206,7 @@ export default function Convert({options}: Props) {
 								converter: t.tokenConverter,
 								tokenToReceiveFromConverter: t.assetOut.address,
 								tokenToSendToConverter: t.assetIn,
-							})]: {underlyingPriceUsd, underlyingUsdValue},
+							})]: { underlyingPriceUsd, underlyingUsdValue },
 						}));
 
 						if (+underlyingUsdValue > minTradeUsd) {
@@ -194,14 +222,13 @@ export default function Convert({options}: Props) {
 								t.assetIn,
 								amountOut,
 							);
-							const {trade, amount, minIncome} = arbitrageArgs || {
+							const { trade, amount, minIncome } = arbitrageArgs || {
 								trade: undefined,
 								amount: 0n,
 								minIncome: 0n,
 							};
-
-							const maxMinIncome = ((amount * 1003n) / 1000n - amount) * -1n;
-
+							
+							const maxMinIncome = (((amount * BigInt(10000 + minIncomeBP)) / 10000n) - amount) * -1n;
 							if (t.accountBalanceAssetOut < minIncome * -1n) {
 								dispatch({
 									type: 'ExecuteTrade',
@@ -212,9 +239,10 @@ export default function Convert({options}: Props) {
 										tokenToSendToConverter: t.assetIn,
 										amount,
 										minIncome,
+										percentage: Number(minIncome * 10000000n / amount) / 10000000
 									},
 								});
-							} else if (minIncome < maxMinIncome) {
+							} else if (minIncome < 1 && minIncome * -1n > maxMinIncome * -1n) {
 								dispatch({
 									type: 'ExecuteTrade',
 									error: 'Min income too high',
@@ -224,6 +252,7 @@ export default function Convert({options}: Props) {
 										tokenToSendToConverter: t.assetIn,
 										amount,
 										minIncome,
+										percentage: Number(minIncome * 10000000n / amount) / 10000000
 									},
 								});
 							} else if (
@@ -238,16 +267,16 @@ export default function Convert({options}: Props) {
 										tokenToSendToConverter: t.assetIn,
 										amount,
 										minIncome,
+										percentage: Number(minIncome * 10000000n / amount) / 10000000
 									},
 								});
+								await tokenConverter.arbitrage(
+									t.tokenConverter,
+									trade,
+									amount,
+									minIncome,
+								);
 							}
-
-							await tokenConverter.arbitrage(
-								t.tokenConverter,
-								trade,
-								amount,
-								minIncome,
-							);
 						}
 					}),
 				);
@@ -262,6 +291,28 @@ export default function Convert({options}: Props) {
 		<FullScreenBox flexDirection="column">
 			<Title />
 			{debug && <Options options={options} />}
+			{releaseFunds && (
+				<Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
+					<Box
+						flexDirection="row"
+						marginLeft={1}
+						justifyContent="space-between"
+					>
+						<Box flexDirection="column">
+							<Box flexDirection="row">
+								<Text bold color="white">
+									Release Funds Steps
+								</Text>
+							</Box>
+							<Box flexDirection="row">
+								<Text color="green">{releasedFunds.done ? '✔' : ' '}</Text>
+								<Box marginRight={1} />
+								<Text>Release Funds</Text>
+							</Box>
+						</Box>
+					</Box>
+				</Box>
+			)}
 			<Box flexDirection="column" flexGrow={1}>
 				<Text bold backgroundColor="#3396FF">
 					Conversions
@@ -377,6 +428,6 @@ export default function Convert({options}: Props) {
 				})}
 			</Box>
 			{error ? <Text color="red">Error - {error}</Text> : null}
-		</FullScreenBox>
+			</FullScreenBox>
 	);
 }

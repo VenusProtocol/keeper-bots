@@ -17,7 +17,7 @@ export const getWalletClient = (): WalletClient<HttpTransport, typeof chains[SUP
   const chainName = config.network;
   return createWalletClient({
     chain: chains[chainName],
-    transport: http(process.env[`LIVE_NETWORK_${chainName}`]),
+    transport: http(config.rpcUrl),
     account: readPrivateKeyFromEnv(chainName),
   });
 };

@@ -53,6 +53,7 @@ export interface ReduceReservesMessage extends DefaultMessage {
 
 export interface ReleaseFundsMessage extends DefaultMessage {
   type: "ReleaseFunds";
+  context: [Address, readonly Address[]];
 }
 
 export interface ArbitrageMessage extends DefaultMessage {
@@ -405,10 +406,11 @@ export class TokenConverter {
     this.sendMessage({ type: "ReduceReserves", error, trx });
   }
 
-  async checkForTrades(tokenConverterConfigs: TokenConverterConfig[]) {
+  async checkForTrades(tokenConverterConfigs: TokenConverterConfig[], releaseFunds: boolean) {
     const { results, blockNumber } = await readTokenConvertersTokenBalances(
       tokenConverterConfigs,
       this.walletClient.account.address,
+      releaseFunds,
     );
     const trades = results.filter(v => v.assetOut.balance > 0);
     this.sendMessage({ type: "PotentialTrades", context: { trades }, blockNumber });
@@ -443,7 +445,12 @@ export class TokenConverter {
       } catch (e) {
         error = (e as Error).message;
       }
-      this.sendMessage({ type: "ReleaseFunds", trx, error });
+      this.sendMessage({
+        type: "ReleaseFunds",
+        trx,
+        error,
+        context: args as [`0x${string}`, readonly `0x${string}`[]],
+      });
     }
   }
 

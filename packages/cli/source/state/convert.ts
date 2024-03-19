@@ -15,6 +15,7 @@ interface ExecuteTradeMessage {
 		tokenToSendToConverter: Address;
 		amount: bigint;
 		minIncome: bigint;
+		percentage: number;
 	};
 }
 
@@ -29,8 +30,6 @@ interface TradeError {
 }
 
 interface State {
-	accruedInterest: {done: boolean; error?: string};
-	reducedReserves: {done: boolean};
 	releasedFunds: {done: boolean};
 	completed: (TradeSuccess | TradeError)[];
 	messages: Array<
@@ -42,8 +41,6 @@ interface State {
 }
 
 export const defaultState = {
-	accruedInterest: {done: false},
-	reducedReserves: {done: false},
 	releasedFunds: {done: false},
 	trades: {},
 	completed: [],

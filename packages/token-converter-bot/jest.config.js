@@ -1,15 +1,12 @@
-require('dotenv').config({ path: '.env.test' })
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+require("dotenv").config({ path: ".env.test" });
 
 module.exports = {
-  roots: [
-    '<rootDir>/src'
-  ],
+  roots: ["<rootDir>/src"],
   transform: {
-    '^.+\\.tsx?$': 'ts-jest'
+    "^.+\\.tsx?$": "ts-jest",
   },
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  coveragePathIgnorePatterns: [
-    '/node_modules/'
-  ],
+  preset: "ts-jest",
+  testEnvironment: "node",
+  coveragePathIgnorePatterns: ["/node_modules/"],
 };
