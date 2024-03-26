@@ -227,7 +227,7 @@ export default function Convert({ options }: Props) {
 								amount: 0n,
 								minIncome: 0n,
 							};
-							
+
 							const maxMinIncome = (((amount * BigInt(10000 + minIncomeBP)) / 10000n) - amount) * -1n;
 							if (t.accountBalanceAssetOut < minIncome * -1n) {
 								dispatch({
@@ -239,7 +239,8 @@ export default function Convert({ options }: Props) {
 										tokenToSendToConverter: t.assetIn,
 										amount,
 										minIncome,
-										percentage: Number(minIncome * 10000000n / amount) / 10000000
+										percentage: Number(minIncome * 10000000n / amount) / 10000000,
+										maxMinIncome
 									},
 								});
 							} else if (minIncome < 1 && minIncome * -1n > maxMinIncome * -1n) {
@@ -252,7 +253,8 @@ export default function Convert({ options }: Props) {
 										tokenToSendToConverter: t.assetIn,
 										amount,
 										minIncome,
-										percentage: Number(minIncome * 10000000n / amount) / 10000000
+										percentage: Number(minIncome * 10000000n / amount) / 10000000,
+										maxMinIncome
 									},
 								});
 							} else if (
@@ -267,7 +269,8 @@ export default function Convert({ options }: Props) {
 										tokenToSendToConverter: t.assetIn,
 										amount,
 										minIncome,
-										percentage: Number(minIncome * 10000000n / amount) / 10000000
+										percentage: Number(minIncome * 10000000n / amount) / 10000000,
+										maxMinIncome
 									},
 								});
 								await tokenConverter.arbitrage(
