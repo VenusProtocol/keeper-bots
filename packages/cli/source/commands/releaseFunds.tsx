@@ -87,7 +87,7 @@ const reduceToTokensWithBalances = async (tokenConverter: TokenConverter, underl
 				vToken!.core || vToken!.isolated![0]![1],
 				result.result as bigint,
 			);
-			if (+underlyingUsdValue < 500) {
+			if (+underlyingUsdValue < 100) {
 				tokenSet.delete(token)
 			}
 		} else {
