@@ -1,20 +1,20 @@
-import { Box, Text } from 'ink';
-import { Address, erc20Abi } from 'viem';
-import { option } from 'pastel';
-import { useEffect, useReducer } from 'react';
-import zod from 'zod';
+import { Box, Text } from "ink";
+import { Address, erc20Abi } from "viem";
+import { option } from "pastel";
+import { useEffect, useReducer } from "react";
+import zod from "zod";
 import {
 	TokenConverter,
 	readCoreMarkets,
 	readIsolatedMarkets,
 	underlyingToVTokens,
 	underlyingByComptroller,
-	addresses
-} from '@venusprotocol/token-converter-bot';
-import publicClient from '../queries/publicClient.js';
-import { Options, BorderBox } from '../components/index.js';
-import { reducer, defaultState } from '../state/releaseFunds.js';
-import FullScreenBox from '../components/fullScreenBox.js';
+	addresses,
+} from "@venusprotocol/token-converter-bot";
+import publicClient from "../queries/publicClient.js";
+import { Options, BorderBox } from "../components/index.js";
+import { reducer, defaultState } from "../state/releaseFunds.js";
+import FullScreenBox from "../components/fullScreenBox.js";
 
 export const options = zod.object({
 	simulate: zod
@@ -22,60 +22,82 @@ export const options = zod.object({
 		.default(false)
 		.describe(
 			option({
-				description: 'Simulate transactions',
-				alias: 's',
-			}))
+				description: "Simulate transactions",
+				alias: "s",
+			}),
+		)
 		.optional(),
-	verbose: zod.boolean().default(false).describe(option({
-		description: 'Verbose logging',
-		alias: 'v',
-	})).optional(),
-	accrueInterest: zod.boolean().default(false).describe(option({
-		description: 'Accrue Interest',
-		alias: 'a',
-	})).optional(),
-	reduceReserves: zod.boolean().default(false).describe(option({
-		description: 'Reduce BNB Reserves',
-		alias: 'r',
-	})).optional(),
+	verbose: zod
+		.boolean()
+		.default(false)
+		.describe(
+			option({
+				description: "Verbose logging",
+				alias: "v",
+			}),
+		)
+		.optional(),
+	accrueInterest: zod
+		.boolean()
+		.default(false)
+		.describe(
+			option({
+				description: "Accrue Interest",
+				alias: "a",
+			}),
+		)
+		.optional(),
+	reduceReserves: zod
+		.boolean()
+		.default(false)
+		.describe(
+			option({
+				description: "Reduce BNB Reserves",
+				alias: "r",
+			}),
+		)
+		.optional(),
 	debug: zod
 		.boolean()
 		.describe(
 			option({
-				description: 'Add debug logging',
-				alias: 'd',
+				description: "Add debug logging",
+				alias: "d",
 			}),
 		)
 		.default(false)
-		.optional()
+		.optional(),
 });
 
 interface Props {
 	options: zod.infer<typeof options>;
 }
 
-const reduceToTokensWithBalances = async (tokenConverter: TokenConverter, underlyingByComptroller: Record<Address, readonly Address[]>) => {
-	const underlyingByComptrollerEntries = Object.entries(underlyingByComptroller)
+const reduceToTokensWithBalances = async (
+	tokenConverter: TokenConverter,
+	underlyingByComptroller: Record<Address, readonly Address[]>,
+) => {
+	const underlyingByComptrollerEntries = Object.entries(underlyingByComptroller);
 	let tokenSet = new Set([underlyingByComptrollerEntries[0]![1][0]]);
 
 	for (const [_comptroller, tokens] of underlyingByComptrollerEntries) {
-		tokenSet = new Set([...Array.from(tokenSet), ...tokens])
+		tokenSet = new Set([...Array.from(tokenSet), ...tokens]);
 	}
 
-	const withBalances: Record<Address, readonly Address[]> = {}
+	const withBalances: Record<Address, readonly Address[]> = {};
 	const tokenSetArray = Array.from(tokenSet);
 
 	const response = await publicClient.multicall({
 		contracts: [
-			...tokenSetArray.map((v) => {
+			...tokenSetArray.map(v => {
 				return {
 					address: v as Address,
 					abi: erc20Abi,
 					functionName: "balanceOf",
 					args: [addresses.ProtocolShareReserve],
-				}
-			})
-		]
+				};
+			}),
+		],
 	});
 
 	for (const [idx, result] of response.entries()) {
@@ -88,29 +110,29 @@ const reduceToTokensWithBalances = async (tokenConverter: TokenConverter, underl
 				result.result as bigint,
 			);
 			if (+underlyingUsdValue < 100) {
-				tokenSet.delete(token)
+				tokenSet.delete(token);
 			}
 		} else {
-			tokenSet.delete(token)
+			tokenSet.delete(token);
 		}
 
-		for (const [comptroller,] of underlyingByComptrollerEntries) {
-			const haveBalance = underlyingByComptroller[comptroller as Address]!.filter((t) => tokenSet.has(t));
+		for (const [comptroller] of underlyingByComptrollerEntries) {
+			const haveBalance = underlyingByComptroller[comptroller as Address]!.filter(t => tokenSet.has(t));
 			if (haveBalance.length > 0) {
-				withBalances[comptroller as Address] = haveBalance
+				withBalances[comptroller as Address] = haveBalance;
 			}
 		}
 	}
 
-	return withBalances
-}
+	return withBalances;
+};
 
 /**
- * 
+ *
  * Command to release funds
  */
 function ReleaseFunds({ options = {} }: Props) {
-	const { accrueInterest, reduceReserves, debug } = options
+	const { accrueInterest, reduceReserves, debug } = options;
 	const [{ releasedFunds }, dispatch] = useReducer(reducer, defaultState);
 	useEffect(() => {
 		const releaseFunds = async () => {
@@ -137,13 +159,7 @@ function ReleaseFunds({ options = {} }: Props) {
 	return (
 		<FullScreenBox flexDirection="column">
 			<Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
-				<BorderBox
-					marginBottom={1}
-					flexDirection="row"
-					borderBottom
-					borderStyle="round"
-					borderColor="#3396FF"
-				>
+				<BorderBox marginBottom={1} flexDirection="row" borderBottom borderStyle="round" borderColor="#3396FF">
 					<Box marginRight={1}>
 						<Text bold>Release Funds</Text>
 					</Box>
@@ -161,11 +177,10 @@ function ReleaseFunds({ options = {} }: Props) {
 							{t.error && <Text color="red">{t.error}</Text>}
 							<Text>{JSON.stringify(t.context)}</Text>
 						</Box>
-					)
-					)}
+					))}
 				</Box>
 			</Box>
-			</FullScreenBox>
+		</FullScreenBox>
 	);
 }
 

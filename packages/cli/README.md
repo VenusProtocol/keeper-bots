@@ -8,7 +8,7 @@ $ yarn install --global @venusprotocol/cli
 
 ## Venus CLI
 
-The Venus cli is a easy way to run tasks and interact with the venus protocol from the command line.
+The Venus CLI is a easy way to run tasks and interact with the Venus Protocol from the command line.
 
 ### Token Converter
 

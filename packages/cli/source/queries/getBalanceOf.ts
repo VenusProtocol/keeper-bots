@@ -1,8 +1,5 @@
-import {
-	Address,
-	erc20Abi,
-} from 'viem';
-import publicClient from './publicClient.js'
+import { Address, erc20Abi } from "viem";
+import publicClient from "./publicClient.js";
 
 const useBalanceOf = async ({
 	tokenAddress,
@@ -16,7 +13,7 @@ const useBalanceOf = async ({
 	const resp = publicClient.readContract({
 		address: tokenAddress,
 		abi: erc20Abi,
-		functionName: 'balanceOf',
+		functionName: "balanceOf",
 		args: [contractAddress],
 		blockNumber: blockNumber ? BigInt(blockNumber) : undefined,
 	});

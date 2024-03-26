@@ -1,17 +1,13 @@
-import { useEffect, useState, useReducer } from 'react';
-import { option } from 'pastel';
-import { Box, Spacer, Text } from 'ink';
-import zod from 'zod';
-import { Address, getAddress, parseUnits } from 'viem';
-import { TokenConverter } from '@venusprotocol/token-converter-bot';
-import {
-	stringifyBigInt,
-	getConverterConfigs,
-	getConverterConfigId,
-} from '../utils/index.js';
-import { Options, Title, BorderBox } from '../components/index.js';
-import { reducer, defaultState } from '../state/convert.js';
-import FullScreenBox from '../components/fullScreenBox.js';
+import { useEffect, useState, useReducer } from "react";
+import { option } from "pastel";
+import { Box, Spacer, Text } from "ink";
+import zod from "zod";
+import { Address, getAddress, parseUnits } from "viem";
+import { TokenConverter } from "@venusprotocol/token-converter-bot";
+import { stringifyBigInt, getConverterConfigs, getConverterConfigId } from "../utils/index.js";
+import { Options, Title, BorderBox } from "../components/index.js";
+import { reducer, defaultState } from "../state/convert.js";
+import FullScreenBox from "../components/fullScreenBox.js";
 
 const address = zod
 	.custom<Address>(val => {
@@ -29,8 +25,8 @@ export const options = zod.object({
 		.array(address)
 		.describe(
 			option({
-				description: 'TokenConverter',
-				alias: 'c',
+				description: "TokenConverter",
+				alias: "c",
 			}),
 		)
 		.optional(),
@@ -38,8 +34,8 @@ export const options = zod.object({
 		.boolean()
 		.describe(
 			option({
-				description: 'Require trade be profitable',
-				alias: 'p',
+				description: "Require trade be profitable",
+				alias: "p",
 			}),
 		)
 		.optional()
@@ -47,16 +43,16 @@ export const options = zod.object({
 	assetIn: address
 		.describe(
 			option({
-				description: 'Asset In',
-				alias: 'in',
+				description: "Asset In",
+				alias: "in",
 			}),
 		)
 		.optional(),
 	assetOut: address
 		.describe(
 			option({
-				description: 'Asset Out',
-				alias: 'out',
+				description: "Asset Out",
+				alias: "out",
 			}),
 		)
 		.optional(),
@@ -64,8 +60,8 @@ export const options = zod.object({
 		.boolean()
 		.describe(
 			option({
-				description: 'Simulate transactions',
-				alias: 's',
+				description: "Simulate transactions",
+				alias: "s",
 			}),
 		)
 		.optional()
@@ -74,18 +70,19 @@ export const options = zod.object({
 		.boolean()
 		.describe(
 			option({
-				description: 'Add debug logging',
-				alias: 'd',
+				description: "Add debug logging",
+				alias: "d",
 			}),
 		)
 		.optional()
 		.default(false),
 	releaseFunds: zod
 		.boolean()
-		.describe(option({
-			description: 'Release funds',
-			alias: 'rf',
-		}),
+		.describe(
+			option({
+				description: "Release funds",
+				alias: "rf",
+			}),
 		)
 		.optional()
 		.default(false),
@@ -93,8 +90,8 @@ export const options = zod.object({
 		.number()
 		.describe(
 			option({
-				description: 'Minimum value of tokens to try and convert',
-				alias: 'min',
+				description: "Minimum value of tokens to try and convert",
+				alias: "min",
 			}),
 		)
 		.optional()
@@ -103,8 +100,8 @@ export const options = zod.object({
 		.number()
 		.describe(
 			option({
-				description: 'Maximum value of tokens to try and convert',
-				alias: 'max',
+				description: "Maximum value of tokens to try and convert",
+				alias: "max",
 			}),
 		)
 		.optional()
@@ -113,8 +110,8 @@ export const options = zod.object({
 		.boolean()
 		.describe(
 			option({
-				description: 'Loop',
-				alias: 'l',
+				description: "Loop",
+				alias: "l",
 			}),
 		)
 		.optional()
@@ -123,8 +120,8 @@ export const options = zod.object({
 		.number()
 		.describe(
 			option({
-				description: 'Min income in basis points as percentage of amount',
-				alias: 'i',
+				description: "Min income in basis points as percentage of amount",
+				alias: "i",
 			}),
 		)
 		.optional()
@@ -154,7 +151,7 @@ export default function Convert({ options }: Props) {
 	} = options;
 
 	const [{ completed, messages, releasedFunds }, dispatch] = useReducer(reducer, defaultState);
-	const [error, setError] = useState('');
+	const [error, setError] = useState("");
 	const [_tradeUsdValues, setTradeUsdValues] = useState<
 		Record<string, { underlyingPriceUsd: string; underlyingUsdValue: string }>
 	>({});
@@ -173,13 +170,10 @@ export default function Convert({ options }: Props) {
 			});
 
 			do {
-				const potentialTrades = await tokenConverter.checkForTrades(
-					tokenConverterConfigs,
-					!!releaseFunds,
-				);
+				const potentialTrades = await tokenConverter.checkForTrades(tokenConverterConfigs, !!releaseFunds);
 
 				if (potentialTrades.length === 0) {
-					setError('No Potential Trades Found');
+					setError("No Potential Trades Found");
 				}
 				if (releaseFunds) {
 					// @todo check if we need to release funds or if there are already enough funds to make our trade
@@ -193,12 +187,11 @@ export default function Convert({ options }: Props) {
 							((t.assetOutVTokens.isolated &&
 								t.assetOutVTokens.isolated[0] &&
 								t.assetOutVTokens.isolated[0][1]) as Address);
-						const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } =
-							await tokenConverter.getUsdValue(
-								t.assetOut.address,
-								vTokenAddress,
-								amountOut,
-							);
+						const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(
+							t.assetOut.address,
+							vTokenAddress,
+							amountOut,
+						);
 
 						setTradeUsdValues(prevState => ({
 							...prevState,
@@ -211,10 +204,7 @@ export default function Convert({ options }: Props) {
 
 						if (+underlyingUsdValue > minTradeUsd) {
 							if (+underlyingUsdValue > maxTradeUsd) {
-								amountOut = parseUnits(
-									(maxTradeUsd / +underlyingPriceUsd.toString()).toString(),
-									underlyingDecimals,
-								);
+								amountOut = parseUnits((maxTradeUsd / +underlyingPriceUsd.toString()).toString(), underlyingDecimals);
 							}
 							const arbitrageArgs = await tokenConverter.prepareTrade(
 								t.tokenConverter,
@@ -228,57 +218,49 @@ export default function Convert({ options }: Props) {
 								minIncome: 0n,
 							};
 
-							const maxMinIncome = (((amount * BigInt(10000 + minIncomeBP)) / 10000n) - amount) * -1n;
+							const maxMinIncome = ((amount * BigInt(10000 + minIncomeBP)) / 10000n - amount) * -1n;
 							if (t.accountBalanceAssetOut < minIncome * -1n) {
 								dispatch({
-									type: 'ExecuteTrade',
-									error: 'Insufficient wallet balance to pay min income',
+									type: "ExecuteTrade",
+									error: "Insufficient wallet balance to pay min income",
 									context: {
 										converter: t.tokenConverter,
 										tokenToReceiveFromConverter: t.assetOut.address,
 										tokenToSendToConverter: t.assetIn,
 										amount,
 										minIncome,
-										percentage: Number(minIncome * 10000000n / amount) / 10000000,
-										maxMinIncome
+										percentage: Number((minIncome * 10000000n) / amount) / 10000000,
+										maxMinIncome,
 									},
 								});
 							} else if (minIncome < 1 && minIncome * -1n > maxMinIncome * -1n) {
 								dispatch({
-									type: 'ExecuteTrade',
-									error: 'Min income too high',
+									type: "ExecuteTrade",
+									error: "Min income too high",
 									context: {
 										converter: t.tokenConverter,
 										tokenToReceiveFromConverter: t.assetOut.address,
 										tokenToSendToConverter: t.assetIn,
 										amount,
 										minIncome,
-										percentage: Number(minIncome * 10000000n / amount) / 10000000,
-										maxMinIncome
+										percentage: Number((minIncome * 10000000n) / amount) / 10000000,
+										maxMinIncome,
 									},
 								});
-							} else if (
-								trade &&
-								((profitable && minIncome > 0n) || !profitable)
-							) {
+							} else if (trade && ((profitable && minIncome > 0n) || !profitable)) {
 								dispatch({
-									type: 'ExecuteTrade',
+									type: "ExecuteTrade",
 									context: {
 										converter: t.tokenConverter,
 										tokenToReceiveFromConverter: t.assetOut.address,
 										tokenToSendToConverter: t.assetIn,
 										amount,
 										minIncome,
-										percentage: Number(minIncome * 10000000n / amount) / 10000000,
-										maxMinIncome
+										percentage: Number((minIncome * 10000000n) / amount) / 10000000,
+										maxMinIncome,
 									},
 								});
-								await tokenConverter.arbitrage(
-									t.tokenConverter,
-									trade,
-									amount,
-									minIncome,
-								);
+								await tokenConverter.arbitrage(t.tokenConverter, trade, amount, minIncome);
 							}
 						}
 					}),
@@ -296,11 +278,7 @@ export default function Convert({ options }: Props) {
 			{debug && <Options options={options} />}
 			{releaseFunds && (
 				<Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
-					<Box
-						flexDirection="row"
-						marginLeft={1}
-						justifyContent="space-between"
-					>
+					<Box flexDirection="row" marginLeft={1} justifyContent="space-between">
 						<Box flexDirection="column">
 							<Box flexDirection="row">
 								<Text bold color="white">
@@ -308,7 +286,7 @@ export default function Convert({ options }: Props) {
 								</Text>
 							</Box>
 							<Box flexDirection="row">
-								<Text color="green">{releasedFunds.done ? '✔' : ' '}</Text>
+								<Text color="green">{releasedFunds.done ? "✔" : " "}</Text>
 								<Box marginRight={1} />
 								<Text>Release Funds</Text>
 							</Box>
@@ -321,48 +299,26 @@ export default function Convert({ options }: Props) {
 					Conversions
 				</Text>
 				{completed.map((result, idx) => {
-					if ('trx' in result) {
+					if ("trx" in result) {
 						return (
-							<BorderBox
-								borderBottom
-								borderStyle="bold"
-								key={idx}
-								flexDirection="column"
-							>
+							<BorderBox borderBottom borderStyle="bold" key={idx} flexDirection="column">
 								<Text color="green">Trx: {result.trx as string}</Text>
 								{result.args && (
-									<BorderBox
-										borderTop
-										borderStyle="classic"
-										borderColor="#3396FF"
-									>
-										<Text>
-											{JSON.stringify(result.args || ' ', stringifyBigInt)}
-										</Text>
+									<BorderBox borderTop borderStyle="classic" borderColor="#3396FF">
+										<Text>{JSON.stringify(result.args || " ", stringifyBigInt)}</Text>
 									</BorderBox>
 								)}
 								<Spacer />
 							</BorderBox>
 						);
 					}
-					if ('error' in result) {
+					if ("error" in result) {
 						return (
-							<BorderBox
-								borderStyle="bold"
-								borderBottom
-								key={idx}
-								flexDirection="column"
-							>
+							<BorderBox borderStyle="bold" borderBottom key={idx} flexDirection="column">
 								<Text color="red">Error: {result.error as string}</Text>
 								{result.args && (
-									<BorderBox
-										borderTop
-										borderStyle="classic"
-										borderColor="#3396FF"
-									>
-										<Text>
-											{JSON.stringify(result.args || ' ', stringifyBigInt)}
-										</Text>
+									<BorderBox borderTop borderStyle="classic" borderColor="#3396FF">
+										<Text>{JSON.stringify(result.args || " ", stringifyBigInt)}</Text>
 									</BorderBox>
 								)}
 							</BorderBox>
@@ -373,10 +329,7 @@ export default function Convert({ options }: Props) {
 				<Spacer />
 				<Text bold>Logs</Text>
 				{messages.map((msg, idx) => {
-					const id =
-						msg.type === 'PotentialTrades'
-							? idx
-							: getConverterConfigId(msg.context);
+					const id = msg.type === "PotentialTrades" ? idx : getConverterConfigId(msg.context);
 					return (
 						<BorderBox
 							key={`${id}-${idx}`}
@@ -385,43 +338,24 @@ export default function Convert({ options }: Props) {
 							borderColor="#3396FF"
 							borderTop
 						>
-							<Box
-								flexGrow={1}
-								flexDirection="column"
-								marginLeft={1}
-								marginRight={1}
-								minWidth={60}
-							>
+							<Box flexGrow={1} flexDirection="column" marginLeft={1} marginRight={1} minWidth={60}>
 								<Text bold>{msg.type}</Text>
-								{'blockNumber' in msg && msg.blockNumber !== undefined && (
+								{"blockNumber" in msg && msg.blockNumber !== undefined && (
 									<Text bold>Block Number {msg.blockNumber?.toString()}</Text>
 								)}
-								{'error' in msg && msg.error && (
+								{"error" in msg && msg.error && (
 									<>
 										<Text color="red">{msg.error}</Text>
 									</>
 								)}
-								{'pancakeSwapTrade' in msg.context && (
-									<Text>
-										{JSON.stringify(
-											msg.context.pancakeSwapTrade || ' ',
-											stringifyBigInt,
-										)}
-									</Text>
+								{"pancakeSwapTrade" in msg.context && (
+									<Text>{JSON.stringify(msg.context.pancakeSwapTrade || " ", stringifyBigInt)}</Text>
 								)}
-								{(msg.type === 'Arbitrage' || msg.type === 'ExecuteTrade') && (
-									<Text>
-										{JSON.stringify(msg.context || ' ', stringifyBigInt)}
-									</Text>
+								{(msg.type === "Arbitrage" || msg.type === "ExecuteTrade") && (
+									<Text>{JSON.stringify(msg.context || " ", stringifyBigInt)}</Text>
 								)}
-								{msg.type === 'PotentialTrades' ? (
-									<Box
-										flexGrow={1}
-										flexDirection="column"
-										minWidth={60}
-										marginRight={1}
-										marginLeft={1}
-									>
+								{msg.type === "PotentialTrades" ? (
+									<Box flexGrow={1} flexDirection="column" minWidth={60} marginRight={1} marginLeft={1}>
 										<Text>{msg.context.trades.length} Trades found</Text>
 									</Box>
 								) : null}
@@ -431,6 +365,6 @@ export default function Convert({ options }: Props) {
 				})}
 			</Box>
 			{error ? <Text color="red">Error - {error}</Text> : null}
-			</FullScreenBox>
+		</FullScreenBox>
 	);
 }

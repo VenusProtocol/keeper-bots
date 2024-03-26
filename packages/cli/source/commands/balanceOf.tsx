@@ -1,10 +1,10 @@
-import 'dotenv/config';
-import { useEffect, useState } from 'react';
-import { option } from 'pastel';
-import { Text } from 'ink';
-import zod from 'zod';
-import { Address, getAddress } from 'viem';
-import getBalanceOf from '../queries/getBalanceOf.js';
+import "dotenv/config";
+import { useEffect, useState } from "react";
+import { option } from "pastel";
+import { Text } from "ink";
+import zod from "zod";
+import { Address, getAddress } from "viem";
+import getBalanceOf from "../queries/getBalanceOf.js";
 
 const address = zod
 	.custom<Address>(val => {
@@ -20,22 +20,22 @@ const address = zod
 export const options = zod.object({
 	tokenAddress: address.describe(
 		option({
-			description: 'Token Address',
-			alias: 't',
+			description: "Token Address",
+			alias: "t",
 		}),
 	),
 	contractAddress: address.describe(
 		option({
-			description: 'Contract Address',
-			alias: 'c',
+			description: "Contract Address",
+			alias: "c",
 		}),
 	),
 	blockNumber: zod
 		.string()
 		.describe(
 			option({
-				description: 'Block Number',
-				alias: 'bn',
+				description: "Block Number",
+				alias: "bn",
 			}),
 		)
 		.optional(),
@@ -53,7 +53,11 @@ export default function BalanceOf({ options }: Props) {
 	const [balance, setBalance] = useState<bigint>();
 	useEffect(() => {
 		(async () => {
-			const result = await getBalanceOf({ tokenAddress, contractAddress, blockNumber });
+			const result = await getBalanceOf({
+				tokenAddress,
+				contractAddress,
+				blockNumber,
+			});
 			setBalance(result);
 		})();
 	}, []);

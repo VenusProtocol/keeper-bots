@@ -2,7 +2,7 @@
 declare global {
 	namespace NodeJS {
 		interface ProcessEnv {
-			NETWORK: 'bsctestnet' | 'bscmainnet';
+			NETWORK: "bsctestnet" | "bscmainnet";
 		}
 	}
 }

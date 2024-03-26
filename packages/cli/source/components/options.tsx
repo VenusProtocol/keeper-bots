@@ -1,15 +1,15 @@
-import {Box, Text} from 'ink';
-import BorderBox from './borderBox.js';
+import { Box, Text } from "ink";
+import BorderBox from "./borderBox.js";
 
 const toTitleCase = (str: string) => {
 	return (
 		str
-			.replace(/([A-Z])/g, ' $1')
+			.replace(/([A-Z])/g, " $1")
 			.charAt(0)
 			.toUpperCase() + str.slice(1)
 	);
 };
-const Options = ({options}: {options: Record<string, any>}) => (
+const Options = ({ options }: { options: Record<string, any> }) => (
 	<BorderBox all flexDirection="column" borderStyle="classic">
 		<BorderBox borderBottom borderStyle="classic">
 			<Text bold color="white">

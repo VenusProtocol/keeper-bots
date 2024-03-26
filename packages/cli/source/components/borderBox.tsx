@@ -1,8 +1,8 @@
-import {Box, BoxProps} from 'ink';
+import { Box, BoxProps } from "ink";
 
 const BorderBox = ({
 	all = false,
-	borderColor = '',
+	borderColor = "",
 	borderTop = false,
 	borderBottom = false,
 	borderRight = false,

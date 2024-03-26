@@ -1,5 +1,5 @@
-import {Box, Text} from 'ink';
-import venus from '../constants/venus.js';
+import { Box, Text } from "ink";
+import venus from "../constants/venus.js";
 
 const Title = () => (
 	<Box
