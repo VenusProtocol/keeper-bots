@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-vars */
 declare global {
-	namespace NodeJS {
-		interface ProcessEnv {
-			NETWORK: "bsctestnet" | "bscmainnet";
-		}
-	}
+  namespace NodeJS {
+    interface ProcessEnv {
+      NETWORK: "bsctestnet" | "bscmainnet";
+    }
+  }
 }
 
 // If this file has no import/export statements (i.e. is a script)

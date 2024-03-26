@@ -6,9 +6,9 @@
 $ yarn install --global @venusprotocol/cli
 ```
 
-## Venus CLI
+## Venus Keeper Bots CLI
 
-The Venus CLI is a easy way to run tasks and interact with the Venus Protocol from the command line.
+The Venus Keeper Bots CLI is a easy way to run tasks and interact with keeper bots from the command line.
 
 ### Token Converter
 

@@ -1,8 +1,3 @@
-// The viem and ethers.js human-readable ABI's are different. First we have `MULTICALL_ABI` which is
-// the viem-compatible version, then `MULTICALL_ABI_ETHERS` which is the ethers.js-compatible
-// version. We could have provided the standard JSON ABI instead and used it with both ethers and
-// viem, but human-readable ABI's are much more readable.
-
 export const MULTICALL_ADDRESS = "0xcA11bde05977b3631167028862bE2a173976CA11";
 
 // Ethers
