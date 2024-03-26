@@ -74,7 +74,7 @@ forking({ bsctestnet: 37472590, bscmainnet: 35878500 } as const, network => {
           .connect(timelock)
           .setConversionConfigs(addresses.XVS, [addresses.USDT], [{ incentive: 0, conversionAccess: 1 }]);
         await usdt.connect(root).transfer(converter.address, usdtToReceive);
-        await converter.connect(root).updateAssetsState(addresses.Comptroller, addresses.USDT);
+        await converter.connect(root).updateAssetsState(addresses.Unitroller, addresses.USDT);
         await usdt.connect(root).approve(operator.address, negate(minIncome));
       });
 
