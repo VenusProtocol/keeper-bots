@@ -1,18 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.13;
 
-import { IPancakeV3SwapCallback } from "@pancakeswap/v3-core/contracts/interfaces/callback/IPancakeV3SwapCallback.sol";
-import { IPancakeV3Pool } from "@pancakeswap/v3-core/contracts/interfaces/IPancakeV3Pool.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ensureNonzeroAddress } from "@venusprotocol/solidity-utilities/contracts/validators.sol";
 import { IAbstractTokenConverter } from "@venusprotocol/protocol-reserve/contracts/TokenConverter/IAbstractTokenConverter.sol";
 
+import { FlashHandler } from "../flash-swap/FlashHandler.sol";
 import { ExactOutputFlashSwap } from "../flash-swap/ExactOutputFlashSwap.sol";
 import { approveOrRevert } from "../util/approveOrRevert.sol";
 import { transferAll } from "../util/transferAll.sol";
+import { checkDeadline, validatePath } from "../util/validators.sol";
 import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
-import { BytesLib } from "../third-party/pancakeswap-v8/BytesLib.sol";
 
 /// @title TokenConverterOperator
 /// @notice Converts tokens in a TokenConverter using an exact-output flash swap
@@ -32,7 +30,6 @@ import { BytesLib } from "../third-party/pancakeswap-v8/BytesLib.sol";
 ///   a bit more efficient since there's no slippage associated with the income conversion.
 contract TokenConverterOperator is ExactOutputFlashSwap {
     using SafeERC20 for IERC20;
-    using BytesLib for bytes;
 
     /// @notice Conversion parameters
     struct ConversionParameters {
@@ -76,23 +73,10 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         IAbstractTokenConverter converter;
     }
 
-    /// @notice Thrown if the provided swap path start does not correspond to tokenToSendToConverter
-    /// @param expected Expected swap path start (tokenToSendToConverter)
-    /// @param actual Provided swap path start
-    error InvalidSwapStart(address expected, address actual);
-
-    /// @notice Thrown if the provided swap path end does not correspond to tokenToReceiveFromConverter
-    /// @param expected Expected swap path end (tokenToReceiveFromConverter)
-    /// @param actual Provided swap path end
-    error InvalidSwapEnd(address expected, address actual);
-
     /// @notice Thrown if the amount of to receive from TokenConverter is less than expected
     /// @param expected Expected amount of tokens
     /// @param actual Actual amount of tokens
     error InsufficientLiquidity(uint256 expected, uint256 actual);
-
-    /// @notice Thrown if the deadline has passed
-    error DeadlinePassed(uint256 currentTimestamp, uint256 deadline);
 
     /// @notice Thrown on math underflow
     error Underflow();
@@ -102,16 +86,13 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
 
     /// @param swapRouter_ PancakeSwap SmartRouter contract
     // solhint-disable-next-line no-empty-blocks
-    constructor(ISmartRouter swapRouter_) ExactOutputFlashSwap(swapRouter_) {}
+    constructor(ISmartRouter swapRouter_) FlashHandler(swapRouter_) {}
 
     /// @notice Converts tokens in a TokenConverter using a flash swap
     /// @param params Conversion parameters
     function convert(ConversionParameters calldata params) external {
-        if (params.deadline < block.timestamp) {
-            revert DeadlinePassed(block.timestamp, params.deadline);
-        }
-
-        _validatePath(params.path, address(params.tokenToSendToConverter), address(params.tokenToReceiveFromConverter));
+        checkDeadline(params.deadline);
+        validatePath(params.path, address(params.tokenToSendToConverter), address(params.tokenToReceiveFromConverter));
 
         (uint256 amountToReceive, uint256 amountToPay) = params.converter.getUpdatedAmountIn(
             params.amount,
@@ -136,7 +117,7 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
             converter: params.converter
         });
 
-        _flashSwap(FlashSwapParams({ amountOut: amountToPay, path: params.path, data: abi.encode(data) }));
+        _flashSwap(amountToPay, params.path, abi.encode(data));
     }
 
     function _onMoneyReceived(bytes memory data) internal override returns (IERC20 tokenIn, uint256 maxAmountIn) {
@@ -152,7 +133,7 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         return (decoded.tokenToReceiveFromConverter, _u(_i(receivedAmount) - decoded.minIncome));
     }
 
-    function _onFlashSwapCompleted(bytes memory data) internal override {
+    function _onFlashCompleted(bytes memory data) internal override {
         ConversionData memory decoded = abi.decode(data, (ConversionData));
         transferAll(decoded.tokenToReceiveFromConverter, address(this), decoded.beneficiary);
     }
@@ -181,18 +162,6 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         approveOrRevert(tokenToPay, address(converter), 0);
         uint256 tokensReceived = tokenToReceive.balanceOf(address(this)) - balanceBefore;
         return tokensReceived;
-    }
-
-    function _validatePath(bytes calldata path, address expectedPathStart, address expectedPathEnd) internal pure {
-        address swapStart = path.toAddress(0);
-        if (swapStart != expectedPathStart) {
-            revert InvalidSwapStart(expectedPathStart, swapStart);
-        }
-
-        address swapEnd = path.toAddress(path.length - 20);
-        if (swapEnd != expectedPathEnd) {
-            revert InvalidSwapEnd(expectedPathEnd, swapEnd);
-        }
     }
 
     function _u(int256 value) private pure returns (uint256) {
