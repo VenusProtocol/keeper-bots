@@ -1,9 +1,9 @@
 import { HttpTransport, WalletClient, createWalletClient, http } from "viem";
 import { PrivateKeyAccount, privateKeyToAccount } from "viem/accounts";
 
-import config from "../";
-import { chains } from "../chains";
-import type { SUPPORTED_CHAINS } from "../chains";
+import config from "../config";
+import { chains } from "../config/chains";
+import type { SUPPORTED_CHAINS } from "../config/chains";
 
 const readPrivateKeyFromEnv = (chainName: string): PrivateKeyAccount => {
   const key = process.env[`PRIVATE_KEY_${chainName}`];

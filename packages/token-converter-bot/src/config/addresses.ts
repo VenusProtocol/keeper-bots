@@ -52,6 +52,8 @@ const addresses = {
 
     TokenConverterOperator: bsctestnetTokenConverterBot.addresses.TokenConverterOperator as Address,
   },
+  ethereum: {},
+  sepolia: {},
 } as const;
 
 type Addresses = typeof addresses;

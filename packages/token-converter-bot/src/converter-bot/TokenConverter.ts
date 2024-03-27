@@ -3,6 +3,8 @@ import { BaseRoute, Pool, QuoteProvider, SmartRouter, SmartRouterTrade, V3Pool }
 import { Client as UrqlClient, createClient } from "urql/core";
 import { Address, BaseError, ContractFunctionRevertedError, Hex, encodePacked, erc20Abi, formatUnits } from "viem";
 
+import publicClient from "../clients/publicClient";
+import walletClient from "../clients/walletClient";
 import config from "../config";
 import {
   coreVTokenAbi,
@@ -15,8 +17,6 @@ import {
 import addresses from "../config/addresses";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
-import publicClient from "../config/clients/publicClient";
-import walletClient from "../config/clients/walletClient";
 import logger from "./logger";
 import getConverterConfigs from "./queries/getTokenConverterConfigs";
 import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";

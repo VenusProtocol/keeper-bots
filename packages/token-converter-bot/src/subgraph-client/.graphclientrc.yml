@@ -1,5 +1,5 @@
 sources:
-  - name: venus-protocol-reserve-chapel
+  - name: venus-protocol-reserve
     handler:
       graphql:
         endpoint: https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve

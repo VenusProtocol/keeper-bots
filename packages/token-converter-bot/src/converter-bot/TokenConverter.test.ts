@@ -3,14 +3,14 @@ import { SmartRouter } from "@pancakeswap/smart-router/evm";
 import { erc20Abi } from "viem";
 
 import { mockRoute, mockTrade } from "../__mocks__";
+import publicClient from "../clients/publicClient";
+import walletClient from "../clients/walletClient";
 import {
   coreVTokenAbi,
   protocolShareReserveAbi,
   tokenConverterOperatorAbi,
   vBnbAdminAbi,
 } from "../config/abis/generated";
-import publicClient from "../config/clients/publicClient";
-import walletClient from "../config/clients/walletClient";
 import TokenConverter from "./TokenConverter";
 import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
 

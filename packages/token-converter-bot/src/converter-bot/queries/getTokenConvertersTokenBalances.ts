@@ -2,9 +2,9 @@ import "dotenv/config";
 
 import { Address, decodeFunctionResult, encodeFunctionData, erc20Abi, parseAbi } from "viem";
 
+import publicClient from "../../clients/publicClient";
 import { protocolShareReserveAbi } from "../../config/abis/generated";
 import addresses, { underlyingByComptroller, underlyingToVTokens } from "../../config/addresses";
-import publicClient from "../../config/clients/publicClient";
 import { MULTICALL_ABI, MULTICALL_ADDRESS } from "../constants";
 import { TokenConverterConfig } from "./getTokenConverterConfigs/formatTokenConverterConfigs";
 
