@@ -8,7 +8,7 @@ export const getPublicClient = (): PublicClient<HttpTransport, typeof chains[SUP
   const chainName = config.network;
   return createPublicClient({
     chain: chains[chainName],
-    transport: http(process.env[`LIVE_NETWORK_${chainName}`]),
+    transport: http(config.rpcUrl),
   });
 };
 

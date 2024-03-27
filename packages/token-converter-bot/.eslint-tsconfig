@@ -1,8 +1,12 @@
 {
   "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true
+  },
   "include": [
     "./src",
     "wagmi.config.ts",
-    "src/environment.d.ts"
+    "src/environment.d.ts",
+    "jest.config.js"
   ]
 }

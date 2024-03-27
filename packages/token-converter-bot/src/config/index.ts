@@ -17,13 +17,14 @@ const subgraphUrlByNetwork = {
   bsctestnet: "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel",
   bscmainnet: "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve",
 };
-
+const network = safelyGetEnvVar<SUPPORTED_CHAINS>("NETWORK");
 const config = {
-  subgraphUrl: subgraphUrlByNetwork[safelyGetEnvVar<SUPPORTED_CHAINS>("NETWORK")],
-  pancakeSwapSubgraphUrl: pancakeSwapSubgraphUrlByNetwork[safelyGetEnvVar<SUPPORTED_CHAINS>("NETWORK")],
+  subgraphUrl: subgraphUrlByNetwork[network],
+  pancakeSwapSubgraphUrl: pancakeSwapSubgraphUrlByNetwork[network],
   telegramBotToken: safelyGetEnvVar("TELEGRAM_BOT_TOKEN"),
   telegramChatId: +safelyGetEnvVar("TELEGRAM_CHAT_ID"),
   network: safelyGetEnvVar("NETWORK") as SUPPORTED_CHAINS,
+  rpcUrl: safelyGetEnvVar(`LIVE_NETWORK_${network}`),
 };
 
 export default config;
