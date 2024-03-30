@@ -2,7 +2,7 @@ import { useEffect, useState, useReducer } from "react";
 import { option } from "pastel";
 import { Box, Spacer, Text } from "ink";
 import zod from "zod";
-import { Address, getAddress, parseUnits } from "viem";
+import { Address, parseUnits } from "viem";
 import { TokenConverter } from "@venusprotocol/token-converter-bot";
 import { stringifyBigInt, getConverterConfigs, getConverterConfigId } from "../utils/index.js";
 import { Options, Title, BorderBox } from "../components/index.js";
