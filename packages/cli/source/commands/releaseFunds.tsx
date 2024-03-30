@@ -129,13 +129,13 @@ const reduceToTokensWithBalances = async (
  * Command to release funds
  */
 function ReleaseFunds({ options = {} }: Props) {
-  const { accrueInterest, reduceReserves, debug } = options;
+  const { accrueInterest, reduceReserves, debug, simulate } = options;
   const [{ releasedFunds }, dispatch] = useReducer(reducer, defaultState);
   useEffect(() => {
     const releaseFunds = async () => {
       const tokenConverter = new TokenConverter({
         subscriber: dispatch,
-        simulate: !!options.simulate,
+        simulate: !!simulate,
         verbose: false,
       });
       if (accrueInterest) {
@@ -153,6 +153,7 @@ function ReleaseFunds({ options = {} }: Props) {
     };
     releaseFunds();
   }, []);
+
   return (
     <FullScreenBox flexDirection="column">
       <Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
