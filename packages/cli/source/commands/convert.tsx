@@ -106,16 +106,16 @@ export const options = zod.object({
     )
     .optional()
     .default(false),
-  minIncomeBP: zod
+  minIncomeBp: zod
     .number()
     .describe(
       option({
         description: "Min income in basis points as percentage of amount",
-        alias: "i",
+        alias: "bp",
       }),
     )
     .optional()
-    .default(30),
+    .default(50),
 });
 
 interface Props {
@@ -137,7 +137,7 @@ export default function Convert({ options }: Props) {
     profitable,
     loop,
     debug,
-    minIncomeBP,
+    minIncomeBp,
   } = options;
 
   const { exit } = useApp();
@@ -210,7 +210,7 @@ export default function Convert({ options }: Props) {
                 minIncome: 0n,
               };
 
-              const maxMinIncome = ((amount * BigInt(10000 + minIncomeBP)) / 10000n - amount) * -1n;
+              const maxMinIncome = ((amount * BigInt(10000 + minIncomeBp)) / 10000n - amount) * -1n;
               if (t.accountBalanceAssetOut < minIncome * -1n) {
                 dispatch({
                   type: "ExecuteTrade",
