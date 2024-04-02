@@ -1,6 +1,6 @@
 import { useEffect, useState, useReducer } from "react";
 import { option } from "pastel";
-import { Box, Spacer, Text } from "ink";
+import { Box, Spacer, Text, useApp } from "ink";
 import zod from "zod";
 import { Address, parseUnits } from "viem";
 import { TokenConverter } from "@venusprotocol/token-converter-bot";
@@ -140,6 +140,8 @@ export default function Convert({ options }: Props) {
     minIncomeBP,
   } = options;
 
+  const { exit } = useApp();
+
   const [{ completed, messages, releasedFunds }, dispatch] = useReducer(reducer, defaultState);
   const [error, setError] = useState("");
   const [_tradeUsdValues, setTradeUsdValues] = useState<
@@ -259,7 +261,8 @@ export default function Convert({ options }: Props) {
     };
     convert().catch(e => {
       setError(e.message);
-    });
+      exit()
+    }).then(() => exit());
   }, []);
 
   return (
