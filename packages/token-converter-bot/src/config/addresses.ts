@@ -70,7 +70,7 @@ export type SupportedConverters =
 
 export const underlyingByComptroller: Record<Address, readonly Address[]> = {
   bsctestnet: {
-    [addresses[network].Unitroller as Address]: [
+    [addresses.bsctestnet.Unitroller as Address]: [
       "0x16227d60f7a0e586c66b005219dfc887d13c9531",
       "0x167f1f9ef531b3576201aa3146b13c57dbeda514",
       "0x19e7215abf8b2716ee807c9f4b83af0e7f92653f",
@@ -126,7 +126,7 @@ export const underlyingByComptroller: Record<Address, readonly Address[]> = {
     ] as Address[],
   },
   bscmainnet: {
-    [addresses[network].Unitroller as Address]: [
+    [addresses.bscmainnet.Unitroller as Address]: [
       "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
       "0x55d398326f99059ff775485246999027b3197955",
       "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
