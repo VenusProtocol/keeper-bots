@@ -15,8 +15,7 @@
     ]
   },
   "scripts": {
-    "lint": "yarn workspaces foreach run lint",
-    "prettier": "yarn workspaces foreach run prettier"
+    "lint": "yarn workspaces foreach run lint"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.0.3",

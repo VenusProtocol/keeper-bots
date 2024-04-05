@@ -10,8 +10,11 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "prettier --check . && xo && ava",
-    "prettier": "prettier --check ."
+    "test": "ava",
+    "lint": "yarn lint:ts && yarn prettier:check",
+    "lint:ts": "eslint --ext .js,.ts .",
+    "lint:ts:fix": "eslint --fix --ext .js,.ts .",
+    "prettier:check": "prettier --check ."
   },
   "files": [
     "dist"
@@ -45,12 +48,5 @@
     "nodeArguments": [
       "--loader=ts-node/esm"
     ]
-  },
-  "xo": {
-    "extends": "xo-react",
-    "prettier": true,
-    "rules": {
-      "react/prop-types": "off"
-    }
   }
 }
