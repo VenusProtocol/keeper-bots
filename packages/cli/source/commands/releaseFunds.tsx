@@ -49,7 +49,7 @@ export const options = zod.object({
     .optional(),
   reduceReserves: zod
     .boolean()
-    .default(false)
+    .default(true)
     .describe(
       option({
         description: "Reduce BNB Reserves",
@@ -130,9 +130,9 @@ const reduceToTokensWithBalances = async (
  */
 function ReleaseFunds({ options = {} }: Props) {
   const { accrueInterest, reduceReserves, debug, simulate } = options;
-  
+
   const [{ releasedFunds }, dispatch] = useReducer(reducer, defaultState);
-  
+
   const { exit } = useApp();
 
   useEffect(() => {
