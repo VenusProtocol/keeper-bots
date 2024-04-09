@@ -1,4 +1,4 @@
-import { Box, Text } from "ink";
+import { Box, Text, useApp } from "ink";
 import { Address, erc20Abi } from "viem";
 import { option } from "pastel";
 import { useEffect, useReducer } from "react";
@@ -130,7 +130,11 @@ const reduceToTokensWithBalances = async (
  */
 function ReleaseFunds({ options = {} }: Props) {
   const { accrueInterest, reduceReserves, debug, simulate } = options;
+  
   const [{ releasedFunds }, dispatch] = useReducer(reducer, defaultState);
+  
+  const { exit } = useApp();
+
   useEffect(() => {
     const releaseFunds = async () => {
       const tokenConverter = new TokenConverter({
@@ -151,7 +155,7 @@ function ReleaseFunds({ options = {} }: Props) {
       const withBalances = await reduceToTokensWithBalances(tokenConverter, underlyingByComptroller);
       await tokenConverter.releaseFunds(withBalances);
     };
-    releaseFunds();
+    releaseFunds().finally(exit);
   }, []);
 
   return (
