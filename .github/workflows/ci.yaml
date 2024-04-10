@@ -114,11 +114,11 @@ jobs:
       - name: Export deployments
         run: |
           for NETWORK in bsctestnet bscmainnet ethereum sepolia; do
-            EXPORT=true yarn workspace @venusprotocol/keeper-bot-contracts run hardhat export --network ${NETWORK} --export ./deployments/${NETWORK}.json
+          EXPORT=true yarn workspace @venusprotocol/keeper-bot-contracts run hardhat export --network ${NETWORK} --export ./deployments/${NETWORK}.json
             jq -M '{name, chainId, addresses: .contracts | map_values(.address)}' ./packages/smart-contracts/deployments/${NETWORK}.json > ./packages/smart-contracts/deployments/${NETWORK}_addresses.json
           done
           yarn prettier
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "feat: updating deployment files"
-          file_pattern: "deployments/*.json"
+          file_pattern: "./packages/smart-contracts/deployments/*.json"
