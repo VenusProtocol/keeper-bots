@@ -36,8 +36,7 @@
     "hardhat": "^2.19.5",
     "urql": "^3.0.3",
     "viem": "^2.7.1",
-    "winston": "^3.11.0",
-    "winston-telegram": "^2.7.0"
+    "winston": "^3.11.0"
   },
   "devDependencies": {
     "@pancakeswap/v3-core": "^1.0.2",
