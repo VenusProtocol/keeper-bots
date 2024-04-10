@@ -116,7 +116,7 @@ export const options = zod.object({
     )
     .optional()
     .default(50),
-})
+});
 
 interface Props {
   options: zod.infer<typeof options>;
@@ -261,21 +261,23 @@ export default function Convert({ options }: Props) {
       } while (loop);
     };
     if (converter || assetIn || assetOut) {
-      convert().catch(e => {
-        setError(e.message);
-      }).finally(() => exit());
+      convert()
+        .catch(e => {
+          setError(e.message);
+        })
+        .finally(() => exit());
     } else {
-      exit()
+      exit();
     }
   }, []);
 
   if (!converter && !assetIn && !assetOut) {
-    writeStdErr('converter, asset-in or asset-out must be present');
+    writeStdErr("converter, asset-in or asset-out must be present");
     return null;
   }
 
   return (
-    <FullScreenBox  flexDirection="column">
+    <FullScreenBox flexDirection="column">
       <Title />
       {debug && <Options options={options} />}
       {releaseFunds && (
@@ -367,6 +369,6 @@ export default function Convert({ options }: Props) {
         })}
       </Box>
       {error ? <Text color="red">Error - {error}</Text> : null}
-    </FullScreenBox >
+    </FullScreenBox>
   );
 }

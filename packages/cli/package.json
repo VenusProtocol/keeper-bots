@@ -14,6 +14,7 @@
     "lint": "yarn lint:ts && yarn prettier:check",
     "lint:ts": "eslint --ext .js,.ts .",
     "lint:ts:fix": "eslint --fix --ext .js,.ts .",
+    "prettier": "prettier --write .",
     "prettier:check": "prettier --check ."
   },
   "files": [

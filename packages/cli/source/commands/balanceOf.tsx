@@ -51,7 +51,7 @@ export default function BalanceOf({ options }: Props) {
         contractAddress,
         blockNumber,
       });
-      setBalance(result)
+      setBalance(result);
     })().finally(exit);
   }, []);
 

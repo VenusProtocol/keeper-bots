@@ -15,7 +15,7 @@ export const defaultState = {
 export const reducer = (state: State, action: Message): State => {
   switch (action.type) {
     case "ReleaseFunds": {
-      const releasedFunds = [...state.releasedFunds]
+      const releasedFunds = [...state.releasedFunds];
       releasedFunds.push({
         trx: action.trx,
         error: action.error,
@@ -23,7 +23,7 @@ export const reducer = (state: State, action: Message): State => {
       });
       return {
         ...state,
-        releasedFunds
+        releasedFunds,
       };
     }
   }

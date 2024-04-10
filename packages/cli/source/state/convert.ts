@@ -54,7 +54,7 @@ export const reducer = (state: State, action: Message | ExecuteTradeMessage): St
       };
     }
     case "Arbitrage": {
-      let prevState = state;
+      const prevState = { ...state };
       if (action.trx) {
         prevState.completed.push({ trx: action.trx, args: action.context });
       } else if (action.error) {
