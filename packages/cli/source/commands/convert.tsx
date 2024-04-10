@@ -15,7 +15,7 @@ export const options = zod.object({
     .array(addressValidation)
     .describe(
       option({
-        description: "TokenConverter",
+        description: "Token converter address",
         alias: "c",
       }),
     )
@@ -33,7 +33,7 @@ export const options = zod.object({
   assetIn: addressValidation
     .describe(
       option({
-        description: "Asset In",
+        description: "Asset In address",
         alias: "in",
       }),
     )
@@ -41,7 +41,7 @@ export const options = zod.object({
   assetOut: addressValidation
     .describe(
       option({
-        description: "Asset Out",
+        description: "Asset Out address",
         alias: "out",
       }),
     )
@@ -100,7 +100,7 @@ export const options = zod.object({
     .boolean()
     .describe(
       option({
-        description: "Loop",
+        description: "Continuously query and execute trades",
         alias: "l",
       }),
     )

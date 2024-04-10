@@ -19,11 +19,17 @@ $ venus --help
     $ venus convert
 
   Options
-    --converter Query a specific converter for available assets
-	  --assetOut Filter configs by asset you will receive
-	  --simulate Simulates contracts calls for testing
-	  --verbose Print debugging console logs
-	  --releaseFunds Releases funds as part of the conversion
+    -c, --converter [converters...]        Token converter address
+    --no-profitable                        Require trade be profitable
+    -in, --asset-in [asset-in]             Asset In address
+    -out, --asset-out [asset-out]          Asset Out address
+    -s, --simulate                         Simulate transactions (default: false)
+    -d, --debug                            Add debug logging (default: false)
+    -rf, --release-funds                   Release funds (default: false)
+    -min, --min-trade-usd [min-trade-usd]  Minimum value of tokens to try and convert (default: 500)
+    -max, --max-trade-usd [max-trade-usd]  Maximum value of tokens to try and convert (default: 5000)
+    -l, --loop                             Continuously query and execute trades (default: false)
+    -bp, --min-income-bp [min-income-bp]   Min income in basis points as percentage of amount (default: 50)
 ```
 
 ## Environment variables
