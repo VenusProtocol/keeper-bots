@@ -1,6 +1,6 @@
 import { useEffect, useState, useReducer } from "react";
 import { option } from "pastel";
-import { Box, Spacer, Text, useApp } from "ink";
+import { Box, Spacer, Text, useApp, useStderr } from "ink";
 import zod from "zod";
 import { Address, parseUnits } from "viem";
 import { TokenConverter } from "@venusprotocol/token-converter-bot";
@@ -116,7 +116,7 @@ export const options = zod.object({
     )
     .optional()
     .default(50),
-});
+})
 
 interface Props {
   options: zod.infer<typeof options>;
@@ -141,6 +141,7 @@ export default function Convert({ options }: Props) {
   } = options;
 
   const { exit } = useApp();
+  const { write: writeStdErr } = useStderr();
 
   const [{ completed, messages, releasedFunds }, dispatch] = useReducer(reducer, defaultState);
   const [error, setError] = useState("");
@@ -259,14 +260,22 @@ export default function Convert({ options }: Props) {
         );
       } while (loop);
     };
-    convert().catch(e => {
-      setError(e.message);
+    if (converter || assetIn || assetOut) {
+      convert().catch(e => {
+        setError(e.message);
+      }).finally(() => exit());
+    } else {
       exit()
-    }).then(() => exit());
+    }
   }, []);
 
+  if (!converter && !assetIn && !assetOut) {
+    writeStdErr('converter, asset-in or asset-out must be present');
+    return null;
+  }
+
   return (
-    <FullScreenBox flexDirection="column">
+    <FullScreenBox  flexDirection="column">
       <Title />
       {debug && <Options options={options} />}
       {releaseFunds && (
@@ -358,6 +367,6 @@ export default function Convert({ options }: Props) {
         })}
       </Box>
       {error ? <Text color="red">Error - {error}</Text> : null}
-    </FullScreenBox>
+    </FullScreenBox >
   );
 }
