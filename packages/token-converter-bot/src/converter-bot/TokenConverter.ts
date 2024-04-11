@@ -28,8 +28,8 @@ import { chains } from "../config/chains";
 import publicClient from "../config/clients/publicClient";
 import walletClient from "../config/clients/walletClient";
 import logger from "./logger";
-import { TokenConverterConfig } from "./queries/read/readTokenConverterConfigs/formatTokenConverterConfigs";
-import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/read/readTokenConvertersTokenBalances";
+import getConverterConfigs  from "./queries/getTokenConverterConfigs";
+import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
 import type { PoolAddressArray } from "./types";
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
@@ -406,7 +406,12 @@ export class TokenConverter {
     this.sendMessage({ type: "ReduceReserves", error, trx });
   }
 
-  async checkForTrades(tokenConverterConfigs: TokenConverterConfig[], releaseFunds: boolean) {
+  async checkForTrades({ assetIn, assetOut, converters, releaseFunds}: { assetIn?: Address, assetOut?: Address, converters?: Address[], releaseFunds: boolean}) {
+    const tokenConverterConfigs = await getConverterConfigs({
+      assetIn,
+      assetOut,
+      converters,
+    });
     const { results, blockNumber } = await readTokenConvertersTokenBalances(
       tokenConverterConfigs,
       this.walletClient.account.address,

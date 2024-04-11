@@ -1,8 +1,8 @@
 // import { Address } from "viem";
 import TokenConverter from "./TokenConverter";
-import readTokenConvertersTokenBalances from "./queries/read/readTokenConvertersTokenBalances";
+import readTokenConvertersTokenBalances from "./queries/getTokenConvertersTokenBalances";
 
-jest.mock("./queries/read/readTokenConvertersTokenBalances");
+jest.mock("./queries/getTokenConvertersTokenBalances");
 
 describe("Token Converter", () => {
   test("should filter out opportunities where converter has no asset out balance", async () => {
@@ -25,14 +25,12 @@ describe("Token Converter", () => {
     }));
 
     const trades = await tokenConverter.checkForTrades(
-      [
-        {
-          tokenConverter: "0xd5b9ae835f4c59272032b3b954417179573331e0",
-          tokenAddressOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          tokenAddressIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
-        },
-      ],
-      false,
+      {
+        converters: ["0xd5b9ae835f4c59272032b3b954417179573331e0"],
+        assetOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        assetIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+        releaseFunds: false,
+      },
     );
     expect(trades.length).toBe(0);
   });
@@ -57,14 +55,12 @@ describe("Token Converter", () => {
     }));
 
     const trades = await tokenConverter.checkForTrades(
-      [
-        {
-          tokenConverter: "0xd5b9ae835f4c59272032b3b954417179573331e0",
-          tokenAddressOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-          tokenAddressIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
-        },
-      ],
-      false,
+      {
+        converters: ["0xd5b9ae835f4c59272032b3b954417179573331e0"],
+        assetOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        assetIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+        releaseFunds: false
+      }
     );
     expect(trades.length).toBe(1);
   });

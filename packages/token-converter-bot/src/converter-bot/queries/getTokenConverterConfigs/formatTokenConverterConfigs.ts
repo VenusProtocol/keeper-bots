@@ -1,6 +1,6 @@
 import { Address } from "viem";
 
-import { TokenConvertersQuery } from "../../../../subgraph-client/.graphclient";
+import { TokenConvertersQuery } from "../../../subgraph-client/.graphclient";
 
 export interface TokenConverterConfig {
   tokenConverter: Address;

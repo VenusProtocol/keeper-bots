@@ -4,14 +4,14 @@ import { Box, Spacer, Text, useApp, useStderr } from "ink";
 import zod from "zod";
 import { Address, parseUnits } from "viem";
 import { TokenConverter } from "@venusprotocol/token-converter-bot";
-import { stringifyBigInt, getConverterConfigs, getConverterConfigId } from "../utils/index.js";
+import { stringifyBigInt, getConverterConfigId } from "../utils/index.js";
 import { Options, Title, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/convert.js";
 import FullScreenBox from "../components/fullScreenBox.js";
 import { addressValidation } from "../utils/validation.js";
 
 export const options = zod.object({
-  converter: zod
+  converters: zod
     .array(addressValidation)
     .describe(
       option({
@@ -133,7 +133,7 @@ export default function Convert({ options }: Props) {
     releaseFunds,
     assetIn,
     assetOut,
-    converter,
+    converters,
     profitable,
     loop,
     debug,
@@ -156,14 +156,9 @@ export default function Convert({ options }: Props) {
         simulate: !!simulate,
         verbose: debug,
       });
-      const tokenConverterConfigs = await getConverterConfigs({
-        assetIn,
-        assetOut,
-        converter,
-      });
 
       do {
-        const potentialTrades = await tokenConverter.checkForTrades(tokenConverterConfigs, !!releaseFunds);
+        const potentialTrades = await tokenConverter.checkForTrades({ assetIn, assetOut, converters, releaseFunds: !!releaseFunds });
 
         if (potentialTrades.length === 0) {
           setError("No Potential Trades Found");
@@ -260,7 +255,7 @@ export default function Convert({ options }: Props) {
         );
       } while (loop);
     };
-    if (converter || assetIn || assetOut) {
+    if (converters || assetIn || assetOut) {
       convert()
         .catch(e => {
           setError(e.message);
@@ -271,7 +266,7 @@ export default function Convert({ options }: Props) {
     }
   }, []);
 
-  if (!converter && !assetIn && !assetOut) {
+  if (!converters && !assetIn && !assetOut) {
     writeStdErr("converter, asset-in or asset-out must be present");
     return null;
   }

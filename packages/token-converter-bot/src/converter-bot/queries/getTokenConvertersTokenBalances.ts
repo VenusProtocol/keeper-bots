@@ -4,12 +4,12 @@ import { BigNumber } from "bignumber.js";
 import { Contract, providers, utils } from "ethers";
 import { Address, erc20Abi } from "viem";
 
-import config from "../../../config";
-import { protocolShareReserveAbi } from "../../../config/abis/generated";
-import addresses, { underlyingByComptroller, underlyingToVTokens } from "../../../config/addresses";
-import publicClient from "../../../config/clients/publicClient";
-import { MULTICALL_ABI, MULTICALL_ADDRESS } from "../../constants";
-import { TokenConverterConfig } from "./readTokenConverterConfigs/formatTokenConverterConfigs";
+import config from "../../config";
+import { protocolShareReserveAbi } from "../../config/abis/generated";
+import addresses, { underlyingByComptroller, underlyingToVTokens } from "../../config/addresses";
+import publicClient from "../../config/clients/publicClient";
+import { MULTICALL_ABI, MULTICALL_ADDRESS } from "../constants";
+import { TokenConverterConfig } from "./getTokenConverterConfigs/formatTokenConverterConfigs";
 
 const provider = new providers.JsonRpcProvider(config.rpcUrl);
 const multicall = new Contract(MULTICALL_ADDRESS, MULTICALL_ABI, provider);
@@ -65,7 +65,7 @@ const reduceConfigsToComptrollerAndTokens = (tokenConfigs: TokenConverterConfig[
   return pools;
 };
 
-export const readTokenConvertersTokenBalances = async (
+export const getTokenConvertersTokenBalances = async (
   tokenConverterConfigs: TokenConverterConfig[],
   walletAddress: Address,
   releaseFunds?: boolean,
@@ -112,4 +112,4 @@ export const readTokenConvertersTokenBalances = async (
   return { results: formattedResults, blockNumber };
 };
 
-export default readTokenConvertersTokenBalances;
+export default getTokenConvertersTokenBalances;

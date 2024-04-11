@@ -5,8 +5,8 @@ import { useEffect, useReducer } from "react";
 import zod from "zod";
 import {
   TokenConverter,
-  readCoreMarkets,
-  readIsolatedMarkets,
+  getCoreMarkets,
+  getIsolatedMarkets,
   underlyingToVTokens,
   underlyingByComptroller,
   addresses,
@@ -143,8 +143,8 @@ function ReleaseFunds({ options = {} }: Props) {
         verbose: false,
       });
       if (accrueInterest) {
-        const corePoolMarkets = await readCoreMarkets();
-        const isolatedPoolsMarkets = await readIsolatedMarkets();
+        const corePoolMarkets = await getCoreMarkets();
+        const isolatedPoolsMarkets = await getIsolatedMarkets();
         const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
         await tokenConverter.accrueInterest(allPools);
       }
