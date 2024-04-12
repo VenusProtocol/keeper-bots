@@ -6,7 +6,7 @@
     "test": "hardhat test",
     "test:fork": "hardhat test fork-tests/index.ts",
     "hardhat:compile": "hardhat compile",
-    "hardhat:coverage": "hardhat coverage",
+    "coverage": "hardhat coverage",
     "lint": "yarn lint:sol && yarn lint:ts && yarn prettier:check",
     "lint:sol": "solhint \"contracts/**/*.sol\"",
     "lint:sol:fix": "prettier --write \"contracts/**/*.sol\"",

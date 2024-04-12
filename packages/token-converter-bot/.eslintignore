@@ -1,4 +1,4 @@
 dist
-
+coverage
 src/config/abis/generated.ts
 subgraph-client/.graphqlclient
