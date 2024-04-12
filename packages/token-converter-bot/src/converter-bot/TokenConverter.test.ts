@@ -24,14 +24,12 @@ describe("Token Converter", () => {
       blockNumber: 100n,
     }));
 
-    const trades = await tokenConverter.checkForTrades(
-      {
-        converters: ["0xd5b9ae835f4c59272032b3b954417179573331e0"],
-        assetOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-        assetIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
-        releaseFunds: false,
-      },
-    );
+    const trades = await tokenConverter.queryConversions({
+      converters: ["0xd5b9ae835f4c59272032b3b954417179573331e0"],
+      assetOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      assetIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+      releaseFunds: false,
+    });
     expect(trades.length).toBe(0);
   });
 
@@ -54,14 +52,12 @@ describe("Token Converter", () => {
       blockNumber: 100n,
     }));
 
-    const trades = await tokenConverter.checkForTrades(
-      {
-        converters: ["0xd5b9ae835f4c59272032b3b954417179573331e0"],
-        assetOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-        assetIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
-        releaseFunds: false
-      }
-    );
+    const trades = await tokenConverter.queryConversions({
+      converters: ["0xd5b9ae835f4c59272032b3b954417179573331e0"],
+      assetOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      assetIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+      releaseFunds: false,
+    });
     expect(trades.length).toBe(1);
   });
 });

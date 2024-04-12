@@ -146,7 +146,11 @@ function ReleaseFunds({ options = {} }: Props) {
         const corePoolMarkets = await getCoreMarkets();
         const isolatedPoolsMarkets = await getIsolatedMarkets();
         const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
-        await tokenConverter.accrueInterest(allPools);
+        const allMarkets = allPools.reduce((acc, curr) => {
+          acc.concat(curr[1]);
+          return acc;
+        }, [] as Address[]);
+        await tokenConverter.accrueInterest(allMarkets);
       }
       if (reduceReserves) {
         await tokenConverter.reduceReserves();

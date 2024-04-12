@@ -115,7 +115,7 @@ export const options = zod.object({
       }),
     )
     .optional()
-    .default(50),
+    .default(30),
 });
 
 interface Props {
@@ -158,17 +158,22 @@ export default function Convert({ options }: Props) {
       });
 
       do {
-        const potentialTrades = await tokenConverter.checkForTrades({ assetIn, assetOut, converters, releaseFunds: !!releaseFunds });
+        const potentialConversions = await tokenConverter.queryConversions({
+          assetIn,
+          assetOut,
+          converters,
+          releaseFunds: !!releaseFunds,
+        });
 
-        if (potentialTrades.length === 0) {
+        if (potentialConversions.length === 0) {
           setError("No Potential Trades Found");
         }
         if (releaseFunds) {
           // @todo check if we need to release funds or if there are already enough funds to make our trade
-          await tokenConverter.releaseFundsForTrades(potentialTrades);
+          await tokenConverter.releaseFundsForConversions(potentialConversions);
         }
         await Promise.allSettled(
-          potentialTrades.map(async (t: any) => {
+          potentialConversions.map(async (t: any) => {
             let amountOut = t.assetOut.balance;
             const vTokenAddress =
               t.assetOutVTokens.core ||
@@ -194,7 +199,7 @@ export default function Convert({ options }: Props) {
               if (+underlyingUsdValue > maxTradeUsd) {
                 amountOut = parseUnits((maxTradeUsd / +underlyingPriceUsd.toString()).toString(), underlyingDecimals);
               }
-              const arbitrageArgs = await tokenConverter.prepareTrade(
+              const arbitrageArgs = await tokenConverter.prepareConversion(
                 t.tokenConverter,
                 t.assetOut.address,
                 t.assetIn,
@@ -328,7 +333,7 @@ export default function Convert({ options }: Props) {
         <Spacer />
         <Text bold>Logs</Text>
         {messages.map((msg, idx) => {
-          const id = msg.type === "PotentialTrades" ? idx : getConverterConfigId(msg.context);
+          const id = msg.type === "PotentialConversions" ? idx : getConverterConfigId(msg.context);
           return (
             <BorderBox
               key={`${id}-${idx}`}
@@ -353,9 +358,9 @@ export default function Convert({ options }: Props) {
                 {(msg.type === "Arbitrage" || msg.type === "ExecuteTrade") && (
                   <Text>{JSON.stringify(msg.context || " ", stringifyBigInt)}</Text>
                 )}
-                {msg.type === "PotentialTrades" ? (
+                {msg.type === "PotentialConversions" ? (
                   <Box flexGrow={1} flexDirection="column" minWidth={60} marginRight={1} marginLeft={1}>
-                    <Text>{msg.context.trades.length} Trades found</Text>
+                    <Text>{msg.context.conversions.length} Trades found</Text>
                   </Box>
                 ) : null}
               </Box>

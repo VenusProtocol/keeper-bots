@@ -3,7 +3,7 @@ import {
   Message,
   GetBestTradeMessage,
   ArbitrageMessage,
-  PotentialTradesMessage,
+  PotentialConversionsMessage,
 } from "@venusprotocol/token-converter-bot";
 
 interface ExecuteTradeMessage {
@@ -33,7 +33,7 @@ interface TradeError {
 interface State {
   releasedFunds: { done: boolean };
   completed: (TradeSuccess | TradeError)[];
-  messages: Array<PotentialTradesMessage | GetBestTradeMessage | ArbitrageMessage | ExecuteTradeMessage>;
+  messages: Array<PotentialConversionsMessage | GetBestTradeMessage | ArbitrageMessage | ExecuteTradeMessage>;
 }
 
 export const defaultState = {
@@ -45,7 +45,7 @@ export const defaultState = {
 
 export const reducer = (state: State, action: Message | ExecuteTradeMessage): State => {
   switch (action.type) {
-    case "PotentialTrades":
+    case "PotentialConversions":
     case "GetBestTrade":
     case "ExecuteTrade": {
       return {
