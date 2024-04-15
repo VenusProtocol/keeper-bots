@@ -1,0 +1,7 @@
+{
+  "name": "bscmainnet",
+  "chainId": "56",
+  "addresses": {
+    "TokenConverterOperator": "0x9Db8ABe20D004ab172DBE07c6Ea89680A5a3c337"
+  }
+}
