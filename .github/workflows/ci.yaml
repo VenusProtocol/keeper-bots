@@ -48,6 +48,7 @@ jobs:
       - name: Run hardhat compile and tests coverage
         run: |
           source packages/smart-contracts/.env.example
+          mkdir coverage
           yarn coverage:combined
 
       - name: Code Coverage Report

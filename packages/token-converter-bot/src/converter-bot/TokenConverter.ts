@@ -1,17 +1,7 @@
 import { Currency, CurrencyAmount, Fraction, Percent, Token, TradeType } from "@pancakeswap/sdk";
 import { BaseRoute, Pool, QuoteProvider, SmartRouter, SmartRouterTrade, V3Pool } from "@pancakeswap/smart-router/evm";
 import { Client as UrqlClient, createClient } from "urql/core";
-import {
-  Address,
-  BaseError,
-  ContractFunctionRevertedError,
-  Hex,
-  HttpTransport,
-  PublicClient,
-  encodePacked,
-  erc20Abi,
-  formatUnits,
-} from "viem";
+import { Address, BaseError, ContractFunctionRevertedError, Hex, encodePacked, erc20Abi, formatUnits } from "viem";
 
 import config from "../config";
 import {
@@ -109,9 +99,6 @@ export type Message =
 export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
-  private addresses: typeof addresses;
-  private _walletClient?: typeof walletClient;
-  private _publicClient?: typeof publicClient;
   private v3SubgraphClient: UrqlClient;
   private quoteProvider: QuoteProvider;
   private tokens: Map<Address, Currency>;
@@ -130,7 +117,6 @@ export class TokenConverter {
   }) {
     this.chainName = config.network;
     this.subscriber = subscriber;
-    this.addresses = addresses;
     this.operator = {
       address: addresses.TokenConverterOperator,
       abi: tokenConverterOperatorAbi,
@@ -139,18 +125,10 @@ export class TokenConverter {
       url: config.pancakeSwapSubgraphUrl,
       requestPolicy: "network-only",
     });
-    this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => this.publicClient });
+    this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => publicClient });
     this.tokens = new Map();
     this.simulate = simulate;
     this.verbose = verbose;
-  }
-
-  get publicClient(): PublicClient<HttpTransport, typeof chains[SUPPORTED_CHAINS]> {
-    return (this._publicClient ||= publicClient);
-  }
-
-  get walletClient() {
-    return (this._walletClient ||= walletClient);
   }
 
   /**
@@ -188,7 +166,7 @@ export class TokenConverter {
     if (this.tokens.has(address)) {
       return this.tokens.get(address) as Currency;
     }
-    const [{ result: decimals }, { result: symbol }] = await this.publicClient.multicall({
+    const [{ result: decimals }, { result: symbol }] = await publicClient.multicall({
       contracts: [
         {
           address,
@@ -237,7 +215,7 @@ export class TokenConverter {
     });
 
     const candidatePools = await SmartRouter.getV3CandidatePools({
-      onChainProvider: () => this.publicClient,
+      onChainProvider: () => publicClient,
       subgraphProvider: () => this.v3SubgraphClient,
       currencyA: swapFromToken,
       currencyB: swapToToken,
@@ -251,7 +229,7 @@ export class TokenConverter {
         swapFromToken,
         TradeType.EXACT_OUTPUT,
         {
-          gasPriceWei: () => this.publicClient.getGasPrice(),
+          gasPriceWei: () => publicClient.getGasPrice(),
           maxHops: MAX_HOPS,
           maxSplits: 0,
           poolProvider: SmartRouter.createStaticPoolProvider(candidatePools),
@@ -261,17 +239,16 @@ export class TokenConverter {
       );
     } catch (e) {
       error = `Error getting best trade - ${(e as Error).message}`;
-    }
-
-    if (!trade) {
-      error = "No trade found";
-    }
-    if (error) {
       throw new Error(error);
     }
 
+    if (!trade) {
+      throw new Error("No trade found");
+    }
+
     const priceImpact = SmartRouter.getPriceImpact(trade);
-    if (priceImpact.greaterThan(new Percent(1n, 1n))) {
+
+    if (priceImpact.greaterThan(new Percent(5n, 1000n))) {
       this.sendMessage({
         type: "GetBestTrade",
         error: "High price impact",
@@ -354,7 +331,7 @@ export class TokenConverter {
 
       error = results.reduce((acc, curr) => {
         if (curr.status === "rejected") {
-          acc.push(curr.reason);
+          acc.push(curr.reason.message);
         }
         return acc;
       }, [] as string[]);
@@ -432,7 +409,7 @@ export class TokenConverter {
     });
     const { results, blockNumber } = await readTokenConvertersTokenBalances(
       tokenConverterConfigs,
-      this.walletClient.account.address,
+      walletClient.account.address,
       releaseFunds,
     );
     const conversions = results.filter(v => v.assetOut.balance > 0);
@@ -545,7 +522,7 @@ export class TokenConverter {
    * @param amount Amount to check/ request if an allowance has been granted
    */
   async checkAndRequestAllowance(token: Address, owner: Address, spender: Address, amount: bigint) {
-    const approvalAmount = await this.publicClient.readContract({
+    const approvalAmount = await publicClient.readContract({
       address: token,
       abi: erc20Abi,
       functionName: "allowance",
@@ -553,7 +530,7 @@ export class TokenConverter {
     });
 
     if (approvalAmount < amount) {
-      const trx = await this.walletClient.writeContract({
+      const trx = await walletClient.writeContract({
         address: token,
         abi: erc20Abi,
         functionName: "approve",
@@ -576,9 +553,9 @@ export class TokenConverter {
     amount: bigint,
     minIncome: bigint,
   ) {
-    const beneficiary = this.walletClient.account.address;
+    const beneficiary = walletClient.account.address;
 
-    const block = await this.publicClient.getBlock();
+    const block = await publicClient.getBlock();
     const convertTransaction = {
       ...this.operator,
       functionName: "convert" as const,
@@ -605,21 +582,21 @@ export class TokenConverter {
       if (minIncome < 0n && !this.simulate) {
         await this.checkAndRequestAllowance(
           trade.inputAmount.currency.address,
-          this.walletClient.account.address,
+          walletClient.account.address,
           addresses.TokenConverterOperator,
           -minIncome,
         );
       }
 
       blockNumber = await publicClient.getBlockNumber();
-      const gasEstimation = await this.publicClient.estimateContractGas({
-        account: this.walletClient.account,
+      const gasEstimation = await publicClient.estimateContractGas({
+        account: walletClient.account,
         ...convertTransaction,
       });
 
       if (!this.simulate) {
         simulation = "Execution: ";
-        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
+        trx = await walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
         ({ blockNumber } = await publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 }));
       }
     } catch (e) {

@@ -19,7 +19,7 @@
     "prettier": "yarn workspaces foreach run prettier",
     "coverage": "yarn workspaces foreach run coverage",
     "coverage:collect": "ts-node ./scripts/collect-files.ts --pattern='packages/**/coverage/cobertura-coverage.xml' --target='coverage'",
-    "coverage:combined": "yarn coverage && yarn coverage:collect && nyc merge .nyc_output coverage/coverage.json"
+    "coverage:combined": "yarn coverage && yarn coverage:collect && nyc merge coverage coverage/coverage.json"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.0.3",

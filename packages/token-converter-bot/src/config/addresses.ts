@@ -39,8 +39,6 @@ const addresses = {
     ...bsctestnetGovernance.addresses,
     ...bsctestnetIsolated.addresses,
     PancakeSwapRouter: "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
-    xvsHolder: "0x2Ce1d0ffD7E869D9DF33e28552b12DdDed326706",
-    usdtHolder: "0x2Ce1d0ffD7E869D9DF33e28552b12DdDed326706",
 
     BTCBPrimeConverter: bsctestnetProtocolReserve.addresses.BTCBPrimeConverter,
     ConverterNetwork: bsctestnetProtocolReserve.addresses.ConverterNetwork,
