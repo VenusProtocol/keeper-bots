@@ -9,11 +9,9 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "workspaces": {
-    "packages": [
-      "packages/*"
-    ]
-  },
+  "workspaces": [
+    "./packages/*"
+  ],
   "scripts": {
     "lint": "yarn workspaces foreach run lint",
     "prettier": "yarn workspaces foreach run prettier",
@@ -38,8 +36,8 @@
     "eslint-plugin-prettier": "3.4.1",
     "eslint-plugin-promise": "^5.2.0",
     "husky": "^8.0.3",
-    "prettier": "2.7.1",
     "nyc": "^15.1.0",
+    "prettier": "2.7.1",
     "semantic-release": "^23.0.8",
     "semantic-release-monorepo": "^8.0.2",
     "ts-node": "^10.9.2"

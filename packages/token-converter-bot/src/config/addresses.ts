@@ -6,6 +6,8 @@ import bscmainnetProtocolReserve from "@venusprotocol/protocol-reserve/deploymen
 import bsctestnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bsctestnet_addresses.json";
 import bscmainnetCore from "@venusprotocol/venus-protocol/deployments/bscmainnet_addresses.json";
 import bsctestnetCore from "@venusprotocol/venus-protocol/deployments/bsctestnet_addresses.json";
+import bscmainnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bscmainnet_addresses.json";
+import bsctestnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bsctestnet_addresses.json";
 import { Address } from "viem";
 
 import config from ".";
@@ -31,7 +33,7 @@ const addresses = {
     USDCPrimeConverter: bscmainnetProtocolReserve.addresses.USDCPrimeConverter,
     USDTPrimeConverter: bscmainnetProtocolReserve.addresses.USDTPrimeConverter,
     XVSVaultConverter: bscmainnetProtocolReserve.addresses.XVSVaultConverter,
-    TokenConverterOperator: "0x9Db8ABe20D004ab172DBE07c6Ea89680A5a3c337",
+    TokenConverterOperator: bscmainnetTokenConverterBot.addresses.TokenConverterOperator as Address,
   },
   bsctestnet: {
     ...bsctestnetCore.addresses,
@@ -48,7 +50,7 @@ const addresses = {
     USDTPrimeConverter: bsctestnetProtocolReserve.addresses.USDTPrimeConverter,
     XVSVaultConverter: bsctestnetProtocolReserve.addresses.XVSVaultConverter,
 
-    TokenConverterOperator: "0x9222F8b71603318d5EEbBf0074c2Da07fEbbB9eb",
+    TokenConverterOperator: bsctestnetTokenConverterBot.addresses.TokenConverterOperator as Address,
   },
 } as const;
 
