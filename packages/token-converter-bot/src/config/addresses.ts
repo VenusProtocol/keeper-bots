@@ -2,12 +2,12 @@ import bscmainnetGovernance from "@venusprotocol/governance-contracts/deployment
 import bsctestnetGovernance from "@venusprotocol/governance-contracts/deployments/bsctestnet_addresses.json";
 import bscmainnetIsolated from "@venusprotocol/isolated-pools/deployments/bscmainnet_addresses.json";
 import bsctestnetIsolated from "@venusprotocol/isolated-pools/deployments/bsctestnet_addresses.json";
+import bscmainnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bscmainnet_addresses.json";
+import bsctestnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bsctestnet_addresses.json";
 import bscmainnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bscmainnet_addresses.json";
 import bsctestnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bsctestnet_addresses.json";
 import bscmainnetCore from "@venusprotocol/venus-protocol/deployments/bscmainnet_addresses.json";
 import bsctestnetCore from "@venusprotocol/venus-protocol/deployments/bsctestnet_addresses.json";
-import bscmainnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bscmainnet_addresses.json";
-import bsctestnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bsctestnet_addresses.json";
 import { Address } from "viem";
 
 import config from ".";

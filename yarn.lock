@@ -5967,7 +5967,6 @@ __metadata:
     "@pancakeswap/sdk": ^5.8.0
     "@pancakeswap/smart-router": ^5.1.3
     "@pancakeswap/v3-core": ^1.0.2
-    "@typechain/ethers-v5": ^10.1.0
     "@typechain/hardhat": ^6.1.2
     "@types/chai": ^4.3.11
     "@types/jest": ^29.5.12

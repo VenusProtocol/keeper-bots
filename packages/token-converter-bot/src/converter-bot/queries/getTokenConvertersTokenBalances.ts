@@ -1,18 +1,13 @@
 import "dotenv/config";
 
-import { BigNumber } from "bignumber.js";
-import { Contract, providers, utils } from "ethers";
-import { Address, erc20Abi } from "viem";
+import { Address, decodeFunctionResult, encodeFunctionData, erc20Abi, parseAbi } from "viem";
 
-import config from "../../config";
 import { protocolShareReserveAbi } from "../../config/abis/generated";
 import addresses, { underlyingByComptroller, underlyingToVTokens } from "../../config/addresses";
 import publicClient from "../../config/clients/publicClient";
 import { MULTICALL_ABI, MULTICALL_ADDRESS } from "../constants";
 import { TokenConverterConfig } from "./getTokenConverterConfigs/formatTokenConverterConfigs";
 
-const provider = new providers.JsonRpcProvider(config.rpcUrl);
-const multicall = new Contract(MULTICALL_ADDRESS, MULTICALL_ABI, provider);
 export interface BalanceResult {
   tokenConverter: Address;
   assetIn: Address;
@@ -24,7 +19,7 @@ export interface BalanceResult {
   accountBalanceAssetOut: bigint;
 }
 
-const formatResults = (results: BigNumber[], tokenConverterConfigs: TokenConverterConfig[]): BalanceResult[] => {
+const formatResults = (results: bigint[], tokenConverterConfigs: TokenConverterConfig[]): BalanceResult[] => {
   const chunkSize = 2;
   const balances: BalanceResult[] = [];
 
@@ -65,6 +60,27 @@ const reduceConfigsToComptrollerAndTokens = (tokenConfigs: TokenConverterConfig[
   return pools;
 };
 
+const encodeBalanceOfData = (args: readonly [`0x${string}`]) =>
+  encodeFunctionData({
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args,
+  });
+
+const encodeReleaseFundsData = (args: readonly [`0x${string}`, readonly `0x${string}`[]]) =>
+  encodeFunctionData({
+    abi: protocolShareReserveAbi,
+    functionName: "releaseFunds",
+    args,
+  });
+
+const decodeBalanceOfData = (data: `0x${string}`) =>
+  decodeFunctionResult({
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    data,
+  });
+
 export const getTokenConvertersTokenBalances = async (
   tokenConverterConfigs: TokenConverterConfig[],
   walletAddress: Address,
@@ -76,39 +92,45 @@ export const getTokenConvertersTokenBalances = async (
     releaseFundsCalls = Object.entries(pools).map(node => ({
       target: addresses.ProtocolShareReserve,
       allowFailure: true, // We allow failure for all calls.
-      callData: protocolShareReserveInterface.encodeFunctionData("releaseFunds", node),
+      callData: encodeReleaseFundsData(node as [`0x${string}`, readonly `0x${string}`[]]),
     }));
   }
 
   const blockNumber = await publicClient.getBlockNumber();
 
-  const erc20Interface = new utils.Interface(erc20Abi);
-  const protocolShareReserveInterface = new utils.Interface(protocolShareReserveAbi);
-
-  const resolverResults = await multicall.callStatic.aggregate3([
-    ...releaseFundsCalls,
-    ...tokenConverterConfigs.reduce((acc, curr) => {
-      acc = acc.concat([
-        {
-          target: curr.tokenAddressOut,
-          callData: erc20Interface.encodeFunctionData("balanceOf", [curr.tokenConverter]),
-        },
-        {
-          target: curr.tokenAddressOut,
-          callData: erc20Interface.encodeFunctionData("balanceOf", [walletAddress]),
-        },
-      ]);
-      return acc;
-    }, [] as { target: string; callData: string }[]),
-  ]);
-  // Decode the responses.
-  const results = resolverResults.map(({ success, returnData }: { success: boolean; returnData: string }) => {
-    if (success && returnData != "0x") {
-      return erc20Interface.decodeFunctionResult("balanceOf", returnData)[0];
-    }
+  const { result } = await publicClient.simulateContract({
+    address: MULTICALL_ADDRESS,
+    abi: parseAbi(MULTICALL_ABI),
+    functionName: "aggregate3",
+    args: [
+      [
+        ...releaseFundsCalls,
+        ...tokenConverterConfigs.reduce((acc, curr) => {
+          acc = acc.concat([
+            {
+              target: curr.tokenAddressOut,
+              callData: encodeBalanceOfData([curr.tokenConverter]),
+              allowFailure: false,
+            },
+            {
+              target: curr.tokenAddressOut,
+              callData: encodeBalanceOfData([walletAddress]),
+              allowFailure: false,
+            },
+          ]);
+          //
+          return acc;
+        }, [] as unknown as readonly { target: `0x${string}`; callData: `0x${string}`; allowFailure: boolean }[]),
+      ],
+    ] as [readonly { target: `0x${string}`; callData: `0x${string}`; allowFailure: boolean }[]],
+    blockNumber: blockNumber ? BigInt(blockNumber) : undefined,
   });
 
+  const results = result.map(({ returnData }: { success: boolean; returnData: string }) =>
+    decodeBalanceOfData(returnData as `0x${string}`),
+  );
   const formattedResults = formatResults(results, tokenConverterConfigs);
+
   return { results: formattedResults, blockNumber };
 };
 
