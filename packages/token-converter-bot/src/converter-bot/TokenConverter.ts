@@ -1,17 +1,7 @@
 import { Currency, CurrencyAmount, Fraction, Percent, Token, TradeType } from "@pancakeswap/sdk";
 import { BaseRoute, Pool, QuoteProvider, SmartRouter, SmartRouterTrade, V3Pool } from "@pancakeswap/smart-router/evm";
 import { Client as UrqlClient, createClient } from "urql/core";
-import {
-  Address,
-  BaseError,
-  ContractFunctionRevertedError,
-  Hex,
-  HttpTransport,
-  PublicClient,
-  encodePacked,
-  erc20Abi,
-  formatUnits,
-} from "viem";
+import { Address, BaseError, ContractFunctionRevertedError, Hex, encodePacked, erc20Abi, formatUnits } from "viem";
 
 import config from "../config";
 import {
@@ -28,9 +18,8 @@ import { chains } from "../config/chains";
 import publicClient from "../config/clients/publicClient";
 import walletClient from "../config/clients/walletClient";
 import logger from "./logger";
-import { TokenConverterConfig } from "./queries/read/readTokenConverterConfigs/formatTokenConverterConfigs";
-import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/read/readTokenConvertersTokenBalances";
-import type { PoolAddressArray } from "./types";
+import getConverterConfigs from "./queries/getTokenConverterConfigs";
+import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 const MAX_HOPS = 5;
@@ -85,10 +74,10 @@ export interface GetBestTradeMessage extends DefaultMessage {
   };
 }
 
-export interface PotentialTradesMessage extends DefaultMessage {
-  type: "PotentialTrades";
+export interface PotentialConversionsMessage extends DefaultMessage {
+  type: "PotentialConversions";
   trx: undefined;
-  context: { trades: BalanceResult[] };
+  context: { conversions: BalanceResult[] };
 }
 
 export interface AccrueInterestMessage {
@@ -102,7 +91,7 @@ export interface AccrueInterestMessage {
 export type Message =
   | ReduceReservesMessage
   | ReleaseFundsMessage
-  | PotentialTradesMessage
+  | PotentialConversionsMessage
   | AccrueInterestMessage
   | ArbitrageMessage
   | GetBestTradeMessage;
@@ -110,9 +99,6 @@ export type Message =
 export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
-  private addresses: typeof addresses;
-  private _walletClient?: typeof walletClient;
-  private _publicClient?: typeof publicClient;
   private v3SubgraphClient: UrqlClient;
   private quoteProvider: QuoteProvider;
   private tokens: Map<Address, Currency>;
@@ -131,7 +117,6 @@ export class TokenConverter {
   }) {
     this.chainName = config.network;
     this.subscriber = subscriber;
-    this.addresses = addresses;
     this.operator = {
       address: addresses.TokenConverterOperator,
       abi: tokenConverterOperatorAbi,
@@ -140,20 +125,17 @@ export class TokenConverter {
       url: config.pancakeSwapSubgraphUrl,
       requestPolicy: "network-only",
     });
-    this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => this.publicClient });
+    this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => publicClient });
     this.tokens = new Map();
     this.simulate = simulate;
     this.verbose = verbose;
   }
 
-  get publicClient(): PublicClient<HttpTransport, typeof chains[SUPPORTED_CHAINS]> {
-    return (this._publicClient ||= publicClient);
-  }
-
-  get walletClient() {
-    return (this._walletClient ||= walletClient);
-  }
-
+  /**
+   * Function to post message to subscriber
+   * @param Message
+   *
+   */
   private sendMessage({
     type,
     trx = undefined,
@@ -174,11 +156,17 @@ export class TokenConverter {
     }
   }
 
-  getToken = async (address: Address): Promise<Currency> => {
+  /**
+   * Helper function got retrieving and caching a PancackeSwap sdk Token
+   * @param address Address of the token to fetch
+   * @error Throws if token can't be fetched
+   *
+   */
+  private getToken = async (address: Address): Promise<Currency> => {
     if (this.tokens.has(address)) {
       return this.tokens.get(address) as Currency;
     }
-    const [{ result: decimals }, { result: symbol }] = await this.publicClient.multicall({
+    const [{ result: decimals }, { result: symbol }] = await publicClient.multicall({
       contracts: [
         {
           address,
@@ -200,17 +188,6 @@ export class TokenConverter {
     }
     throw new Error(`Unable to fetch token details for ${address}`);
   };
-
-  async sanityCheck() {
-    const expected = this.addresses.PancakeSwapRouter;
-    const actual = await this.publicClient.readContract({
-      ...this.operator,
-      functionName: "SWAP_ROUTER",
-    });
-    if (expected !== actual) {
-      throw new Error(`Expected swap router to be at ${expected} but found at ${actual}`);
-    }
-  }
 
   /**
    * Create a trade that will provide required amount in for exact output
@@ -238,7 +215,7 @@ export class TokenConverter {
     });
 
     const candidatePools = await SmartRouter.getV3CandidatePools({
-      onChainProvider: () => this.publicClient,
+      onChainProvider: () => publicClient,
       subgraphProvider: () => this.v3SubgraphClient,
       currencyA: swapFromToken,
       currencyB: swapToToken,
@@ -252,7 +229,7 @@ export class TokenConverter {
         swapFromToken,
         TradeType.EXACT_OUTPUT,
         {
-          gasPriceWei: () => this.publicClient.getGasPrice(),
+          gasPriceWei: () => publicClient.getGasPrice(),
           maxHops: MAX_HOPS,
           maxSplits: 0,
           poolProvider: SmartRouter.createStaticPoolProvider(candidatePools),
@@ -262,17 +239,16 @@ export class TokenConverter {
       );
     } catch (e) {
       error = `Error getting best trade - ${(e as Error).message}`;
-    }
-
-    if (!trade) {
-      error = "No trade found";
-    }
-    if (error) {
       throw new Error(error);
     }
 
+    if (!trade) {
+      throw new Error("No trade found");
+    }
+
     const priceImpact = SmartRouter.getPriceImpact(trade);
-    if (priceImpact.greaterThan(new Percent(1n, 1n))) {
+
+    if (priceImpact.greaterThan(new Percent(5n, 1000n))) {
       this.sendMessage({
         type: "GetBestTrade",
         error: "High price impact",
@@ -287,7 +263,11 @@ export class TokenConverter {
     }
     return [trade as SmartRouterTrade<TradeType.EXACT_OUTPUT>, updatedAmountIn];
   }
-
+  /**
+   * Formats the swap exact input swap path
+   * @param route PancakeSwap SmartRouter Route
+   * @returns Encoded path
+   */
   encodeExactInputPath(route: BaseRoute): Hex {
     const firstInputToken: Token = route.inputAmount.currency;
 
@@ -322,17 +302,16 @@ export class TokenConverter {
     return encodePacked(types.reverse(), path.reverse());
   }
 
-  async accrueInterest(allPools: PoolAddressArray[]) {
+  /**
+   * Accrues interest on all passed markets
+   * @param allPools Tuple of [comprollerAddress, MarketAddress[]]
+   */
+  async accrueInterest(markets: Address[]) {
     let error: string | string[];
     try {
-      const allMarkets = allPools.reduce((acc, curr) => {
-        acc.concat(curr[1]);
-        return acc;
-      }, [] as Address[]);
-
       // Accrue Interest in all markets
       const results = await Promise.allSettled(
-        allMarkets.map(async market => {
+        markets.map(async market => {
           if (this.simulate) {
             await publicClient.simulateContract({
               account: walletClient.account.address,
@@ -352,7 +331,7 @@ export class TokenConverter {
 
       error = results.reduce((acc, curr) => {
         if (curr.status === "rejected") {
-          acc.push(curr.reason);
+          acc.push(curr.reason.message);
         }
         return acc;
       }, [] as string[]);
@@ -406,19 +385,40 @@ export class TokenConverter {
     this.sendMessage({ type: "ReduceReserves", error, trx });
   }
 
-  async checkForTrades(tokenConverterConfigs: TokenConverterConfig[], releaseFunds: boolean) {
+  /**
+   * Queries Protocol Reserve subgraph for query configs that fit the parameters.
+   * If `releaseFunds` is true, it will include funds that can be released in the returned balances
+   * @param { assetIn?: Address, assetOut?: Address, converters?: Address[], releaseFunds: boolean }
+   * @returns BalanceResult[] Array of converter asset balances
+   */
+  async queryConversions({
+    assetIn,
+    assetOut,
+    converters,
+    releaseFunds,
+  }: {
+    assetIn?: Address;
+    assetOut?: Address;
+    converters?: Address[];
+    releaseFunds: boolean;
+  }) {
+    const tokenConverterConfigs = await getConverterConfigs({
+      assetIn,
+      assetOut,
+      converters,
+    });
     const { results, blockNumber } = await readTokenConvertersTokenBalances(
       tokenConverterConfigs,
-      this.walletClient.account.address,
+      walletClient.account.address,
       releaseFunds,
     );
-    const trades = results.filter(v => v.assetOut.balance > 0);
-    this.sendMessage({ type: "PotentialTrades", context: { trades }, blockNumber });
-    return trades;
+    const conversions = results.filter(v => v.assetOut.balance > 0);
+    this.sendMessage({ type: "PotentialConversions", context: { conversions }, blockNumber });
+    return conversions;
   }
 
   /**
-   *
+   * Takes an map or comptroller to assets and releases funds for those markets
    * @param pools Object with address of comptroller as key and an array of underlying assets addresses for the value
    */
   async releaseFunds(pools: Record<Address, readonly Address[]>) {
@@ -454,8 +454,12 @@ export class TokenConverter {
     }
   }
 
-  async releaseFundsForTrades(trades: BalanceResult[]) {
-    const releaseFundsArgs = trades.reduce((acc, curr) => {
+  /**
+   * Takes an array of potential conversions (BalanceResult[]) and releases funds for those potential conversions
+   * @param conversions Array of BalanceResults
+   */
+  async releaseFundsForConversions(conversions: BalanceResult[]) {
+    const releaseFundsArgs = conversions.reduce((acc, curr) => {
       const { core, isolated } = curr.assetOutVTokens;
       if (core) {
         acc[addresses.Unitroller as Address] = acc[addresses.Unitroller as Address]
@@ -473,6 +477,13 @@ export class TokenConverter {
     await this.releaseFunds(releaseFundsArgs);
   }
 
+  /**
+   * Helper function to query the Venus oracle usd value data for an asset and amount
+   * @param underlyingAddress Asset address
+   * @param vTokenAddress vToken market address for the asset
+   * @param value Amount of asset
+   * @returns {underlyingPriceUsd: string, underlyingUsdValue: string, underlyingDecimals: number}
+   */
   async getUsdValue(underlyingAddress: Address, vTokenAddress: Address, value: bigint) {
     const result = await publicClient.multicall({
       contracts: [
@@ -503,8 +514,15 @@ export class TokenConverter {
     };
   }
 
+  /**
+   * Helper method to check and if not allowed request allowance
+   * @param token Token that will be spent
+   * @param owner Owner of the token
+   * @param spender Contract that would like to spend the token
+   * @param amount Amount to check/ request if an allowance has been granted
+   */
   async checkAndRequestAllowance(token: Address, owner: Address, spender: Address, amount: bigint) {
-    const approvalAmount = await this.publicClient.readContract({
+    const approvalAmount = await publicClient.readContract({
       address: token,
       abi: erc20Abi,
       functionName: "allowance",
@@ -512,7 +530,7 @@ export class TokenConverter {
     });
 
     if (approvalAmount < amount) {
-      const trx = await this.walletClient.writeContract({
+      const trx = await walletClient.writeContract({
         address: token,
         abi: erc20Abi,
         functionName: "approve",
@@ -535,9 +553,9 @@ export class TokenConverter {
     amount: bigint,
     minIncome: bigint,
   ) {
-    const beneficiary = this.walletClient.account.address;
+    const beneficiary = walletClient.account.address;
 
-    const block = await this.publicClient.getBlock();
+    const block = await publicClient.getBlock();
     const convertTransaction = {
       ...this.operator,
       functionName: "convert" as const,
@@ -564,21 +582,21 @@ export class TokenConverter {
       if (minIncome < 0n && !this.simulate) {
         await this.checkAndRequestAllowance(
           trade.inputAmount.currency.address,
-          this.walletClient.account.address,
+          walletClient.account.address,
           addresses.TokenConverterOperator,
           -minIncome,
         );
       }
 
       blockNumber = await publicClient.getBlockNumber();
-      const gasEstimation = await this.publicClient.estimateContractGas({
-        account: this.walletClient.account,
+      const gasEstimation = await publicClient.estimateContractGas({
+        account: walletClient.account,
         ...convertTransaction,
       });
 
       if (!this.simulate) {
         simulation = "Execution: ";
-        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
+        trx = await walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
         ({ blockNumber } = await publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 }));
       }
     } catch (e) {
@@ -596,7 +614,15 @@ export class TokenConverter {
     this.sendMessage({ type: "Arbitrage", error, trx, context: convertTransaction.args[0], blockNumber });
   }
 
-  async prepareTrade(tokenConverter: Address, assetOut: Address, assetIn: Address, amountOut: bigint) {
+  /**
+   * Prepares conversion arguments based on token converter, pair, and amount to receive
+   * @param tokenConverter Address of the token converter to interact with
+   * @param assetOut Address of the asset to receive from the token converter
+   * @param assetIn Address of the asset to sent to the token converter
+   * @param amountOut Amount of asset out to receive from the token converter
+   * @returns {trade: SmartRouterTrade, amount: bigint, minIncome: bigint }
+   */
+  async prepareConversion(tokenConverter: Address, assetOut: Address, assetIn: Address, amountOut: bigint) {
     let error;
     let trade;
     let tradeAmount;

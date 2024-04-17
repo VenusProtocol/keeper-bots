@@ -56,4 +56,4 @@ class SubgraphClient {
   }
 }
 
-export default new SubgraphClient(config.subgraphUrl);
+export default new SubgraphClient(config.subgraphUrl || "nonetwork");

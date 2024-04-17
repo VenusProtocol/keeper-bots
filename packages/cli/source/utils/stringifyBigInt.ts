@@ -1,4 +1,4 @@
-const stringifyBigInt = (_: string, val: any) => {
+const stringifyBigInt = (_: string, val: unknown) => {
   if (typeof val === "bigint") {
     return val.toString();
   }

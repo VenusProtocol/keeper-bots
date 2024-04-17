@@ -15,12 +15,16 @@ export const defaultState = {
 export const reducer = (state: State, action: Message): State => {
   switch (action.type) {
     case "ReleaseFunds": {
-      state.releasedFunds.push({
+      const releasedFunds = [...state.releasedFunds];
+      releasedFunds.push({
         trx: action.trx,
         error: action.error,
         context: action.context,
       });
-      return state;
+      return {
+        ...state,
+        releasedFunds,
+      };
     }
   }
   return state;

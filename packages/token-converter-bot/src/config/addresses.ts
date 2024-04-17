@@ -2,6 +2,8 @@ import bscmainnetGovernance from "@venusprotocol/governance-contracts/deployment
 import bsctestnetGovernance from "@venusprotocol/governance-contracts/deployments/bsctestnet_addresses.json";
 import bscmainnetIsolated from "@venusprotocol/isolated-pools/deployments/bscmainnet_addresses.json";
 import bsctestnetIsolated from "@venusprotocol/isolated-pools/deployments/bsctestnet_addresses.json";
+import bscmainnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bscmainnet_addresses.json";
+import bsctestnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bsctestnet_addresses.json";
 import bscmainnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bscmainnet_addresses.json";
 import bsctestnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bsctestnet_addresses.json";
 import bscmainnetCore from "@venusprotocol/venus-protocol/deployments/bscmainnet_addresses.json";
@@ -31,7 +33,7 @@ const addresses = {
     USDCPrimeConverter: bscmainnetProtocolReserve.addresses.USDCPrimeConverter,
     USDTPrimeConverter: bscmainnetProtocolReserve.addresses.USDTPrimeConverter,
     XVSVaultConverter: bscmainnetProtocolReserve.addresses.XVSVaultConverter,
-    TokenConverterOperator: "0x9Db8ABe20D004ab172DBE07c6Ea89680A5a3c337",
+    TokenConverterOperator: bscmainnetTokenConverterBot.addresses.TokenConverterOperator as Address,
   },
   bsctestnet: {
     ...bsctestnetCore.addresses,
@@ -39,8 +41,6 @@ const addresses = {
     ...bsctestnetGovernance.addresses,
     ...bsctestnetIsolated.addresses,
     PancakeSwapRouter: "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
-    xvsHolder: "0x2Ce1d0ffD7E869D9DF33e28552b12DdDed326706",
-    usdtHolder: "0x2Ce1d0ffD7E869D9DF33e28552b12DdDed326706",
 
     BTCBPrimeConverter: bsctestnetProtocolReserve.addresses.BTCBPrimeConverter,
     ConverterNetwork: bsctestnetProtocolReserve.addresses.ConverterNetwork,
@@ -50,7 +50,7 @@ const addresses = {
     USDTPrimeConverter: bsctestnetProtocolReserve.addresses.USDTPrimeConverter,
     XVSVaultConverter: bsctestnetProtocolReserve.addresses.XVSVaultConverter,
 
-    TokenConverterOperator: "0x9222F8b71603318d5EEbBf0074c2Da07fEbbB9eb",
+    TokenConverterOperator: bsctestnetTokenConverterBot.addresses.TokenConverterOperator as Address,
   },
 } as const;
 
@@ -70,7 +70,7 @@ export type SupportedConverters =
 
 export const underlyingByComptroller: Record<Address, readonly Address[]> = {
   bsctestnet: {
-    [addresses[network].Unitroller as Address]: [
+    [addresses.bsctestnet.Unitroller as Address]: [
       "0x16227d60f7a0e586c66b005219dfc887d13c9531",
       "0x167f1f9ef531b3576201aa3146b13c57dbeda514",
       "0x19e7215abf8b2716ee807c9f4b83af0e7f92653f",
@@ -126,7 +126,7 @@ export const underlyingByComptroller: Record<Address, readonly Address[]> = {
     ] as Address[],
   },
   bscmainnet: {
-    [addresses[network].Unitroller as Address]: [
+    [addresses.bscmainnet.Unitroller as Address]: [
       "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c",
       "0x55d398326f99059ff775485246999027b3197955",
       "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",

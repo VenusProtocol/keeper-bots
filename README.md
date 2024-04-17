@@ -2,44 +2,29 @@
 
 Keeper bots are intended to perform regular permissionless tasks like liquidations, token converter arbitrage, shortfall auctions, VAI arbitrage.
 
-The repository contains a combination of contracts and scripts. Contracts are implemented and tested using the established Venus toolset – ethers v5, hardhat, solidity v0.8.13. Scripts, in turn, use viem to interact with the smart contracts.
+The repository is organized into several packages
+- Smart contracts
+- CLI
+- Token Converter Bot
 
-## Prerequisites
+## Packages
 
-- NodeJS - 18.x
-- Solc - v0.8.13 (https://github.com/ethereum/solidity/releases/tag/v0.8.13)
+### Smart Contracts
+This package contains the operator and related contracts for various keeper bot operations. It follows Venus Protocol Smart Contract best practices.
+
+### CLI
+The cli is a convenient way to execute and test keeper bot operations. It can also be used as a reference for building more complex keeper bot strategies.
+
+### Token Converter Bot
+The Token Converter Bot package contains code for interacting with the `TokenConverterOperator` and can be used to build complex conversion strategies.
+
 
 ## Linting and code formatting
 
-Linting is done using eslint for typescript and solhint for solidity. Prettier is used to format solidity and typescript files.
+Linting is done using eslint for typescript and solhint for solidity. Prettier is used to format solidity and typescript files. Linting can be run from the root of the repository with each package extending the base config
 
 To check linting and formatting on all files run:
 
 ```
 $ yarn lint
-```
-
-Linting command can be run with the fix flag to fix eligible errors automatically
-
-```
-$ yarn lint:sol --fix
-$ yarn lint:ts --fix
-```
-
-To pretty all files run:
-
-```
-$ yarn prettier
-```
-
-## Testing the contracts
-
-```
-yarn test
-```
-
-To run fork tests add FORK=true, FORKED_NETWORK and one ARCHIVE_NODE var in the .env file, then run
-
-```
-yarn hardhat test fork-tests/index.ts
 ```

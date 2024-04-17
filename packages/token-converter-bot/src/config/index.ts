@@ -17,7 +17,9 @@ const subgraphUrlByNetwork = {
   bsctestnet: "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel",
   bscmainnet: "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve",
 };
+
 const network = safelyGetEnvVar<SUPPORTED_CHAINS>("NETWORK");
+
 const config = {
   subgraphUrl: subgraphUrlByNetwork[network],
   pancakeSwapSubgraphUrl: pancakeSwapSubgraphUrlByNetwork[network],
