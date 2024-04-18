@@ -6,6 +6,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy } = deployments;
 
   const { deployer } = await getNamedAccounts();
+
   const PancakeSwapRouterAddresses = {
     bscmainnet: "0x13f4EA83D0bd40E75C8222255bc855a974568Dd4",
     bsctestnet: "0x1b81D678ffb9C0263b24A97847620C99d213eB14",
@@ -13,7 +14,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     hardhat: "",
   };
 
-  await deploy("TokenConverterOperator", {
+  await deploy("LiquidationOperator", {
     from: deployer,
     args: [PancakeSwapRouterAddresses[hre.network.name as keyof typeof PancakeSwapRouterAddresses]],
     log: true,
@@ -21,7 +22,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   });
 };
 
-func.tags = ["TokenConverterOperator"];
-func.skip = async hre => !["bscmainnet", "bsctestnet"].includes(hre.network.name);
+func.tags = ["LiquidationOperator"];
 
 export default func;
