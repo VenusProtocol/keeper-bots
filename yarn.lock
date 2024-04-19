@@ -5806,7 +5806,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/keeper-bot-contracts@^0.0.1, @venusprotocol/keeper-bot-contracts@workspace:packages/smart-contracts":
+"@venusprotocol/keeper-bot-contracts@^1.0.0-dev.1, @venusprotocol/keeper-bot-contracts@workspace:packages/smart-contracts":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/keeper-bot-contracts@workspace:packages/smart-contracts"
   dependencies:
@@ -5974,7 +5974,7 @@ __metadata:
     "@types/node": ^20.10.0
     "@typescript-eslint/eslint-plugin": ^6.13.1
     "@typescript-eslint/parser": ^6.13.1
-    "@venusprotocol/keeper-bot-contracts": ^0.0.1
+    "@venusprotocol/keeper-bot-contracts": ^1.0.0-dev.1
     "@venusprotocol/oracle": ^1.7.3
     "@venusprotocol/solidity-utilities": ^1.1.0
     "@wagmi/cli": ^2.0.4
