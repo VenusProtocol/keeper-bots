@@ -32,7 +32,7 @@
     "@graphprotocol/client-cli": "^3.0.0",
     "@pancakeswap/sdk": "^5.8.0",
     "@pancakeswap/smart-router": "^5.1.3",
-    "@venusprotocol/keeper-bot-contracts": "^1.5.1",
+    "@venusprotocol/keeper-bot-contracts": "^0.0.1",
     "abitype": "0.10.0",
     "graphql": "^16.8.1",
     "hardhat": "^2.19.5",
