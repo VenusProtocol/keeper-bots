@@ -1,10 +1,11 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
-      - develop
+  workflow_run:
+    workflows: ["CI"]
+    branches: [develop, main]
+    types: 
+      - completed
 
 jobs:
   release-smart-contracts:
@@ -53,10 +54,6 @@ jobs:
       
             - name: Install dependencies
               run: yarn
-            
-            - name: Generate subgraph types
-              run: |
-                yarn workspace @venusprotocol/token-converter-bot run generate-subgraph-types
       
             - name: Build
               run: yarn workspace @venusprotocol/token-converter-bot run build
