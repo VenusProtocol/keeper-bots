@@ -1,6 +1,6 @@
 {
   "name": "@venusprotocol/token-converter-bot",
-  "version": "1.0.0-dev.2",
+  "version": "1.0.0-dev.3",
   "description": "",
   "scripts": {
     "lint": "yarn lint:ts && yarn prettier:check",
