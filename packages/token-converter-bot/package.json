@@ -12,7 +12,6 @@
     "build": "tsc",
     "prettier:check": "prettier --check \"**/*.{js,json,md,ts,yaml,yml}\"",
     "generate-abis": "yarn wagmi generate",
-    "postinstall": "yarn generate-abis",
     "generate-subgraph-types": "rm -rf ./src/subgraph-client/.graphclient && npx graphclient build --dir ./src/subgraph-client"
   },
   "keywords": [],

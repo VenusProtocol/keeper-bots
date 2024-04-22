@@ -57,6 +57,7 @@ jobs:
 
             - name: Generate subgraph types
               run: |
+                yarn workspace @venusprotocol/token-converter-bot run generate-abis
                 yarn workspace @venusprotocol/token-converter-bot run generate-subgraph-types
 
             - name: Build
