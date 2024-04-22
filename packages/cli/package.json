@@ -50,5 +50,9 @@
     "nodeArguments": [
       "--loader=ts-node/esm"
     ]
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": false
   }
 }
