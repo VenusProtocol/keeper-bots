@@ -26,10 +26,10 @@
   "dependencies": {
     "@openzeppelin/contracts": "4.9.3",
     "@openzeppelin/contracts-upgradeable": "4.9.3",
-    "@venusprotocol/governance-contracts": "^1.4.0",
-    "@venusprotocol/isolated-pools": "^2.3.0",
-    "@venusprotocol/protocol-reserve": "^1.5.0-dev.3",
-    "@venusprotocol/venus-protocol": "^7.1.0"
+    "@venusprotocol/governance-contracts": "^2.0.0",
+    "@venusprotocol/isolated-pools": "^3.0.0",
+    "@venusprotocol/protocol-reserve": "^2.0.0",
+    "@venusprotocol/venus-protocol": "^8.0.0"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.7.0",
@@ -46,8 +46,8 @@
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",
-    "@venusprotocol/oracle": "^1.7.3",
-    "@venusprotocol/solidity-utilities": "^1.1.0",
+    "@venusprotocol/oracle": "^2.0.0",
+    "@venusprotocol/solidity-utilities": "^2.0.0",
     "@wagmi/cli": "^2.0.4",
     "chai": "^4.3.10",
     "eslint": "^7.32.0",

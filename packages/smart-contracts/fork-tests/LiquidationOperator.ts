@@ -23,7 +23,7 @@ const makePath = (parts: string[]) => hexlify(concat(parts));
 const deployZeroRateModel = async () => {
   // Since it's a zero rate model, any value for blocks per year should work
   const blocksPerYear = 123456;
-  return deploy(WhitePaperInterestRateModel__factory, blocksPerYear, 0, 0);
+  return deploy(WhitePaperInterestRateModel__factory, 0, 0, false, blocksPerYear);
 };
 
 forking({ bscmainnet: 36612930 } as const, network => {

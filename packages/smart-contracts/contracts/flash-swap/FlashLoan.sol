@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity 0.8.25;
 
 import { IPancakeV3FlashCallback } from "@pancakeswap/v3-core/contracts/interfaces/callback/IPancakeV3FlashCallback.sol";
 import { IPancakeV3Pool } from "@pancakeswap/v3-core/contracts/interfaces/IPancakeV3Pool.sol";
