@@ -3,9 +3,8 @@ pragma solidity 0.8.25;
 
 import { IPancakeV3FlashCallback } from "@pancakeswap/v3-core/contracts/interfaces/callback/IPancakeV3FlashCallback.sol";
 import { IPancakeV3Pool } from "@pancakeswap/v3-core/contracts/interfaces/IPancakeV3Pool.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import { Token } from "../util/Token.sol";
 import { Path } from "../third-party/pancakeswap-v8/Path.sol";
 import { PoolAddress } from "../third-party/pancakeswap-v8/PoolAddress.sol";
 
@@ -14,7 +13,7 @@ import { FlashHandler } from "./FlashHandler.sol";
 /// @notice Callback data passed to the flash loan callback
 struct Envelope {
     /// @notice Token (the same as path[0])
-    IERC20 token;
+    Token token;
     /// @notice Amount of token to receive during the flash loan
     uint256 amountOut;
     /// @notice Application-specific data
@@ -41,7 +40,6 @@ struct Envelope {
 ///   contracts should save the original context in the application-specific data bytes
 ///   passed to the callbacks.
 abstract contract FlashLoan is IPancakeV3FlashCallback, FlashHandler {
-    using SafeERC20 for IERC20;
     using Path for bytes;
 
     /// @notice Flash swap parameters
@@ -69,10 +67,10 @@ abstract contract FlashLoan is IPancakeV3FlashCallback, FlashHandler {
         Envelope memory envelope = abi.decode(data, (Envelope));
         _verifyCallback(envelope.poolKey);
 
-        (IERC20 tokenIn, uint256 maxAmountIn) = _onMoneyReceived(envelope.data);
+        (Token tokenIn, uint256 maxAmountIn) = _onMoneyReceived(envelope.data);
 
         if (tokenIn != envelope.token) {
-            revert UnexpectedFlashLoan(address(tokenIn), address(envelope.token));
+            revert UnexpectedFlashLoan(tokenIn.addr(), envelope.token.addr());
         }
 
         uint256 fee = (fee0 == 0 ? fee1 : fee0);
@@ -81,7 +79,7 @@ abstract contract FlashLoan is IPancakeV3FlashCallback, FlashHandler {
             revert MaxAmountInViolated(amountToPay, maxAmountIn);
         }
 
-        envelope.token.safeTransfer(msg.sender, envelope.amountOut + fee);
+        envelope.token.transfer(msg.sender, envelope.amountOut + fee);
 
         _onFlashCompleted(envelope.data);
     }
@@ -112,7 +110,7 @@ abstract contract FlashLoan is IPancakeV3FlashCallback, FlashHandler {
             address(this),
             poolKey.token0 == token ? amountOut : 0,
             poolKey.token1 == token ? amountOut : 0,
-            abi.encode(Envelope(IERC20(token), amountOut, data, poolKey))
+            abi.encode(Envelope(Token.wrap(token), amountOut, data, poolKey))
         );
     }
 }
