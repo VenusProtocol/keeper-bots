@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.25;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ensureNonzeroAddress } from "@venusprotocol/solidity-utilities/contracts/validators.sol";
 
+import { Token } from "../util/Token.sol";
 import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
 import { PoolAddress } from "../third-party/pancakeswap-v8/PoolAddress.sol";
 
@@ -35,7 +35,7 @@ abstract contract FlashHandler {
     /// @param data Application-specific data
     /// @return tokenIn Token X
     /// @return maxAmountIn Maximum amount of token X to be used to repay the flash operation
-    function _onMoneyReceived(bytes memory data) internal virtual returns (IERC20 tokenIn, uint256 maxAmountIn);
+    function _onMoneyReceived(bytes memory data) internal virtual returns (Token tokenIn, uint256 maxAmountIn);
 
     /// @dev Called when the flash operation is completed and was paid for. By default, does nothing.
     ///   Note that msg.sender is the pool that called the callback, not the original caller

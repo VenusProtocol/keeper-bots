@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.25;
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IAbstractTokenConverter } from "@venusprotocol/protocol-reserve/contracts/TokenConverter/IAbstractTokenConverter.sol";
 
 import { FlashHandler } from "../flash-swap/FlashHandler.sol";
 import { ExactOutputFlashSwap } from "../flash-swap/ExactOutputFlashSwap.sol";
-import { approveOrRevert } from "../util/approveOrRevert.sol";
-import { transferAll } from "../util/transferAll.sol";
+import { Token } from "../util/Token.sol";
 import { checkDeadline, validatePath } from "../util/validators.sol";
 import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
 
@@ -29,14 +26,12 @@ import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
 ///   version would send the income in `tokenToSendToConverter`. The former is supposedly
 ///   a bit more efficient since there's no slippage associated with the income conversion.
 contract TokenConverterOperator is ExactOutputFlashSwap {
-    using SafeERC20 for IERC20;
-
     /// @notice Conversion parameters
     struct ConversionParameters {
         /// @notice The receiver of the arbitrage income
         address beneficiary;
         /// @notice The token currently in the TokenConverter
-        IERC20 tokenToReceiveFromConverter;
+        Token tokenToReceiveFromConverter;
         /// @notice The amount (in `tokenToReceiveFromConverter` tokens) to receive as a result of conversion
         uint256 amount;
         /// @notice Minimal income to get from the arbitrage transaction (in `tokenToReceiveFromConverter`).
@@ -45,7 +40,7 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         ///   arbitrage will be executed, and the excess  (if any) will be sent to the beneficiary.
         int256 minIncome;
         /// @notice The token the TokenConverter would get
-        IERC20 tokenToSendToConverter;
+        Token tokenToSendToConverter;
         /// @notice Address of the token converter contract to arbitrage
         IAbstractTokenConverter converter;
         /// @notice Reversed (exact output) path to trade from `tokenToReceiveFromConverter`
@@ -60,11 +55,11 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         /// @notice The receiver of the arbitrage income
         address beneficiary;
         /// @notice The token the TokenConverter would receive
-        IERC20 tokenToSendToConverter;
+        Token tokenToSendToConverter;
         /// @notice The amount (in `amountToSendToConverter` tokens) to send to converter
         uint256 amountToSendToConverter;
         /// @notice The token currently in the TokenConverter
-        IERC20 tokenToReceiveFromConverter;
+        Token tokenToReceiveFromConverter;
         /// @notice The amount (in `tokenToReceiveFromConverter` tokens) to receive
         uint256 amountToReceiveFromConverter;
         /// @notice Minimal income to get from the arbitrage transaction (in `amountToReceiveFromConverter`).
@@ -92,19 +87,19 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
     /// @param params Conversion parameters
     function convert(ConversionParameters calldata params) external {
         checkDeadline(params.deadline);
-        validatePath(params.path, address(params.tokenToSendToConverter), address(params.tokenToReceiveFromConverter));
+        validatePath(params.path, params.tokenToSendToConverter.addr(), params.tokenToReceiveFromConverter.addr());
 
         (uint256 amountToReceive, uint256 amountToPay) = params.converter.getUpdatedAmountIn(
             params.amount,
-            address(params.tokenToSendToConverter),
-            address(params.tokenToReceiveFromConverter)
+            params.tokenToSendToConverter.addr(),
+            params.tokenToReceiveFromConverter.addr()
         );
         if (params.amount != amountToReceive) {
             revert InsufficientLiquidity(params.amount, amountToReceive);
         }
 
         if (params.minIncome < 0) {
-            params.tokenToReceiveFromConverter.safeTransferFrom(msg.sender, address(this), _u(-params.minIncome));
+            params.tokenToReceiveFromConverter.transferToSelf(msg.sender, _u(-params.minIncome));
         }
 
         ConversionData memory data = ConversionData({
@@ -120,7 +115,7 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         _flashSwap(amountToPay, params.path, abi.encode(data));
     }
 
-    function _onMoneyReceived(bytes memory data) internal override returns (IERC20 tokenIn, uint256 maxAmountIn) {
+    function _onMoneyReceived(bytes memory data) internal override returns (Token tokenIn, uint256 maxAmountIn) {
         ConversionData memory decoded = abi.decode(data, (ConversionData));
 
         uint256 receivedAmount = _convertViaTokenConverter(
@@ -135,7 +130,7 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
 
     function _onFlashCompleted(bytes memory data) internal override {
         ConversionData memory decoded = abi.decode(data, (ConversionData));
-        transferAll(decoded.tokenToReceiveFromConverter, address(this), decoded.beneficiary);
+        decoded.tokenToReceiveFromConverter.transferAll(decoded.beneficiary);
     }
 
     /// @dev Get `tokenToReceive` from TokenConverter, paying with `tokenToPay`
@@ -145,22 +140,23 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
     /// @param amountToReceive Amount to receive from TokenConverter in `tokenToReceive` tokens
     function _convertViaTokenConverter(
         IAbstractTokenConverter converter,
-        IERC20 tokenToPay,
-        IERC20 tokenToReceive,
+        Token tokenToPay,
+        Token tokenToReceive,
         uint256 amountToReceive
     ) internal returns (uint256) {
-        uint256 balanceBefore = tokenToReceive.balanceOf(address(this));
-        uint256 maxAmountToPay = tokenToPay.balanceOf(address(this));
-        approveOrRevert(tokenToPay, address(converter), maxAmountToPay);
+        uint256 balanceBefore = tokenToReceive.balanceOfSelf();
+        uint256 maxAmountToPay = tokenToPay.balanceOfSelf();
+
+        tokenToPay.approve(address(converter), maxAmountToPay);
         converter.convertForExactTokens(
             maxAmountToPay,
             amountToReceive,
-            address(tokenToPay),
-            address(tokenToReceive),
+            tokenToPay.addr(),
+            tokenToReceive.addr(),
             address(this)
         );
-        approveOrRevert(tokenToPay, address(converter), 0);
-        uint256 tokensReceived = tokenToReceive.balanceOf(address(this)) - balanceBefore;
+        tokenToPay.approve(address(converter), 0);
+        uint256 tokensReceived = tokenToReceive.balanceOfSelf() - balanceBefore;
         return tokensReceived;
     }
 
