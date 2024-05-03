@@ -3,10 +3,9 @@ pragma solidity 0.8.25;
 
 import { IPancakeV3SwapCallback } from "@pancakeswap/v3-core/contracts/interfaces/callback/IPancakeV3SwapCallback.sol";
 import { IPancakeV3Pool } from "@pancakeswap/v3-core/contracts/interfaces/IPancakeV3Pool.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { approveOrRevert } from "../util/approveOrRevert.sol";
+import { Token } from "../util/Token.sol";
 import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
 import { Path } from "../third-party/pancakeswap-v8/Path.sol";
 import { PoolAddress } from "../third-party/pancakeswap-v8/PoolAddress.sol";
@@ -42,7 +41,6 @@ struct Envelope {
 ///   contracts should save the original context in the application-specific data bytes
 ///   passed to the callbacks.
 abstract contract ExactOutputFlashSwap is IPancakeV3SwapCallback, FlashHandler {
-    using SafeERC20 for IERC20;
     using Path for bytes;
 
     /// @notice Thrown if the swap callback is called with unexpected or zero amount of tokens
@@ -60,20 +58,20 @@ abstract contract ExactOutputFlashSwap is IPancakeV3SwapCallback, FlashHandler {
         }
 
         uint256 amountToPay;
-        IERC20 tokenToPay;
+        Token tokenToPay;
         if (amount0Delta > 0) {
-            tokenToPay = IERC20(envelope.poolKey.token0);
+            tokenToPay = Token.wrap(envelope.poolKey.token0);
             amountToPay = uint256(amount0Delta);
         } else if (amount1Delta > 0) {
-            tokenToPay = IERC20(envelope.poolKey.token1);
+            tokenToPay = Token.wrap(envelope.poolKey.token1);
             amountToPay = uint256(amount1Delta);
         }
 
-        (IERC20 tokenIn, uint256 maxAmountIn) = _onMoneyReceived(envelope.data);
+        (Token tokenIn, uint256 maxAmountIn) = _onMoneyReceived(envelope.data);
 
         if (envelope.path.hasMultiplePools()) {
             bytes memory remainingPath = envelope.path.skipToken();
-            approveOrRevert(tokenIn, address(SWAP_ROUTER), maxAmountIn);
+            tokenIn.approve(address(SWAP_ROUTER), maxAmountIn);
             SWAP_ROUTER.exactOutput(
                 ISmartRouter.ExactOutputParams({
                     path: remainingPath,
@@ -82,10 +80,10 @@ abstract contract ExactOutputFlashSwap is IPancakeV3SwapCallback, FlashHandler {
                     amountInMaximum: maxAmountIn
                 })
             );
-            approveOrRevert(tokenIn, address(SWAP_ROUTER), 0);
+            tokenIn.approve(address(SWAP_ROUTER), 0);
         } else {
             // If the path had just one pool, tokenToPay should be tokenX, so we can just repay the debt.
-            tokenToPay.safeTransfer(msg.sender, amountToPay);
+            tokenToPay.transfer(msg.sender, amountToPay);
         }
 
         _onFlashCompleted(envelope.data);
