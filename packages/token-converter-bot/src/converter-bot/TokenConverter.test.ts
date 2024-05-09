@@ -9,8 +9,6 @@ import {
   tokenConverterOperatorAbi,
   vBnbAdminAbi,
 } from "../config/abis/generated";
-import publicClient from "../config/clients/publicClient";
-import walletClient from "../config/clients/walletClient";
 import TokenConverter from "./TokenConverter";
 import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
 
@@ -53,21 +51,17 @@ const createTokenConverterInstance = ({ simulate = false }: { simulate: boolean 
 };
 
 describe("Token Converter", () => {
-  afterEach(() => {
-    (publicClient.simulateContract as jest.Mock).mockClear();
-    (publicClient.readContract as jest.Mock).mockClear();
-    (publicClient.multicall as jest.Mock).mockClear();
-    (walletClient.writeContract as jest.Mock).mockClear();
-  });
-
   describe("getBestTrade", () => {
     test("should throw error if not trade found", async () => {
-      (publicClient.multicall as jest.Mock).mockImplementation(() => [{ result: 18 }, { result: "USDT" }]);
-      (publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
+      const { tokenConverter } = createTokenConverterInstance();
+      (tokenConverter.publicClient.multicall as jest.Mock).mockImplementation(() => [
+        { result: 18 },
+        { result: "USDT" },
+      ]);
+      (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
 
-      const { tokenConverter } = createTokenConverterInstance();
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       expect(
         tokenConverter.getBestTrade(
@@ -80,15 +74,18 @@ describe("Token Converter", () => {
     });
 
     test("should handle thrown error", async () => {
-      (publicClient.multicall as jest.Mock).mockImplementation(() => [{ result: 18 }, { result: "USDT" }]);
-      (publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
+      const { tokenConverter } = createTokenConverterInstance();
+      (tokenConverter.publicClient.multicall as jest.Mock).mockImplementation(() => [
+        { result: 18 },
+        { result: "USDT" },
+      ]);
+      (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
 
       (SmartRouter.getBestTrade as jest.Mock).mockImplementationOnce(() => {
         throw new Error("Cannot find a valid swap route");
       });
-      const { tokenConverter } = createTokenConverterInstance();
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       expect(
         tokenConverter.getBestTrade(
@@ -101,12 +98,14 @@ describe("Token Converter", () => {
     });
 
     test("should return trade with low price impact", async () => {
-      (publicClient.multicall as jest.Mock).mockImplementation(() => [{ result: 18 }, { result: "USDT" }]);
-      (publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
+      const { tokenConverter } = createTokenConverterInstance();
+      (tokenConverter.publicClient.multicall as jest.Mock).mockImplementation(() => [
+        { result: 18 },
+        { result: "USDT" },
+      ]);
+      (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
-
-      const { tokenConverter } = createTokenConverterInstance();
 
       (SmartRouter.getPriceImpact as jest.Mock).mockImplementationOnce(() => new Percent(2n, 1000n));
       (SmartRouter.getBestTrade as jest.Mock).mockImplementationOnce(() => mockRoute);
@@ -122,12 +121,14 @@ describe("Token Converter", () => {
     });
 
     test("should call getBestTrade again if price impact is high with lower amount", async () => {
-      (publicClient.multicall as jest.Mock).mockImplementation(() => [{ result: 18 }, { result: "USDT" }]);
-      (publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
+      const { tokenConverter, subscriberMock } = createTokenConverterInstance();
+      (tokenConverter.publicClient.multicall as jest.Mock).mockImplementation(() => [
+        { result: 18 },
+        { result: "USDT" },
+      ]);
+      (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
-
-      const { tokenConverter, subscriberMock } = createTokenConverterInstance();
 
       const tokenConverterMock = jest
         .spyOn(TokenConverter.prototype, "getBestTrade")
@@ -188,17 +189,17 @@ describe("Token Converter", () => {
     test("should successfully simulate accrue interest", async () => {
       const { tokenConverter, subscriberMock } = createTokenConverterInstance({ simulate: true });
 
-      expect(await tokenConverter.accrueInterest([addresses.vUSDT, addresses.vUSDC]));
+      await tokenConverter.accrueInterest([addresses.vUSDT, addresses.vUSDC]);
 
-      expect(publicClient.simulateContract).toHaveBeenNthCalledWith(1, {
-        account: walletClient.account.address,
+      expect(tokenConverter.publicClient.simulateContract).toHaveBeenNthCalledWith(1, {
+        account: tokenConverter.walletClient.account.address,
         address: addresses.vUSDT,
         abi: coreVTokenAbi,
         functionName: "accrueInterest",
       });
 
-      expect(publicClient.simulateContract).toHaveBeenNthCalledWith(2, {
-        account: walletClient.account.address,
+      expect(tokenConverter.publicClient.simulateContract).toHaveBeenNthCalledWith(2, {
+        account: tokenConverter.walletClient.account.address,
         address: addresses.vUSDC,
         abi: coreVTokenAbi,
         functionName: "accrueInterest",
@@ -216,15 +217,15 @@ describe("Token Converter", () => {
     test("should successfully accrue interest", async () => {
       const { tokenConverter, subscriberMock } = createTokenConverterInstance();
 
-      expect(await tokenConverter.accrueInterest([addresses.vUSDT, addresses.vUSDC]));
+      await tokenConverter.accrueInterest([addresses.vUSDT, addresses.vUSDC]);
 
-      expect(walletClient.writeContract).toHaveBeenNthCalledWith(1, {
+      expect(tokenConverter.walletClient.writeContract).toHaveBeenNthCalledWith(1, {
         address: addresses.vUSDT,
         abi: coreVTokenAbi,
         functionName: "accrueInterest",
       });
 
-      expect(walletClient.writeContract).toHaveBeenNthCalledWith(2, {
+      expect(tokenConverter.walletClient.writeContract).toHaveBeenNthCalledWith(2, {
         address: addresses.vUSDC,
         abi: coreVTokenAbi,
         functionName: "accrueInterest",
@@ -241,11 +242,11 @@ describe("Token Converter", () => {
 
     test("should report error if accrue interest is unsuccessful", async () => {
       const { tokenConverter, subscriberMock } = createTokenConverterInstance();
-      (walletClient.writeContract as jest.Mock).mockImplementationOnce(() => {
+      (tokenConverter.walletClient.writeContract as jest.Mock).mockImplementationOnce(() => {
         throw new Error("NETWORK ERROR");
       });
 
-      expect(await tokenConverter.accrueInterest([addresses.vUSDT, addresses.vUSDC]));
+      await tokenConverter.accrueInterest([addresses.vUSDT, addresses.vUSDC]);
 
       expect(subscriberMock).toHaveBeenCalledWith({
         type: "AccrueInterest",
@@ -260,16 +261,16 @@ describe("Token Converter", () => {
   describe("reduceReserves", () => {
     test("should do nothing if there is no cash", async () => {
       const { tokenConverter } = createTokenConverterInstance();
-      (publicClient.readContract as jest.Mock).mockImplementation(args => {
+      (tokenConverter.publicClient.readContract as jest.Mock).mockImplementation(args => {
         if (args.functionName === "totalReserves") {
           return 1000000000000000000000n;
         }
         return 0n;
       });
 
-      expect(await tokenConverter.reduceReserves());
+      await tokenConverter.reduceReserves();
 
-      expect(publicClient.simulateContract).toHaveBeenCalledTimes(0);
+      expect(tokenConverter.publicClient.simulateContract).toHaveBeenCalledTimes(0);
     });
 
     test("should successfully simulate reduce reserves with cash if cash is less than reserves", async () => {
@@ -277,17 +278,17 @@ describe("Token Converter", () => {
 
       const totalReserves = 1000000000000000000000n;
       const cash = 1000000000000000000n;
-      (publicClient.readContract as jest.Mock).mockImplementation(args => {
+      (tokenConverter.publicClient.readContract as jest.Mock).mockImplementation(args => {
         if (args.functionName === "totalReserves") {
           return totalReserves;
         }
         return cash;
       });
 
-      expect(await tokenConverter.reduceReserves());
+      await tokenConverter.reduceReserves();
 
-      expect(publicClient.simulateContract).toHaveBeenNthCalledWith(1, {
-        account: walletClient.account.address,
+      expect(tokenConverter.publicClient.simulateContract).toHaveBeenNthCalledWith(1, {
+        account: tokenConverter.walletClient.account.address,
         address: addresses.VBNBAdmin,
         abi: vBnbAdminAbi,
         functionName: "reduceReserves",
@@ -307,17 +308,17 @@ describe("Token Converter", () => {
       const totalReserves = 1000000000000000000n;
       const cash = 1000000000000000000000n;
 
-      (publicClient.readContract as jest.Mock).mockImplementation(args => {
+      (tokenConverter.publicClient.readContract as jest.Mock).mockImplementation(args => {
         if (args.functionName === "totalReserves") {
           return totalReserves;
         }
         return cash;
       });
 
-      expect(await tokenConverter.reduceReserves());
+      await tokenConverter.reduceReserves();
 
-      expect(publicClient.simulateContract).toHaveBeenNthCalledWith(1, {
-        account: walletClient.account.address,
+      expect(tokenConverter.publicClient.simulateContract).toHaveBeenNthCalledWith(1, {
+        account: tokenConverter.walletClient.account.address,
         address: addresses.VBNBAdmin,
         abi: vBnbAdminAbi,
         functionName: "reduceReserves",
@@ -330,16 +331,16 @@ describe("Token Converter", () => {
 
       const totalReserves = 1000000000000000000000n;
       const cash = 1000000000000000000n;
-      (publicClient.readContract as jest.Mock).mockImplementation(args => {
+      (tokenConverter.publicClient.readContract as jest.Mock).mockImplementation(args => {
         if (args.functionName === "totalReserves") {
           return totalReserves;
         }
         return cash;
       });
 
-      expect(await tokenConverter.reduceReserves());
+      await tokenConverter.reduceReserves();
 
-      expect(walletClient.writeContract).toHaveBeenNthCalledWith(1, {
+      expect(tokenConverter.walletClient.writeContract).toHaveBeenNthCalledWith(1, {
         address: addresses.VBNBAdmin,
         abi: vBnbAdminAbi,
         functionName: "reduceReserves",
@@ -360,16 +361,16 @@ describe("Token Converter", () => {
       const totalReserves = 1000000000000000000n;
       const cash = 1000000000000000000000n;
 
-      (publicClient.readContract as jest.Mock).mockImplementationOnce(args => {
+      (tokenConverter.publicClient.readContract as jest.Mock).mockImplementation(args => {
         if (args.functionName === "totalReserves") {
           return totalReserves;
         }
         return cash;
       });
 
-      expect(await tokenConverter.reduceReserves());
+      await tokenConverter.reduceReserves();
 
-      expect(walletClient.writeContract).toHaveBeenNthCalledWith(1, {
+      expect(tokenConverter.walletClient.writeContract).toHaveBeenNthCalledWith(1, {
         address: addresses.VBNBAdmin,
         abi: vBnbAdminAbi,
         functionName: "reduceReserves",
@@ -387,21 +388,21 @@ describe("Token Converter", () => {
 
     test("should report error if reduce reserves is unsuccessful", async () => {
       const { tokenConverter, subscriberMock } = createTokenConverterInstance();
-      (walletClient.writeContract as jest.Mock).mockImplementationOnce(() => {
+      (tokenConverter.walletClient.writeContract as jest.Mock).mockImplementation(() => {
         throw new Error("NETWORK ERROR");
       });
 
       const totalReserves = 1000000000000000000n;
       const cash = 1000000000000000000000n;
 
-      (publicClient.readContract as jest.Mock).mockImplementationOnce(args => {
+      (tokenConverter.publicClient.readContract as jest.Mock).mockImplementation(args => {
         if (args.functionName === "totalReserves") {
           return totalReserves;
         }
         return cash;
       });
 
-      expect(await tokenConverter.reduceReserves());
+      await tokenConverter.reduceReserves();
 
       expect(subscriberMock).toHaveBeenCalledWith({
         type: "ReduceReserves",
@@ -501,13 +502,14 @@ describe("Token Converter", () => {
   describe("releaseFunds", () => {
     test("should simulate the release of funds ", async () => {
       const { tokenConverter, subscriberMock } = createTokenConverterInstance({ simulate: true });
+
       await tokenConverter.releaseFunds({
         [addresses.stableCoinComptroller]: [addresses.WBNB],
         [addresses.coreComptroller]: [addresses.BUSD],
       });
 
-      expect(publicClient.simulateContract).toHaveBeenNthCalledWith(1, {
-        account: walletClient.account.address,
+      expect(tokenConverter.publicClient.simulateContract).toHaveBeenNthCalledWith(1, {
+        account: tokenConverter.walletClient.account.address,
         address: addresses.protocolShareReserve,
         abi: protocolShareReserveAbi,
         functionName: "releaseFunds",
@@ -529,7 +531,7 @@ describe("Token Converter", () => {
         [addresses.coreComptroller]: [addresses.BUSD],
       });
 
-      expect(walletClient.writeContract).toHaveBeenNthCalledWith(1, {
+      expect(tokenConverter.walletClient.writeContract).toHaveBeenNthCalledWith(1, {
         address: addresses.protocolShareReserve,
         abi: protocolShareReserveAbi,
         functionName: "releaseFunds",
@@ -547,7 +549,7 @@ describe("Token Converter", () => {
 
     test("should report error", async () => {
       const { tokenConverter, subscriberMock } = createTokenConverterInstance();
-      (walletClient.writeContract as jest.Mock).mockImplementationOnce(() => {
+      (tokenConverter.walletClient.writeContract as jest.Mock).mockImplementationOnce(() => {
         throw new Error("Failed Transation");
       });
 
@@ -556,7 +558,7 @@ describe("Token Converter", () => {
         [addresses.coreComptroller]: [addresses.BUSD],
       });
 
-      expect(walletClient.writeContract).toHaveBeenNthCalledWith(1, {
+      expect(tokenConverter.walletClient.writeContract).toHaveBeenNthCalledWith(1, {
         address: addresses.protocolShareReserve,
         abi: protocolShareReserveAbi,
         functionName: "releaseFunds",
@@ -575,12 +577,11 @@ describe("Token Converter", () => {
 
   describe("getUsdValue", () => {
     test("should get usd value from addresses", async () => {
-      (publicClient.multicall as jest.Mock).mockImplementationOnce(() => [
+      const { tokenConverter } = createTokenConverterInstance();
+      (tokenConverter.publicClient.multicall as jest.Mock).mockImplementationOnce(() => [
         { result: 18 },
         { result: { underlyingPrice: 20000000000000000000000000000000000000n } },
       ]);
-
-      const { tokenConverter } = createTokenConverterInstance();
 
       expect(await tokenConverter.getUsdValue(addresses.USDC, addresses.vUSDC, 1n)).toEqual({
         underlyingPriceUsd: "20000000000000000000",
@@ -592,8 +593,8 @@ describe("Token Converter", () => {
 
   describe("checkAndRequestAllowance", () => {
     test("should request approval if needed", async () => {
-      (publicClient.readContract as jest.Mock).mockImplementationOnce(() => 0n);
       const { tokenConverter } = createTokenConverterInstance();
+      (tokenConverter.publicClient.readContract as jest.Mock).mockImplementationOnce(() => 0n);
 
       await tokenConverter.checkAndRequestAllowance(
         addresses.usdcHolder,
@@ -602,7 +603,7 @@ describe("Token Converter", () => {
         1000000000000000000n,
       );
 
-      expect(walletClient.writeContract).toHaveBeenNthCalledWith(1, {
+      expect(tokenConverter.walletClient.writeContract).toHaveBeenNthCalledWith(1, {
         address: addresses.usdcHolder,
         abi: erc20Abi,
         functionName: "approve",
@@ -611,8 +612,8 @@ describe("Token Converter", () => {
     });
 
     test("should do nothing if already approved", async () => {
-      (publicClient.readContract as jest.Mock).mockImplementationOnce(() => 2000000000000000000n);
       const { tokenConverter } = createTokenConverterInstance();
+      (tokenConverter.publicClient.readContract as jest.Mock).mockImplementationOnce(() => 2000000000000000000n);
 
       await tokenConverter.checkAndRequestAllowance(
         addresses.usdcHolder,
@@ -621,16 +622,18 @@ describe("Token Converter", () => {
         1000000000000000000n,
       );
 
-      expect(walletClient.writeContract).toHaveBeenCalledTimes(0);
+      expect(tokenConverter.walletClient.writeContract).toHaveBeenCalledTimes(0);
     });
   });
 
   describe("arbitrage", () => {
     test("should simulate arbitrage", async () => {
-      (publicClient.getBlock as jest.Mock).mockImplementation(() => ({ timestamp: 1713214109n }));
-      (publicClient.waitForTransactionReceipt as jest.Mock).mockImplementation(() => ({ blockNumber: 23486902n }));
-
       const { tokenConverter, subscriberMock } = createTokenConverterInstance({ simulate: true });
+      (tokenConverter.publicClient.getBlock as jest.Mock).mockImplementation(() => ({ timestamp: 1713214109n }));
+      (tokenConverter.publicClient.waitForTransactionReceipt as jest.Mock).mockImplementation(() => ({
+        blockNumber: 23486902n,
+      }));
+
       const tokenConverterMock = jest
         .spyOn(TokenConverter.prototype, "checkAndRequestAllowance")
         .mockImplementationOnce(jest.fn());
@@ -639,10 +642,10 @@ describe("Token Converter", () => {
 
       expect(tokenConverterMock).toHaveBeenCalledTimes(0);
 
-      expect(publicClient.estimateContractGas).toHaveBeenCalledWith({
+      expect(tokenConverter.publicClient.estimateContractGas).toHaveBeenCalledWith({
         abi: tokenConverterOperatorAbi,
         functionName: "convert" as const,
-        account: { address: walletClient.account.address },
+        account: { address: tokenConverter.walletClient.account.address },
         address: addresses.tokenConverterOperator,
         args: [
           {
@@ -658,7 +661,7 @@ describe("Token Converter", () => {
         ],
       });
 
-      expect(walletClient.writeContract).toHaveBeenCalledTimes(0);
+      expect(tokenConverter.walletClient.writeContract).toHaveBeenCalledTimes(0);
 
       expect(subscriberMock).toHaveBeenCalledWith({
         type: "Arbitrage",
@@ -679,9 +682,11 @@ describe("Token Converter", () => {
     });
 
     test("should arbitrage and check approvals if minIncome is negative", async () => {
-      (publicClient.getBlock as jest.Mock).mockImplementation(() => ({ timestamp: 1713214109n }));
-      (publicClient.waitForTransactionReceipt as jest.Mock).mockImplementation(() => ({ blockNumber: 23486902n }));
       const { tokenConverter, subscriberMock } = createTokenConverterInstance();
+      (tokenConverter.publicClient.getBlock as jest.Mock).mockImplementation(() => ({ timestamp: 1713214109n }));
+      (tokenConverter.publicClient.waitForTransactionReceipt as jest.Mock).mockImplementation(() => ({
+        blockNumber: 23486902n,
+      }));
       const tokenConverterMock = jest
         .spyOn(TokenConverter.prototype, "checkAndRequestAllowance")
         .mockImplementationOnce(jest.fn());
@@ -691,15 +696,15 @@ describe("Token Converter", () => {
       expect(tokenConverterMock).toHaveBeenNthCalledWith(
         1,
         mockRoute.inputAmount.currency.address,
-        walletClient.account.address,
+        tokenConverter.walletClient.account.address,
         addresses.tokenConverterOperator,
         10000n,
       );
 
-      expect(publicClient.estimateContractGas).toHaveBeenCalledWith({
+      expect(tokenConverter.publicClient.estimateContractGas).toHaveBeenCalledWith({
         abi: tokenConverterOperatorAbi,
         functionName: "convert" as const,
-        account: { address: walletClient.account.address },
+        account: { address: tokenConverter.walletClient.account.address },
         address: addresses.tokenConverterOperator,
         args: [
           {
@@ -734,13 +739,14 @@ describe("Token Converter", () => {
     });
 
     test("should handle error calling arbitrage", async () => {
-      (publicClient.getBlock as jest.Mock).mockImplementation(() => ({ timestamp: 1713214109n }));
-      (publicClient.waitForTransactionReceipt as jest.Mock).mockImplementation(() => ({ blockNumber: 23486902n }));
-      (walletClient.writeContract as jest.Mock).mockImplementation(() => {
+      const { tokenConverter, subscriberMock } = createTokenConverterInstance();
+      (tokenConverter.publicClient.getBlock as jest.Mock).mockImplementation(() => ({ timestamp: 1713214109n }));
+      (tokenConverter.publicClient.waitForTransactionReceipt as jest.Mock).mockImplementation(() => ({
+        blockNumber: 23486902n,
+      }));
+      (tokenConverter.walletClient.writeContract as jest.Mock).mockImplementation(() => {
         throw new Error("NETWORK ERROR");
       });
-
-      const { tokenConverter, subscriberMock } = createTokenConverterInstance();
 
       (SmartRouter.getBestTrade as jest.Mock).mockImplementation(() => mockRoute);
 
@@ -767,12 +773,14 @@ describe("Token Converter", () => {
 
   describe("prepareConversion", () => {
     test("should correctly return conversion arguments", async () => {
-      (publicClient.multicall as jest.Mock).mockImplementation(() => [{ result: 18 }, { result: "USDT" }]);
-      (publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
+      const { tokenConverter, subscriberMock } = createTokenConverterInstance();
+      (tokenConverter.publicClient.multicall as jest.Mock).mockImplementation(() => [
+        { result: 18 },
+        { result: "USDT" },
+      ]);
+      (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
-
-      const { tokenConverter, subscriberMock } = createTokenConverterInstance();
 
       (SmartRouter.getPriceImpact as jest.Mock).mockImplementation(() => new Percent(2n, 1000n));
       (SmartRouter.getBestTrade as jest.Mock).mockImplementation(() => mockRoute);
@@ -826,12 +834,14 @@ describe("Token Converter", () => {
     });
 
     test("should handle error calling prepareConversion", async () => {
-      (publicClient.multicall as jest.Mock).mockImplementation(() => [{ result: 18 }, { result: "USDT" }]);
-      (publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
+      const { tokenConverter, subscriberMock } = createTokenConverterInstance();
+      (tokenConverter.publicClient.multicall as jest.Mock).mockImplementation(() => [
+        { result: 18 },
+        { result: "USDT" },
+      ]);
+      (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
-
-      const { tokenConverter, subscriberMock } = createTokenConverterInstance();
 
       (SmartRouter.getPriceImpact as jest.Mock).mockImplementation(() => new Percent(2n, 1000n));
       (SmartRouter.getBestTrade as jest.Mock).mockImplementation(() => {

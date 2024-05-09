@@ -1,9 +1,11 @@
 import { Address } from "viem";
 
-import subgraphClient from "../../../subgraph-client";
+import getConfig from "../../../config";
+import SubgraphClient from "../../../subgraph-client";
 import formatTokenConverterConfigs from "./formatTokenConverterConfigs";
 
 const readTokenConverterConfigsByConverter = async (configAddresses: Address[]) => {
+  const subgraphClient = new SubgraphClient(getConfig().subgraphUrl);
   const {
     data: { tokenConverters },
   } = await subgraphClient.getTokenConverter(configAddresses);

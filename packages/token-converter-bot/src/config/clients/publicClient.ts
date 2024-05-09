@@ -1,10 +1,10 @@
-import { HttpTransport, PublicClient, createPublicClient, http } from "viem";
+import { createPublicClient, http } from "viem";
 
-import config from "..";
+import getConfig from "..";
 import { chains } from "../chains";
-import type { SUPPORTED_CHAINS } from "../chains";
 
-export const getPublicClient = (): PublicClient<HttpTransport, typeof chains[SUPPORTED_CHAINS]> => {
+const getPublicClient = () => {
+  const config = getConfig();
   const chainName = config.network;
   return createPublicClient({
     chain: chains[chainName],
@@ -12,6 +12,4 @@ export const getPublicClient = (): PublicClient<HttpTransport, typeof chains[SUP
   });
 };
 
-const client: PublicClient<HttpTransport, typeof chains[SUPPORTED_CHAINS]> = getPublicClient();
-
-export default client;
+export default getPublicClient;

@@ -3,7 +3,7 @@ import { BaseRoute, Pool, QuoteProvider, SmartRouter, SmartRouterTrade, V3Pool }
 import { Client as UrqlClient, createClient } from "urql/core";
 import { Address, BaseError, ContractFunctionRevertedError, Hex, encodePacked, erc20Abi, formatUnits } from "viem";
 
-import config from "../config";
+import getConfig from "../config";
 import {
   coreVTokenAbi,
   protocolShareReserveAbi,
@@ -12,11 +12,11 @@ import {
   vBnbAdminAbi,
   venusLensAbi,
 } from "../config/abis/generated";
-import addresses from "../config/addresses";
+import getAddresses from "../config/addresses";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
-import publicClient from "../config/clients/publicClient";
-import walletClient from "../config/clients/walletClient";
+import getPublicClient from "../config/clients/publicClient";
+import getWalletClient from "../config/clients/walletClient";
 import logger from "./logger";
 import getConverterConfigs from "./queries/getTokenConverterConfigs";
 import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
@@ -98,6 +98,7 @@ export type Message =
 
 export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
+  private addresses: ReturnType<typeof getAddresses>;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
   private v3SubgraphClient: UrqlClient;
   private quoteProvider: QuoteProvider;
@@ -105,6 +106,8 @@ export class TokenConverter {
   private subscriber: undefined | ((msg: Message) => void);
   private simulate: boolean;
   private verbose: boolean;
+  public publicClient: ReturnType<typeof getPublicClient>;
+  public walletClient: ReturnType<typeof getWalletClient>;
 
   constructor({
     subscriber,
@@ -115,17 +118,21 @@ export class TokenConverter {
     simulate: boolean;
     verbose: boolean;
   }) {
+    const config = getConfig();
+    this.addresses = getAddresses();
     this.chainName = config.network;
     this.subscriber = subscriber;
     this.operator = {
-      address: addresses.TokenConverterOperator,
+      address: this.addresses.TokenConverterOperator,
       abi: tokenConverterOperatorAbi,
     };
     this.v3SubgraphClient = createClient({
       url: config.pancakeSwapSubgraphUrl,
       requestPolicy: "network-only",
     });
-    this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => publicClient });
+    this.publicClient = getPublicClient();
+    this.walletClient = getWalletClient();
+    this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => this.publicClient });
     this.tokens = new Map();
     this.simulate = simulate;
     this.verbose = verbose;
@@ -166,7 +173,7 @@ export class TokenConverter {
     if (this.tokens.has(address)) {
       return this.tokens.get(address) as Currency;
     }
-    const [{ result: decimals }, { result: symbol }] = await publicClient.multicall({
+    const [{ result: decimals }, { result: symbol }] = await this.publicClient.multicall({
       contracts: [
         {
           address,
@@ -207,7 +214,7 @@ export class TokenConverter {
     const swapToToken = await this.getToken(swapTo);
 
     // [amount transferred out of converter, amount transferred In]
-    const { result: updatedAmountIn } = await publicClient.simulateContract({
+    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
       address: tokenConverter,
       abi: tokenConverterAbi,
       functionName: "getUpdatedAmountIn",
@@ -215,7 +222,7 @@ export class TokenConverter {
     });
 
     const candidatePools = await SmartRouter.getV3CandidatePools({
-      onChainProvider: () => publicClient,
+      onChainProvider: () => this.publicClient,
       subgraphProvider: () => this.v3SubgraphClient,
       currencyA: swapFromToken,
       currencyB: swapToToken,
@@ -229,7 +236,7 @@ export class TokenConverter {
         swapFromToken,
         TradeType.EXACT_OUTPUT,
         {
-          gasPriceWei: () => publicClient.getGasPrice(),
+          gasPriceWei: () => this.publicClient.getGasPrice(),
           maxHops: MAX_HOPS,
           maxSplits: 0,
           poolProvider: SmartRouter.createStaticPoolProvider(candidatePools),
@@ -313,14 +320,14 @@ export class TokenConverter {
       const results = await Promise.allSettled(
         markets.map(async market => {
           if (this.simulate) {
-            await publicClient.simulateContract({
-              account: walletClient.account.address,
+            await this.publicClient.simulateContract({
+              account: this.walletClient.account.address,
               address: market,
               abi: coreVTokenAbi,
               functionName: "accrueInterest",
             });
           } else {
-            await walletClient.writeContract({
+            await this.walletClient.writeContract({
               address: market,
               abi: coreVTokenAbi,
               functionName: "accrueInterest",
@@ -349,30 +356,30 @@ export class TokenConverter {
     let error;
     let trx;
     try {
-      const totalReserves = await publicClient.readContract({
-        address: addresses.vBNB as Address,
+      const totalReserves = await this.publicClient.readContract({
+        address: this.addresses.vBNB as Address,
         abi: coreVTokenAbi,
         functionName: "totalReserves",
       });
 
-      const cash = await publicClient.readContract({
-        address: addresses.vBNB as Address,
+      const cash = await this.publicClient.readContract({
+        address: this.addresses.vBNB as Address,
         abi: coreVTokenAbi,
         functionName: "getCash",
       });
 
       if (cash > 0) {
         if (this.simulate) {
-          await publicClient.simulateContract({
-            account: walletClient.account.address,
-            address: addresses.VBNBAdmin as Address,
+          await this.publicClient.simulateContract({
+            account: this.walletClient.account.address,
+            address: this.addresses.VBNBAdmin as Address,
             abi: vBnbAdminAbi,
             functionName: "reduceReserves",
             args: [totalReserves < cash ? totalReserves : cash],
           });
         } else {
-          trx = await walletClient.writeContract({
-            address: addresses.VBNBAdmin as Address,
+          trx = await this.walletClient.writeContract({
+            address: this.addresses.VBNBAdmin as Address,
             abi: vBnbAdminAbi,
             functionName: "reduceReserves",
             args: [totalReserves < cash ? totalReserves : cash],
@@ -409,7 +416,7 @@ export class TokenConverter {
     });
     const { results, blockNumber } = await readTokenConvertersTokenBalances(
       tokenConverterConfigs,
-      walletClient.account.address,
+      this.walletClient.account.address,
       releaseFunds,
     );
     const conversions = results.filter(v => v.assetOut.balance > 0);
@@ -427,19 +434,19 @@ export class TokenConverter {
       let error;
       try {
         if (this.simulate) {
-          await publicClient.simulateContract({
-            account: walletClient.account.address,
-            address: addresses.ProtocolShareReserve as Address,
+          await this.publicClient.simulateContract({
+            account: this.walletClient.account.address,
+            address: this.addresses.ProtocolShareReserve as Address,
             abi: protocolShareReserveAbi,
             functionName: "releaseFunds",
-            args: args as [`0x${string}`, readonly `0x${string}`[]],
+            args: args as [Address, readonly Address[]],
           });
         } else {
-          trx = await walletClient.writeContract({
-            address: addresses.ProtocolShareReserve as Address,
+          trx = await this.walletClient.writeContract({
+            address: this.addresses.ProtocolShareReserve,
             abi: protocolShareReserveAbi,
             functionName: "releaseFunds",
-            args: args as [`0x${string}`, readonly `0x${string}`[]],
+            args: args as [Address, readonly Address[]],
           });
         }
       } catch (e) {
@@ -449,7 +456,7 @@ export class TokenConverter {
         type: "ReleaseFunds",
         trx,
         error,
-        context: args as [`0x${string}`, readonly `0x${string}`[]],
+        context: args as [Address, readonly Address[]],
       });
     }
   }
@@ -462,8 +469,8 @@ export class TokenConverter {
     const releaseFundsArgs = conversions.reduce((acc, curr) => {
       const { core, isolated } = curr.assetOutVTokens;
       if (core) {
-        acc[addresses.Unitroller as Address] = acc[addresses.Unitroller as Address]
-          ? [...acc[addresses.Unitroller as Address], curr.assetOut.address]
+        acc[this.addresses.Unitroller as Address] = acc[this.addresses.Unitroller as Address]
+          ? [...acc[this.addresses.Unitroller as Address], curr.assetOut.address]
           : [curr.assetOut.address];
       }
       if (isolated) {
@@ -485,7 +492,7 @@ export class TokenConverter {
    * @returns {underlyingPriceUsd: string, underlyingUsdValue: string, underlyingDecimals: number}
    */
   async getUsdValue(underlyingAddress: Address, vTokenAddress: Address, value: bigint) {
-    const result = await publicClient.multicall({
+    const result = await this.publicClient.multicall({
       contracts: [
         {
           address: underlyingAddress,
@@ -494,7 +501,7 @@ export class TokenConverter {
           args: [],
         },
         {
-          address: addresses.VenusLens as Address,
+          address: this.addresses.VenusLens as Address,
           abi: venusLensAbi,
           functionName: "vTokenUnderlyingPrice",
           args: [vTokenAddress],
@@ -522,7 +529,7 @@ export class TokenConverter {
    * @param amount Amount to check/ request if an allowance has been granted
    */
   async checkAndRequestAllowance(token: Address, owner: Address, spender: Address, amount: bigint) {
-    const approvalAmount = await publicClient.readContract({
+    const approvalAmount = await this.publicClient.readContract({
       address: token,
       abi: erc20Abi,
       functionName: "allowance",
@@ -530,13 +537,13 @@ export class TokenConverter {
     });
 
     if (approvalAmount < amount) {
-      const trx = await walletClient.writeContract({
+      const trx = await this.walletClient.writeContract({
         address: token,
         abi: erc20Abi,
         functionName: "approve",
         args: [this.operator.address, amount],
       });
-      await publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 });
+      await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 });
     }
   }
 
@@ -553,9 +560,9 @@ export class TokenConverter {
     amount: bigint,
     minIncome: bigint,
   ) {
-    const beneficiary = walletClient.account.address;
+    const beneficiary = this.walletClient.account.address;
 
-    const block = await publicClient.getBlock();
+    const block = await this.publicClient.getBlock();
     const convertTransaction = {
       ...this.operator,
       functionName: "convert" as const,
@@ -582,22 +589,22 @@ export class TokenConverter {
       if (minIncome < 0n && !this.simulate) {
         await this.checkAndRequestAllowance(
           trade.inputAmount.currency.address,
-          walletClient.account.address,
-          addresses.TokenConverterOperator,
+          this.walletClient.account.address,
+          this.addresses.TokenConverterOperator,
           -minIncome,
         );
       }
 
-      blockNumber = await publicClient.getBlockNumber();
-      const gasEstimation = await publicClient.estimateContractGas({
-        account: walletClient.account,
+      blockNumber = await this.publicClient.getBlockNumber();
+      const gasEstimation = await this.publicClient.estimateContractGas({
+        account: this.walletClient.account,
         ...convertTransaction,
       });
 
       if (!this.simulate) {
         simulation = "Execution: ";
-        trx = await walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
-        ({ blockNumber } = await publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 }));
+        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
+        ({ blockNumber } = await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 }));
       }
     } catch (e) {
       if (e instanceof BaseError) {
