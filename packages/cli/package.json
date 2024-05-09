@@ -1,8 +1,10 @@
 {
   "name": "@venusprotocol/cli",
-  "version": "1.0.0-dev.1",
+  "version": "1.0.0-dev.2",
   "license": "MIT",
-  "bin": "dist/venus.js",
+  "bin": {
+    "venus": "dist/venus.js"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"

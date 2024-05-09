@@ -6101,7 +6101,7 @@ __metadata:
     xo: ^0.54.2
     zod: ^3.21.4
   bin:
-    cli: dist/venus.js
+    venus: dist/venus.js
   languageName: unknown
   linkType: soft
 
