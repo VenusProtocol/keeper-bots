@@ -23,8 +23,6 @@ const getConfig = () => {
   return {
     subgraphUrl: subgraphUrlByNetwork[network],
     pancakeSwapSubgraphUrl: pancakeSwapSubgraphUrlByNetwork[network],
-    telegramBotToken: safelyGetEnvVar("TELEGRAM_BOT_TOKEN"),
-    telegramChatId: +safelyGetEnvVar("TELEGRAM_CHAT_ID"),
     network,
     rpcUrl: safelyGetEnvVar(`RPC_${network}`),
   };
