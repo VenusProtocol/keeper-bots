@@ -40,6 +40,7 @@ jobs:
         run: yarn workspace @venusprotocol/cli run build
 
       - name: Release Keeper Bot Contracts
+        if: ${{ always() }}
         env:
           GITHUB_TOKEN: ${{ secrets.VENUS_TOOLS_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -51,6 +52,7 @@ jobs:
           yarn workspace @venusprotocol/keeper-bot-contracts run semantic-release
 
       - name: Release Token Converter Bot
+        if: ${{ always() }}
         env:
           GITHUB_TOKEN: ${{ secrets.VENUS_TOOLS_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -61,6 +63,7 @@ jobs:
         run: yarn workspace @venusprotocol/token-converter-bot run semantic-release
 
       - name: Release Cli
+        if: ${{ always() }}
         env:
           GITHUB_TOKEN: ${{ secrets.VENUS_TOOLS_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
