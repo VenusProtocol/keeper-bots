@@ -6346,7 +6346,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/token-converter-bot@1.0.0-dev.5, @venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
+"@venusprotocol/token-converter-bot@npm:1.0.0-dev.5":
+  version: 1.0.0-dev.5
+  resolution: "@venusprotocol/token-converter-bot@npm:1.0.0-dev.5"
+  dependencies:
+    "@graphprotocol/client-cli": 3.0.0
+    "@pancakeswap/sdk": ^5.8.0
+    "@pancakeswap/smart-router": ^5.1.3
+    "@venusprotocol/keeper-bot-contracts": ^1.0.0-dev.1
+    "@wagmi/cli": ^2.0.4
+    abitype: 0.10.0
+    graphql: ^16.8.1
+    hardhat: ^2.19.5
+    urql: ^3.0.3
+    viem: ^2.7.1
+    winston: ^3.11.0
+  checksum: b4e935b6047506818e55a7c1249a72b6affe6c11315d223979427b56abe3c0bd624c0427f78ffd627095cfb6c48c3ed40d8d54010cb79feecf2c1838685aaa7b
+  languageName: node
+  linkType: hard
+
+"@venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/token-converter-bot@workspace:packages/token-converter-bot"
   dependencies:
