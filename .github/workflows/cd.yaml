@@ -1,10 +1,11 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
-      - develop
+  workflow_run:
+    workflows: ["CI"]
+    branches: [develop, main]
+    types: 
+      - completed
 
 jobs:
   release:
@@ -31,12 +32,6 @@ jobs:
 
       - name: Build Keeper Bot Contracts
         run: yarn workspace @venusprotocol/keeper-bot-contracts run build
-      
-      - name: Build Token Converter Bots
-        run: yarn workspace @venusprotocol/token-converter-bot run build
-      
-      - name: Build CLI
-        run: yarn workspace @venusprotocol/cli run build
 
       - name: Release Keeper Bot Contracts
         if: ${{ always() }}
@@ -49,6 +44,12 @@ jobs:
           GIT_COMMITTER_EMAIL: tools@venus.io
         run: 
           yarn workspace @venusprotocol/keeper-bot-contracts run semantic-release
+      
+      - name: Install dependencies
+        run: yarn
+      
+      - name: Build Token Converter Bots
+        run: yarn workspace @venusprotocol/token-converter-bot run build
 
       - name: Release Token Converter Bot
         if: ${{ always() }}
@@ -60,6 +61,12 @@ jobs:
           GIT_COMMITTER_NAME: Venus Tools
           GIT_COMMITTER_EMAIL: tools@venus.io
         run: yarn workspace @venusprotocol/token-converter-bot run semantic-release
+      
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build CLI
+        run: yarn workspace @venusprotocol/cli run build
 
       - name: Release Cli
         if: ${{ always() }}
