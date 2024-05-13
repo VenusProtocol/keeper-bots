@@ -1,9 +1,8 @@
-import { HttpTransport, WalletClient, createWalletClient, http } from "viem";
+import { createWalletClient, http } from "viem";
 import { PrivateKeyAccount, privateKeyToAccount } from "viem/accounts";
 
-import config from "../";
+import getConfig from "../";
 import { chains } from "../chains";
-import type { SUPPORTED_CHAINS } from "../chains";
 
 const readPrivateKeyFromEnv = (chainName: string): PrivateKeyAccount => {
   const key = process.env[`PRIVATE_KEY_${chainName}`];
@@ -13,7 +12,8 @@ const readPrivateKeyFromEnv = (chainName: string): PrivateKeyAccount => {
   throw new Error(`Invalid private key for ${chainName}. Please specify PRIVATE_KEY_${chainName} env variable.`);
 };
 
-export const getWalletClient = (): WalletClient<HttpTransport, typeof chains[SUPPORTED_CHAINS], PrivateKeyAccount> => {
+const getWalletClient = () => {
+  const config = getConfig();
   const chainName = config.network;
   return createWalletClient({
     chain: chains[chainName],
@@ -22,4 +22,4 @@ export const getWalletClient = (): WalletClient<HttpTransport, typeof chains[SUP
   });
 };
 
-export default getWalletClient();
+export default getWalletClient;

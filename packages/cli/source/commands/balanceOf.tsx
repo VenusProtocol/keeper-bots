@@ -1,7 +1,6 @@
-import "dotenv/config";
 import { useEffect, useState } from "react";
 import { option } from "pastel";
-import { Text } from "ink";
+import { Text, useApp } from "ink";
 import zod from "zod";
 import getBalanceOf from "../queries/getBalanceOf.js";
 import { addressValidation } from "../utils/validation.js";
@@ -39,7 +38,11 @@ interface Props {
  */
 export default function BalanceOf({ options }: Props) {
   const { tokenAddress, contractAddress, blockNumber } = options;
+
   const [balance, setBalance] = useState<bigint>();
+
+  const { exit } = useApp();
+
   useEffect(() => {
     (async () => {
       const result = await getBalanceOf({
@@ -48,7 +51,7 @@ export default function BalanceOf({ options }: Props) {
         blockNumber,
       });
       setBalance(result);
-    })();
+    })().finally(exit);
   }, []);
 
   return (

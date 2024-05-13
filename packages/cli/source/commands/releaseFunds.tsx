@@ -1,17 +1,17 @@
-import { Box, Text } from "ink";
+import { Box, Text, useApp } from "ink";
 import { Address, erc20Abi } from "viem";
 import { option } from "pastel";
 import { useEffect, useReducer } from "react";
 import zod from "zod";
 import {
   TokenConverter,
-  readCoreMarkets,
-  readIsolatedMarkets,
-  underlyingToVTokens,
-  underlyingByComptroller,
-  addresses,
+  getCoreMarkets,
+  getIsolatedMarkets,
+  getUnderlyingToVTokens,
+  getUnderlyingByComptroller,
+  getAddresses,
 } from "@venusprotocol/token-converter-bot";
-import publicClient from "../queries/publicClient.js";
+import usePublicClient from "../queries/usePublicClient.js";
 import { Options, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/releaseFunds.js";
 import FullScreenBox from "../components/fullScreenBox.js";
@@ -49,7 +49,7 @@ export const options = zod.object({
     .optional(),
   reduceReserves: zod
     .boolean()
-    .default(false)
+    .default(true)
     .describe(
       option({
         description: "Reduce BNB Reserves",
@@ -77,13 +77,15 @@ const reduceToTokensWithBalances = async (
   tokenConverter: TokenConverter,
   underlyingByComptroller: Record<Address, readonly Address[]>,
 ) => {
+  const addresses = getAddresses();
+  const underlyingToVTokens = getUnderlyingToVTokens();
   const underlyingByComptrollerEntries = Object.entries(underlyingByComptroller);
 
   const tokenSet = new Set([...Object.values(underlyingByComptroller)].flat());
 
   const withBalances: Record<Address, readonly Address[]> = {};
   const tokenSetArray = Array.from(tokenSet);
-
+  const publicClient = usePublicClient();
   const response = await publicClient.multicall({
     contracts: [
       ...tokenSetArray.map(v => {
@@ -129,20 +131,29 @@ const reduceToTokensWithBalances = async (
  * Command to release funds
  */
 function ReleaseFunds({ options = {} }: Props) {
-  const { accrueInterest, reduceReserves, debug } = options;
+  const underlyingByComptroller = getUnderlyingByComptroller();
+  const { accrueInterest, reduceReserves, debug, simulate } = options;
+
   const [{ releasedFunds }, dispatch] = useReducer(reducer, defaultState);
+
+  const { exit } = useApp();
+
   useEffect(() => {
     const releaseFunds = async () => {
       const tokenConverter = new TokenConverter({
         subscriber: dispatch,
-        simulate: !!options.simulate,
+        simulate: !!simulate,
         verbose: false,
       });
       if (accrueInterest) {
-        const corePoolMarkets = await readCoreMarkets();
-        const isolatedPoolsMarkets = await readIsolatedMarkets();
+        const corePoolMarkets = await getCoreMarkets();
+        const isolatedPoolsMarkets = await getIsolatedMarkets();
         const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
-        await tokenConverter.accrueInterest(allPools);
+        const allMarkets = allPools.reduce((acc, curr) => {
+          acc.concat(curr[1]);
+          return acc;
+        }, [] as Address[]);
+        await tokenConverter.accrueInterest(allMarkets);
       }
       if (reduceReserves) {
         await tokenConverter.reduceReserves();
@@ -151,8 +162,9 @@ function ReleaseFunds({ options = {} }: Props) {
       const withBalances = await reduceToTokensWithBalances(tokenConverter, underlyingByComptroller);
       await tokenConverter.releaseFunds(withBalances);
     };
-    releaseFunds();
+    releaseFunds().finally(exit);
   }, []);
+
   return (
     <FullScreenBox flexDirection="column">
       <Box flexDirection="column" borderStyle="round" borderColor="#3396FF">

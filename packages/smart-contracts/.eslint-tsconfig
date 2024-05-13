@@ -4,6 +4,7 @@
     "./typechain",
     "docgen-templates",
     "commitlint.config.js",
-    "./fork-tests"
+    "./fork-tests",
+    "deploy"
   ]
 }

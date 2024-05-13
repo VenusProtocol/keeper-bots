@@ -1,0 +1,7 @@
+{
+  "name": "bsctestnet",
+  "chainId": "97",
+  "addresses": {
+    "TokenConverterOperator": "0x9222F8b71603318d5EEbBf0074c2Da07fEbbB9eb"
+  }
+}

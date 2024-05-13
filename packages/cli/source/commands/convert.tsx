@@ -1,21 +1,21 @@
 import { useEffect, useState, useReducer } from "react";
 import { option } from "pastel";
-import { Box, Spacer, Text } from "ink";
+import { Box, Spacer, Text, useApp, useStderr } from "ink";
 import zod from "zod";
-import { Address, getAddress, parseUnits } from "viem";
+import { Address, parseUnits } from "viem";
 import { TokenConverter } from "@venusprotocol/token-converter-bot";
-import { stringifyBigInt, getConverterConfigs, getConverterConfigId } from "../utils/index.js";
+import { stringifyBigInt, getConverterConfigId } from "../utils/index.js";
 import { Options, Title, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/convert.js";
 import FullScreenBox from "../components/fullScreenBox.js";
 import { addressValidation } from "../utils/validation.js";
 
 export const options = zod.object({
-  converter: zod
+  converters: zod
     .array(addressValidation)
     .describe(
       option({
-        description: "TokenConverter",
+        description: "Token converter address",
         alias: "c",
       }),
     )
@@ -33,7 +33,7 @@ export const options = zod.object({
   assetIn: addressValidation
     .describe(
       option({
-        description: "Asset In",
+        description: "Asset In address",
         alias: "in",
       }),
     )
@@ -41,7 +41,7 @@ export const options = zod.object({
   assetOut: addressValidation
     .describe(
       option({
-        description: "Asset Out",
+        description: "Asset Out address",
         alias: "out",
       }),
     )
@@ -100,18 +100,18 @@ export const options = zod.object({
     .boolean()
     .describe(
       option({
-        description: "Loop",
+        description: "Continuously query and execute trades",
         alias: "l",
       }),
     )
     .optional()
     .default(false),
-  minIncomeBP: zod
+  minIncomeBp: zod
     .number()
     .describe(
       option({
         description: "Min income in basis points as percentage of amount",
-        alias: "i",
+        alias: "bp",
       }),
     )
     .optional()
@@ -133,12 +133,15 @@ export default function Convert({ options }: Props) {
     releaseFunds,
     assetIn,
     assetOut,
-    converter,
+    converters,
     profitable,
     loop,
     debug,
-    minIncomeBP,
+    minIncomeBp,
   } = options;
+
+  const { exit } = useApp();
+  const { write: writeStdErr } = useStderr();
 
   const [{ completed, messages, releasedFunds }, dispatch] = useReducer(reducer, defaultState);
   const [error, setError] = useState("");
@@ -153,24 +156,24 @@ export default function Convert({ options }: Props) {
         simulate: !!simulate,
         verbose: debug,
       });
-      const tokenConverterConfigs = await getConverterConfigs({
-        assetIn,
-        assetOut,
-        converter,
-      });
 
       do {
-        const potentialTrades = await tokenConverter.checkForTrades(tokenConverterConfigs, !!releaseFunds);
+        const potentialConversions = await tokenConverter.queryConversions({
+          assetIn,
+          assetOut,
+          converters,
+          releaseFunds: !!releaseFunds,
+        });
 
-        if (potentialTrades.length === 0) {
+        if (potentialConversions.length === 0) {
           setError("No Potential Trades Found");
         }
         if (releaseFunds) {
           // @todo check if we need to release funds or if there are already enough funds to make our trade
-          await tokenConverter.releaseFundsForTrades(potentialTrades);
+          await tokenConverter.releaseFundsForConversions(potentialConversions);
         }
         await Promise.allSettled(
-          potentialTrades.map(async (t: any) => {
+          potentialConversions.map(async (t: any) => {
             let amountOut = t.assetOut.balance;
             const vTokenAddress =
               t.assetOutVTokens.core ||
@@ -196,7 +199,7 @@ export default function Convert({ options }: Props) {
               if (+underlyingUsdValue > maxTradeUsd) {
                 amountOut = parseUnits((maxTradeUsd / +underlyingPriceUsd.toString()).toString(), underlyingDecimals);
               }
-              const arbitrageArgs = await tokenConverter.prepareTrade(
+              const arbitrageArgs = await tokenConverter.prepareConversion(
                 t.tokenConverter,
                 t.assetOut.address,
                 t.assetIn,
@@ -208,7 +211,7 @@ export default function Convert({ options }: Props) {
                 minIncome: 0n,
               };
 
-              const maxMinIncome = ((amount * BigInt(10000 + minIncomeBP)) / 10000n - amount) * -1n;
+              const maxMinIncome = ((amount * BigInt(10000 + minIncomeBp)) / 10000n - amount) * -1n;
               if (t.accountBalanceAssetOut < minIncome * -1n) {
                 dispatch({
                   type: "ExecuteTrade",
@@ -257,10 +260,21 @@ export default function Convert({ options }: Props) {
         );
       } while (loop);
     };
-    convert().catch(e => {
-      setError(e.message);
-    });
+    if (converters || assetIn || assetOut) {
+      convert()
+        .catch(e => {
+          setError(e.message);
+        })
+        .finally(() => exit());
+    } else {
+      exit();
+    }
   }, []);
+
+  if (!converters && !assetIn && !assetOut) {
+    writeStdErr("converter, asset-in or asset-out must be present");
+    return null;
+  }
 
   return (
     <FullScreenBox flexDirection="column">
@@ -319,7 +333,7 @@ export default function Convert({ options }: Props) {
         <Spacer />
         <Text bold>Logs</Text>
         {messages.map((msg, idx) => {
-          const id = msg.type === "PotentialTrades" ? idx : getConverterConfigId(msg.context);
+          const id = msg.type === "PotentialConversions" ? idx : getConverterConfigId(msg.context);
           return (
             <BorderBox
               key={`${id}-${idx}`}
@@ -344,9 +358,9 @@ export default function Convert({ options }: Props) {
                 {(msg.type === "Arbitrage" || msg.type === "ExecuteTrade") && (
                   <Text>{JSON.stringify(msg.context || " ", stringifyBigInt)}</Text>
                 )}
-                {msg.type === "PotentialTrades" ? (
+                {msg.type === "PotentialConversions" ? (
                   <Box flexGrow={1} flexDirection="column" minWidth={60} marginRight={1} marginLeft={1}>
-                    <Text>{msg.context.trades.length} Trades found</Text>
+                    <Text>{msg.context.conversions.length} Trades found</Text>
                   </Box>
                 ) : null}
               </Box>

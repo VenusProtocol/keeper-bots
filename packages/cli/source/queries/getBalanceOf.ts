@@ -1,5 +1,5 @@
 import { Address, erc20Abi } from "viem";
-import publicClient from "./publicClient.js";
+import usePublicClient from "./usePublicClient.js";
 
 const useBalanceOf = async ({
   tokenAddress,
@@ -10,6 +10,7 @@ const useBalanceOf = async ({
   contractAddress: Address;
   blockNumber?: string;
 }) => {
+  const publicClient = usePublicClient();
   const resp = publicClient.readContract({
     address: tokenAddress,
     abi: erc20Abi,

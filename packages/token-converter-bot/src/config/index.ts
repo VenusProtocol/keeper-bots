@@ -1,30 +1,31 @@
-import { SUPPORTED_CHAINS } from "./chains";
-
-const safelyGetEnvVar = <T = string>(key: keyof typeof process.env) => {
+const safelyGetEnvVar = <T extends keyof typeof process.env>(key: T) => {
   const envVar = process.env[key];
-  if (envVar !== undefined) {
-    return envVar as T;
+  if (envVar === undefined) {
+    throw new Error(`${key} not defined in environment variables`);
   }
-  throw new Error(`${key} not defined in environment variables`);
+  return envVar;
 };
 
-const pancakeSwapSubgraphUrlByNetwork = {
+export const pancakeSwapSubgraphUrlByNetwork = {
   bsctestnet: "https://api.thegraph.com/subgraphs/name/pancakeswap/exchange-v3-chapel",
   bscmainnet: "https://api.thegraph.com/subgraphs/name/pancakeswap/exchange-v3-bsc",
 };
 
-const subgraphUrlByNetwork = {
-  bsctestnet: "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel",
-  bscmainnet: "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve",
-};
-const network = safelyGetEnvVar<SUPPORTED_CHAINS>("NETWORK");
-const config = {
-  subgraphUrl: subgraphUrlByNetwork[network],
-  pancakeSwapSubgraphUrl: pancakeSwapSubgraphUrlByNetwork[network],
-  telegramBotToken: safelyGetEnvVar("TELEGRAM_BOT_TOKEN"),
-  telegramChatId: +safelyGetEnvVar("TELEGRAM_CHAT_ID"),
-  network: safelyGetEnvVar("NETWORK") as SUPPORTED_CHAINS,
-  rpcUrl: safelyGetEnvVar(`LIVE_NETWORK_${network}`),
+export const subgraphUrlByNetwork = {
+  bsctestnet:
+    "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel?source=venusprotocol-keeper-bots",
+  bscmainnet:
+    "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve?source=venusprotocol-keeper-bots",
 };
 
-export default config;
+const getConfig = () => {
+  const network = safelyGetEnvVar("NETWORK");
+  return {
+    subgraphUrl: subgraphUrlByNetwork[network],
+    pancakeSwapSubgraphUrl: pancakeSwapSubgraphUrlByNetwork[network],
+    network,
+    rpcUrl: safelyGetEnvVar(`RPC_${network}`),
+  };
+};
+
+export default getConfig;
