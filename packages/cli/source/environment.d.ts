@@ -3,6 +3,17 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       NETWORK: "bsctestnet" | "bscmainnet";
+      VENUS_ENV_PATH?: string;
+      RPC_bsctestnet: string;
+      RPC_bscmainnet: string;
+    }
+
+    interface ErrnoException extends Error {
+      errno: number;
+      code: "ENOENT";
+      path: string;
+      syscall: string;
+      stack: string;
     }
   }
 }

@@ -3,8 +3,6 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       NETWORK: "bsctestnet" | "bscmainnet";
-      TELEGRAM_BOT_TOKEN: string;
-      TELEGRAM_CHAT_ID: string;
     }
   }
 }

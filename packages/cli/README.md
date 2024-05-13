@@ -58,4 +58,10 @@ Options:
 
 ## Environment variables
 
-Environment variables are read from a .env file in the directory where the command is run or can be set inline
+Environment variables are read by default from a `.venus/.env` file in the current user's home directory. If you want to use a different location for the .env file you can specify a path with the `VENUS_ENV_PATH` environment variable.
+
+An example of required variables is defined in `.env.example`. For convenience, they can be set using the config command
+
+```
+venus config set NETWORK bsctestnet
+```

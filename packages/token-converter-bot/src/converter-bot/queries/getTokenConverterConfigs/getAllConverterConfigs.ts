@@ -1,7 +1,9 @@
-import subgraphClient from "../../../subgraph-client";
+import getConfig from "../../../config";
+import SubgraphClient from "../../../subgraph-client";
 import formatTokenConverterConfigs from "./formatTokenConverterConfigs";
 
 const readTokenConverterConfigs = async () => {
+  const subgraphClient = new SubgraphClient(getConfig().subgraphUrl);
   const {
     data: { tokenConverters },
   } = await subgraphClient.getTokenConverters();

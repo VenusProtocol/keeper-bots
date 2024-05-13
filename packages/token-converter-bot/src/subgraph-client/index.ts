@@ -1,7 +1,6 @@
 import { DocumentNode } from "graphql";
 import { Client as UrqlClient, createClient } from "urql/core";
 
-import config from "../config";
 import {
   TokenConverterByAssetInAndAssetOutDocument,
   TokenConverterByAssetInDocument,
@@ -56,4 +55,4 @@ class SubgraphClient {
   }
 }
 
-export default new SubgraphClient(config.subgraphUrl || "nonetwork");
+export default SubgraphClient;

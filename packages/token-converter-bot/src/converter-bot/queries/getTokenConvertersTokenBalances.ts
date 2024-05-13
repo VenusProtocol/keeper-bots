@@ -3,8 +3,8 @@ import "dotenv/config";
 import { Address, decodeFunctionResult, encodeFunctionData, erc20Abi, parseAbi } from "viem";
 
 import { protocolShareReserveAbi } from "../../config/abis/generated";
-import addresses, { underlyingByComptroller, underlyingToVTokens } from "../../config/addresses";
-import publicClient from "../../config/clients/publicClient";
+import getAddresses, { getUnderlyingByComptroller, getUnderlyingToVTokens } from "../../config/addresses";
+import getPublicClient from "../../config/clients/publicClient";
 import { MULTICALL_ABI, MULTICALL_ADDRESS } from "../constants";
 import { TokenConverterConfig } from "./getTokenConverterConfigs/formatTokenConverterConfigs";
 
@@ -31,7 +31,7 @@ const formatResults = (results: bigint[], tokenConverterConfigs: TokenConverterC
 
     const curr = results.slice(i, i + chunkSize);
 
-    const vToken = underlyingToVTokens[assetOut];
+    const vToken = getUnderlyingToVTokens()[assetOut];
     const balance = {
       assetOutVTokens: vToken,
       tokenConverter,
@@ -46,7 +46,7 @@ const formatResults = (results: bigint[], tokenConverterConfigs: TokenConverterC
 };
 
 const reduceConfigsToComptrollerAndTokens = (tokenConfigs: TokenConverterConfig[]) => {
-  const underlyingByComptrollerEntries = Object.entries(underlyingByComptroller);
+  const underlyingByComptrollerEntries = Object.entries(getUnderlyingByComptroller());
   const pools = tokenConfigs.reduce((acc, curr) => {
     for (const [comptroller, tokens] of underlyingByComptrollerEntries) {
       if (tokens.includes(curr.tokenAddressOut) && acc[comptroller]) {
@@ -86,6 +86,8 @@ export const getTokenConvertersTokenBalances = async (
   walletAddress: Address,
   releaseFunds?: boolean,
 ): Promise<{ results: BalanceResult[]; blockNumber: bigint }> => {
+  const addresses = getAddresses();
+  const publicClient = getPublicClient();
   const pools = reduceConfigsToComptrollerAndTokens(tokenConverterConfigs);
   let releaseFundsCalls: { target: string; allowFailure: boolean; callData: string }[] = [];
   if (releaseFunds) {

@@ -17,7 +17,7 @@ Deployments are managed using `hardhat-deploy`. Addresses conveniently organized
 yarn test
 ```
 
-To run fork tests add FORK=true, FORKED_NETWORK and one ARCHIVE_NODE var in the .env file, then run
+To run fork tests add FORK=true and the correct ARCHIVE_NODE var in the .env file, then run
 
 ```
 yarn hardhat test fork-tests/index.ts

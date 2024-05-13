@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { useEffect, useState } from "react";
 import { option } from "pastel";
 import { Text, useApp } from "ink";

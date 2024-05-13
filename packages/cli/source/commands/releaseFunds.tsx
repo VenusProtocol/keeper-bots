@@ -7,11 +7,11 @@ import {
   TokenConverter,
   getCoreMarkets,
   getIsolatedMarkets,
-  underlyingToVTokens,
-  underlyingByComptroller,
-  addresses,
+  getUnderlyingToVTokens,
+  getUnderlyingByComptroller,
+  getAddresses,
 } from "@venusprotocol/token-converter-bot";
-import publicClient from "../queries/publicClient.js";
+import usePublicClient from "../queries/usePublicClient.js";
 import { Options, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/releaseFunds.js";
 import FullScreenBox from "../components/fullScreenBox.js";
@@ -77,13 +77,15 @@ const reduceToTokensWithBalances = async (
   tokenConverter: TokenConverter,
   underlyingByComptroller: Record<Address, readonly Address[]>,
 ) => {
+  const addresses = getAddresses();
+  const underlyingToVTokens = getUnderlyingToVTokens();
   const underlyingByComptrollerEntries = Object.entries(underlyingByComptroller);
 
   const tokenSet = new Set([...Object.values(underlyingByComptroller)].flat());
 
   const withBalances: Record<Address, readonly Address[]> = {};
   const tokenSetArray = Array.from(tokenSet);
-
+  const publicClient = usePublicClient();
   const response = await publicClient.multicall({
     contracts: [
       ...tokenSetArray.map(v => {
@@ -129,6 +131,7 @@ const reduceToTokensWithBalances = async (
  * Command to release funds
  */
 function ReleaseFunds({ options = {} }: Props) {
+  const underlyingByComptroller = getUnderlyingByComptroller();
   const { accrueInterest, reduceReserves, debug, simulate } = options;
 
   const [{ releasedFunds }, dispatch] = useReducer(reducer, defaultState);
