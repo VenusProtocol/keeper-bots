@@ -1,6 +1,6 @@
 {
   "name": "@venusprotocol/cli",
-  "version": "1.0.0-dev.2",
+  "version": "1.0.0",
   "license": "MIT",
   "bin": {
     "venus": "dist/venus.js"
