@@ -23,7 +23,7 @@
     "dist"
   ],
   "dependencies": {
-    "@venusprotocol/token-converter-bot": "npm:1.0.0-dev.6",
+    "@venusprotocol/token-converter-bot": "1.0.0",
     "@venusprotocol/venus-protocol": "^8.1.0",
     "dotenv": "^16.3.1",
     "ink": "^4.1.0",
