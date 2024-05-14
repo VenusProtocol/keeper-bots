@@ -74,6 +74,7 @@ interface Props {
 }
 
 const reduceToTokensWithBalances = async (
+  publicClient: ReturnType<typeof usePublicClient>,
   tokenConverter: TokenConverter,
   underlyingByComptroller: Record<Address, readonly Address[]>,
 ) => {
@@ -85,7 +86,6 @@ const reduceToTokensWithBalances = async (
 
   const withBalances: Record<Address, readonly Address[]> = {};
   const tokenSetArray = Array.from(tokenSet);
-  const publicClient = usePublicClient();
   const response = await publicClient.multicall({
     contracts: [
       ...tokenSetArray.map(v => {
@@ -137,6 +137,7 @@ function ReleaseFunds({ options = {} }: Props) {
   const [{ releasedFunds }, dispatch] = useReducer(reducer, defaultState);
 
   const { exit } = useApp();
+  const publicClient = usePublicClient();
 
   useEffect(() => {
     const releaseFunds = async () => {
@@ -159,7 +160,7 @@ function ReleaseFunds({ options = {} }: Props) {
         await tokenConverter.reduceReserves();
       }
       // Query for funds that are available to be released
-      const withBalances = await reduceToTokensWithBalances(tokenConverter, underlyingByComptroller);
+      const withBalances = await reduceToTokensWithBalances(publicClient, tokenConverter, underlyingByComptroller);
       await tokenConverter.releaseFunds(withBalances);
     };
     releaseFunds().finally(exit);
