@@ -1,6 +1,6 @@
 {
   "name": "@venusprotocol/keeper-bot-contracts",
-  "version": "1.0.0-dev.3",
+  "version": "1.0.0",
   "description": "Smart contracts to support keeper bot tasks",
   "scripts": {
     "test": "hardhat test",
