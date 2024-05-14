@@ -23,12 +23,14 @@
     "dist"
   ],
   "dependencies": {
+    "@graphql-mesh/cache-localforage": "^0.98.4",
     "@venusprotocol/token-converter-bot": "1.0.0",
     "@venusprotocol/venus-protocol": "^8.1.0",
     "dotenv": "^16.3.1",
     "ink": "^4.1.0",
     "pastel": "^2.0.0",
     "react": "^18.2.0",
+    "viem": "^2.10.5",
     "zod": "^3.21.4"
   },
   "devDependencies": {

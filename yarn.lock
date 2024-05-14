@@ -2351,6 +2351,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@graphql-mesh/cache-localforage@npm:^0.98.4":
+  version: 0.98.4
+  resolution: "@graphql-mesh/cache-localforage@npm:0.98.4"
+  dependencies:
+    localforage: 1.10.0
+  peerDependencies:
+    "@graphql-mesh/types": ^0.98.4
+    "@graphql-mesh/utils": ^0.98.4
+    graphql: "*"
+    tslib: ^2.4.0
+  checksum: c2bd7fbc45ab152821a45c9039673f1912e65461814f91c7ef2f1a9523b122cceba318628f1c41575c3046d363b566873646dc46025ef3e2081a520e8e2f7b5e
+  languageName: node
+  linkType: hard
+
 "@graphql-mesh/cli@npm:^0.82.33":
   version: 0.82.35
   resolution: "@graphql-mesh/cli@npm:0.82.35"
@@ -6054,6 +6068,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@venusprotocol/cli@workspace:packages/cli"
   dependencies:
+    "@graphql-mesh/cache-localforage": ^0.98.4
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
     "@venusprotocol/token-converter-bot": 1.0.0
@@ -6072,6 +6087,7 @@ __metadata:
     semantic-release: ^23.0.8
     ts-node: ^10.9.1
     typescript: ^5.0.3
+    viem: ^2.10.5
     xo: ^0.54.2
     zod: ^3.21.4
   bin:
@@ -20489,7 +20505,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:2.*, viem@npm:^2.7.1":
+"viem@npm:2.*, viem@npm:^2.10.5, viem@npm:^2.7.1":
   version: 2.10.5
   resolution: "viem@npm:2.10.5"
   dependencies:
