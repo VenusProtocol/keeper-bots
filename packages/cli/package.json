@@ -23,7 +23,7 @@
     "dist"
   ],
   "dependencies": {
-    "@graphql-mesh/cache-localforage": "^0.98.4",
+    "@graphprotocol/client-cli": "3.0.0",
     "@venusprotocol/token-converter-bot": "1.0.0",
     "@venusprotocol/venus-protocol": "^8.1.0",
     "dotenv": "^16.3.1",
