@@ -6073,7 +6073,7 @@ __metadata:
     "@graphprotocol/client-cli": 3.0.0
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
-    "@venusprotocol/token-converter-bot": 1.0.1-dev.2
+    "@venusprotocol/token-converter-bot": 1.0.1-dev.3
     "@venusprotocol/venus-protocol": ^8.1.0
     ava: ^5.2.0
     chalk: ^5.2.0
@@ -6353,7 +6353,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/token-converter-bot@1.0.1-dev.2, @venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
+"@venusprotocol/token-converter-bot@1.0.1-dev.3, @venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/token-converter-bot@workspace:packages/token-converter-bot"
   dependencies:
