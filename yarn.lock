@@ -6070,7 +6070,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@venusprotocol/cli@workspace:packages/cli"
   dependencies:
-    "@graphprotocol/client-cli": 3.0.0
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
     "@venusprotocol/token-converter-bot": 1.0.1-dev.3
@@ -6081,6 +6080,7 @@ __metadata:
     eslint-config-xo-react: ^0.27.0
     eslint-plugin-react: ^7.32.2
     eslint-plugin-react-hooks: ^4.6.0
+    graphql: ^16.8.1
     ink: ^4.1.0
     ink-testing-library: ^3.0.0
     pastel: ^2.0.0
