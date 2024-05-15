@@ -1,3 +1,3 @@
-#!/usr/bin/env
+#!/bin/bash
 
 yarn
