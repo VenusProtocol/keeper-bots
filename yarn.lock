@@ -6070,6 +6070,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@venusprotocol/cli@workspace:packages/cli"
   dependencies:
+    "@graphprotocol/client-cli": 3.0.0
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
     "@venusprotocol/token-converter-bot": 1.0.1-dev.3
