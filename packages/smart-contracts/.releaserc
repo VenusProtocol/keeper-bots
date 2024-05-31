@@ -64,6 +64,12 @@
       }
     ],
     [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "./prepare.sh"
+      }
+    ],
+    [
       "@semantic-release/git",
       {
         "assets": [
