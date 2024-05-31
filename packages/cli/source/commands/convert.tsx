@@ -212,7 +212,21 @@ export default function Convert({ options }: Props) {
               };
 
               const maxMinIncome = ((amount * BigInt(10000 + minIncomeBp)) / 10000n - amount) * -1n;
-              if (t.accountBalanceAssetOut < minIncome * -1n) {
+              if (trade && ((profitable && minIncome > 0n) || !profitable)) {
+                dispatch({
+                  type: "ExecuteTrade",
+                  context: {
+                    converter: t.tokenConverter,
+                    tokenToReceiveFromConverter: t.assetOut.address,
+                    tokenToSendToConverter: t.assetIn,
+                    amount,
+                    minIncome,
+                    percentage: Number((minIncome * 10000000n) / amount) / 10000000,
+                    maxMinIncome,
+                  },
+                });
+                await tokenConverter.arbitrage(t.tokenConverter, trade, amount, minIncome);
+              } else if (t.accountBalanceAssetOut < minIncome * -1n) {
                 dispatch({
                   type: "ExecuteTrade",
                   error: "Insufficient wallet balance to pay min income",
@@ -240,20 +254,6 @@ export default function Convert({ options }: Props) {
                     maxMinIncome,
                   },
                 });
-              } else if (trade && ((profitable && minIncome > 0n) || !profitable)) {
-                dispatch({
-                  type: "ExecuteTrade",
-                  context: {
-                    converter: t.tokenConverter,
-                    tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn,
-                    amount,
-                    minIncome,
-                    percentage: Number((minIncome * 10000000n) / amount) / 10000000,
-                    maxMinIncome,
-                  },
-                });
-                await tokenConverter.arbitrage(t.tokenConverter, trade, amount, minIncome);
               }
             }
           }),
