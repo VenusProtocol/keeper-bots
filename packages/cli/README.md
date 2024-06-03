@@ -11,7 +11,7 @@ $ venus convert --help
 ## Install
 
 ```bash
-$ yarn install --global @venusprotocol/cli
+$ npm i -g @venusprotocol/cli
 ```
 
 ### Token Conversion Commands
