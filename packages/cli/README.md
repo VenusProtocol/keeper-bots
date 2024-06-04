@@ -65,3 +65,8 @@ An example of required variables is defined in `.env.example`. For convenience, 
 ```
 venus config set NETWORK bsctestnet
 ```
+
+## Reference
+
+- [Token Converter Addresses](https://docs-v4.venus.io/deployed-contracts/token-converters)
+- [Token Converter Documentation](https://docs-v4.venus.io/technical-reference/reference-technical-articles/token-converters)
