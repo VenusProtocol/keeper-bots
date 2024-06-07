@@ -12,6 +12,11 @@ yarn add @venusprotocol/token-converter-bot
 
 You will also need to copy the .env.example file and add the appropriate values for the RPC and private key variables.
 
+## Reference
+
+- [Token Converter Addresses](https://docs-v4.venus.io/deployed-contracts/token-converters)
+- [Token Converter Documentation](https://docs-v4.venus.io/technical-reference/reference-technical-articles/token-converters)
+
 ## Guide
 
 Start by querying available conversions by asset to send to the converter (assetIn), asset to receive from the converter (assetOut) or the converter you'd like to interact with. `TokenConverter.queryConversions` also takes a `releaseFunds: boolean` which will query using converter balances after releasing funds.
