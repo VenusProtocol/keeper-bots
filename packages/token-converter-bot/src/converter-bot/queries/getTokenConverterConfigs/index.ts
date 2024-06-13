@@ -1,29 +1,34 @@
 import { Address } from "viem";
 
-import { TokenConverterConfig } from "./formatTokenConverterConfigs";
+import { TokenConvertersQuery } from "../../../subgraph-client/.graphclient";
 import { default as getAllConverterConfigs } from "./getAllConverterConfigs";
 import { default as getConverterConfigByAssetIn } from "./getConverterConfigByAssetIn";
 import { default as getConverterConfigByAssetInAndAssetOut } from "./getConverterConfigByAssetInAndAssetOut";
+import { default as getConverterConfigByAssetInAndAssetOutAndConverter } from "./getConverterConfigByAssetInAndAssetOutAndConverter";
 import { default as getConverterConfigByAssetOut } from "./getConverterConfigByAssetOut";
 import { default as getConverterConfigsByConverter } from "./getConverterConfigsByConverter";
+
+type TokenConverterConfigs = TokenConvertersQuery["tokenConverterConfigs"];
 
 const getConverterConfigs = async ({
   assetOut,
   assetIn,
-  converters,
+  converter,
 }: {
   assetOut?: Address;
   assetIn?: Address;
-  converters?: Address[];
-}): Promise<TokenConverterConfig[]> => {
-  if (assetOut && assetIn) {
+  converter?: Address;
+}): Promise<TokenConverterConfigs> => {
+  if (assetOut && assetIn && converter) {
+    return await getConverterConfigByAssetInAndAssetOutAndConverter(assetIn, assetOut, converter);
+  } else if (assetOut && assetIn) {
     return await getConverterConfigByAssetInAndAssetOut(assetIn, assetOut);
   } else if (assetOut) {
     return await getConverterConfigByAssetOut(assetOut);
   } else if (assetIn) {
     return await getConverterConfigByAssetIn(assetIn);
-  } else if (converters) {
-    return await getConverterConfigsByConverter(converters);
+  } else if (converter) {
+    return await getConverterConfigsByConverter(converter);
   }
 
   return await getAllConverterConfigs();
@@ -37,5 +42,5 @@ export {
   getConverterConfigByAssetOut,
   getConverterConfigByAssetIn,
   getConverterConfigByAssetInAndAssetOut,
-  TokenConverterConfig,
+  TokenConverterConfigs,
 };

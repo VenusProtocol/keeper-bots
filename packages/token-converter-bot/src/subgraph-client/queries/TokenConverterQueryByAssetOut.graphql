@@ -1,15 +1,14 @@
 query TokenConverterByAssetOut($tokenAddressOut: Bytes!) {
-  tokenConverters(where: { paused: false }) {
-    id
-    destinationAddress
-    configs(
-      where: { and: [{ tokenAddressOut: $tokenAddressOut }, { or: [{ access: ALL }, { access: ONLY_FOR_USERS }] }] }
+  tokenConverterConfigs(
+       where: { and: [{ tokenAddressOut: $tokenAddressOut }, { or: [{ access: ALL }, { access: ONLY_FOR_USERS }] }] }
     ) {
+    id
+    tokenAddressIn
+    tokenAddressOut
+    incentive
+    access
+    tokenConverter {
       id
-      tokenAddressIn
-      tokenAddressOut
-      incentive
-      access
     }
   }
 }

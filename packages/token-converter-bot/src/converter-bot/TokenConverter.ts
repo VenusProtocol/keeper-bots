@@ -401,18 +401,18 @@ export class TokenConverter {
   async queryConversions({
     assetIn,
     assetOut,
-    converters,
+    converter,
     releaseFunds,
   }: {
     assetIn?: Address;
     assetOut?: Address;
-    converters?: Address[];
+    converter?: Address;
     releaseFunds: boolean;
   }) {
     const tokenConverterConfigs = await getConverterConfigs({
       assetIn,
       assetOut,
-      converters,
+      converter,
     });
     const { results, blockNumber } = await readTokenConvertersTokenBalances(
       tokenConverterConfigs,

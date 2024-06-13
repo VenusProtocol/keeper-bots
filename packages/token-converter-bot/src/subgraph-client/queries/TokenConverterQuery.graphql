@@ -1,13 +1,16 @@
-query TokenConverter($id: [ID!]) {
-  tokenConverters(where: { id_in: $id }) {
+query TokenConverter($id: String!) {
+  tokenConverterConfigs(
+      where: {
+        or: [{ access: ALL, tokenConverter:  $id, }, { access: ONLY_FOR_USERS, tokenConverter:  $id, }],
+  }
+    ) {
     id
-    destinationAddress
-    configs(where: { or: [{ access: ALL }, { access: ONLY_FOR_USERS }] }) {
+    tokenAddressIn
+    tokenAddressOut
+    incentive
+    access
+    tokenConverter {
       id
-      tokenAddressIn
-      tokenAddressOut
-      incentive
-      access
     }
   }
 }

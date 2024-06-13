@@ -2,6 +2,7 @@ import { DocumentNode } from "graphql";
 import { Client as UrqlClient, createClient } from "urql/core";
 
 import {
+  TokenConverterByAssetInAndAssetOutAndConverterDocument,
   TokenConverterByAssetInAndAssetOutDocument,
   TokenConverterByAssetInDocument,
   TokenConverterByAssetOutDocument,
@@ -29,8 +30,8 @@ class SubgraphClient {
     return result;
   }
 
-  async getTokenConverter(addresses: string[]) {
-    const result = await this.query(TokenConverterDocument, { id: addresses.map(a => a.toLowerCase()) });
+  async getTokenConverter(address: string) {
+    const result = await this.query(TokenConverterDocument, { id: address.toLowerCase() });
     return result;
   }
 
@@ -50,6 +51,15 @@ class SubgraphClient {
     const result = await this.query(TokenConverterByAssetInAndAssetOutDocument, {
       tokenAddressIn: tokenAddressIn.toLowerCase(),
       tokenAddressOut: tokenAddressOut.toLowerCase(),
+    });
+    return result;
+  }
+  
+  async getTokenConverterByAssetInAndAssetOutAndConverter(tokenAddressIn: string, tokenAddressOut: string, tokenConverter: string) {
+    const result = await this.query(TokenConverterByAssetInAndAssetOutAndConverterDocument, {
+      tokenAddressIn: tokenAddressIn.toLowerCase(),
+      tokenAddressOut: tokenAddressOut.toLowerCase(),
+      tokenConverter: tokenConverter.toLowerCase()
     });
     return result;
   }

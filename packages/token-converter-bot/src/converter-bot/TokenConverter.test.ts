@@ -14,6 +14,7 @@ import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTo
 
 jest.mock("@pancakeswap/smart-router/evm");
 jest.mock("./queries/getTokenConvertersTokenBalances");
+jest.mock("../subgraph-client");
 jest.mock("../config/clients/walletClient");
 jest.mock("../config/clients/publicClient");
 
@@ -434,7 +435,7 @@ describe("Token Converter", () => {
       }));
 
       const trades = await tokenConverter.queryConversions({
-        converters: ["0xd5b9ae835f4c59272032b3b954417179573331e0"],
+        converter: "0xd5b9ae835f4c59272032b3b954417179573331e0",
         assetOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         assetIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
         releaseFunds: false,
@@ -461,7 +462,7 @@ describe("Token Converter", () => {
       }));
 
       const trades = await tokenConverter.queryConversions({
-        converters: ["0xd5b9ae835f4c59272032b3b954417179573331e0"],
+        converter: "0xd5b9ae835f4c59272032b3b954417179573331e0",
         assetOut: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
         assetIn: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
         releaseFunds: false,

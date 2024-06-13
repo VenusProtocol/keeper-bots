@@ -4,7 +4,7 @@ export {
   getConverterConfigByAssetOut,
   getConverterConfigByAssetIn,
   getConverterConfigByAssetInAndAssetOut,
-  TokenConverterConfig,
+  TokenConverterConfigs,
 } from "./getTokenConverterConfigs";
 export { getCoreMarkets } from "./getCoreMarkets";
 export { getIsolatedMarkets } from "./getIsolatedMarkets";
