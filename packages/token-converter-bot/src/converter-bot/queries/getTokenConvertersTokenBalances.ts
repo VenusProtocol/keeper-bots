@@ -6,7 +6,7 @@ import { protocolShareReserveAbi } from "../../config/abis/generated";
 import getAddresses, { getUnderlyingByComptroller, getUnderlyingToVTokens } from "../../config/addresses";
 import getPublicClient from "../../config/clients/publicClient";
 import { MULTICALL_ABI, MULTICALL_ADDRESS } from "../constants";
-import { TokenConverterConfig } from "./getTokenConverterConfigs/formatTokenConverterConfigs";
+import { TokenConverterConfigs } from "./getTokenConverterConfigs";
 
 export interface BalanceResult {
   tokenConverter: Address;
@@ -19,13 +19,13 @@ export interface BalanceResult {
   accountBalanceAssetOut: bigint;
 }
 
-const formatResults = (results: bigint[], tokenConverterConfigs: TokenConverterConfig[]): BalanceResult[] => {
+const formatResults = (results: bigint[], tokenConverterConfigs: TokenConverterConfigs): BalanceResult[] => {
   const chunkSize = 2;
   const balances: BalanceResult[] = [];
 
   for (let i = 0; i < results.length; i += chunkSize) {
     const index = (i + chunkSize) / chunkSize - 1;
-    const tokenConverter = tokenConverterConfigs[index].tokenConverter;
+    const tokenConverter = tokenConverterConfigs[index].tokenConverter.id as Address;
     const assetIn = tokenConverterConfigs[index].tokenAddressIn;
     const assetOut = tokenConverterConfigs[index].tokenAddressOut;
 
@@ -45,7 +45,7 @@ const formatResults = (results: bigint[], tokenConverterConfigs: TokenConverterC
   return balances;
 };
 
-const reduceConfigsToComptrollerAndTokens = (tokenConfigs: TokenConverterConfig[]) => {
+const reduceConfigsToComptrollerAndTokens = (tokenConfigs: TokenConverterConfigs) => {
   const underlyingByComptrollerEntries = Object.entries(getUnderlyingByComptroller());
   const pools = tokenConfigs.reduce((acc, curr) => {
     for (const [comptroller, tokens] of underlyingByComptrollerEntries) {
@@ -82,7 +82,7 @@ const decodeBalanceOfData = (data: `0x${string}`) =>
   });
 
 export const getTokenConvertersTokenBalances = async (
-  tokenConverterConfigs: TokenConverterConfig[],
+  tokenConverterConfigs: TokenConverterConfigs,
   walletAddress: Address,
   releaseFunds?: boolean,
 ): Promise<{ results: BalanceResult[]; blockNumber: bigint }> => {
@@ -111,7 +111,7 @@ export const getTokenConvertersTokenBalances = async (
           acc = acc.concat([
             {
               target: curr.tokenAddressOut,
-              callData: encodeBalanceOfData([curr.tokenConverter]),
+              callData: encodeBalanceOfData([curr.tokenConverter.id as Address]),
               allowFailure: false,
             },
             {

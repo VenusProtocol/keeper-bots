@@ -11,8 +11,7 @@ import FullScreenBox from "../components/fullScreenBox.js";
 import { addressValidation } from "../utils/validation.js";
 
 export const options = zod.object({
-  converters: zod
-    .array(addressValidation)
+  converter: addressValidation
     .describe(
       option({
         description: "Token converter address",
@@ -133,7 +132,7 @@ export default function Convert({ options }: Props) {
     releaseFunds,
     assetIn,
     assetOut,
-    converters,
+    converter,
     profitable,
     loop,
     debug,
@@ -161,7 +160,7 @@ export default function Convert({ options }: Props) {
         const potentialConversions = await tokenConverter.queryConversions({
           assetIn,
           assetOut,
-          converters,
+          converter,
           releaseFunds: !!releaseFunds,
         });
 
@@ -189,7 +188,7 @@ export default function Convert({ options }: Props) {
             setTradeUsdValues(prevState => ({
               ...prevState,
               [getConverterConfigId({
-                converter: t.tokenConverter,
+                converter: t.tokenConverter.id,
                 tokenToReceiveFromConverter: t.assetOut.address,
                 tokenToSendToConverter: t.assetIn,
               })]: { underlyingPriceUsd, underlyingUsdValue },
@@ -200,7 +199,7 @@ export default function Convert({ options }: Props) {
                 amountOut = parseUnits((maxTradeUsd / +underlyingPriceUsd.toString()).toString(), underlyingDecimals);
               }
               const arbitrageArgs = await tokenConverter.prepareConversion(
-                t.tokenConverter,
+                t.tokenConverter.id,
                 t.assetOut.address,
                 t.assetIn,
                 amountOut,
@@ -231,7 +230,7 @@ export default function Convert({ options }: Props) {
                   type: "ExecuteTrade",
                   error: "Insufficient wallet balance to pay min income",
                   context: {
-                    converter: t.tokenConverter,
+                    converter: t.tokenConverter.id,
                     tokenToReceiveFromConverter: t.assetOut.address,
                     tokenToSendToConverter: t.assetIn,
                     amount,
@@ -245,7 +244,7 @@ export default function Convert({ options }: Props) {
                   type: "ExecuteTrade",
                   error: "Min income too high",
                   context: {
-                    converter: t.tokenConverter,
+                    converter: t.tokenConverter.id,
                     tokenToReceiveFromConverter: t.assetOut.address,
                     tokenToSendToConverter: t.assetIn,
                     amount,
@@ -260,7 +259,7 @@ export default function Convert({ options }: Props) {
         );
       } while (loop);
     };
-    if (converters || assetIn || assetOut) {
+    if (converter || assetIn || assetOut) {
       convert()
         .catch(e => {
           setError(e.message);
@@ -271,7 +270,7 @@ export default function Convert({ options }: Props) {
     }
   }, []);
 
-  if (!converters && !assetIn && !assetOut) {
+  if (!converter && !assetIn && !assetOut) {
     writeStdErr("converter, asset-in or asset-out must be present");
     return null;
   }
