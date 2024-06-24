@@ -1,13 +1,14 @@
 query TokenConverters {
-  tokenConverters(where: { paused: false }) {
+  tokenConverterConfigs(
+       where: { or: [{ access: ALL }, { access: ONLY_FOR_USERS }] }
+    ) {
     id
-    destinationAddress
-    configs(where: { or: [{ access: ALL }, { access: ONLY_FOR_USERS }] }) {
+    tokenAddressIn
+    tokenAddressOut
+    incentive
+    access
+    tokenConverter {
       id
-      tokenAddressIn
-      tokenAddressOut
-      incentive
-      access
     }
   }
 }
