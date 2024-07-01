@@ -9,13 +9,10 @@ import { FlashHandler } from "../flash-swap/FlashHandler.sol";
 import { ExactOutputFlashSwap } from "../flash-swap/ExactOutputFlashSwap.sol";
 import { FlashLoan } from "../flash-swap/FlashLoan.sol";
 import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
-import { approveOrRevert } from "../util/approveOrRevert.sol";
-import { transferAll } from "../util/transferAll.sol";
+import { Token } from "../util/Token.sol";
 import { checkDeadline, validatePathStart, validatePathEnd } from "../util/validators.sol";
 
 contract LiquidationOperator is ExactOutputFlashSwap, FlashLoan {
-    using SafeERC20 for IERC20;
-
     /// @notice Liquidation parameters
     struct FlashLiquidationParameters {
         /// @notice The receiver of the liquidated collateral
@@ -40,7 +37,7 @@ contract LiquidationOperator is ExactOutputFlashSwap, FlashLoan {
         /// @notice The receiver of the liquidated collateral
         address beneficiary;
         /// @notice The borrowed underlying
-        IERC20 borrowedUnderlying;
+        Token borrowedUnderlying;
         /// @notice vToken for the borrowed underlying
         VTokenInterface vTokenBorrowed;
         /// @notice Borrower whose position is being liquidated
@@ -48,7 +45,7 @@ contract LiquidationOperator is ExactOutputFlashSwap, FlashLoan {
         /// @notice Amount of borrowed tokens to repay
         uint256 repayAmount;
         /// @notice Collateral asset
-        IERC20 collateralUnderlying;
+        Token collateralUnderlying;
         /// @notice Collateral vToken to seize
         VTokenInterface vTokenCollateral;
     }
@@ -77,11 +74,11 @@ contract LiquidationOperator is ExactOutputFlashSwap, FlashLoan {
         validatePathStart(params.path, borrowedTokenAddress);
         FlashLiquidationData memory data = FlashLiquidationData({
             beneficiary: params.beneficiary,
-            borrowedUnderlying: IERC20(borrowedTokenAddress),
+            borrowedUnderlying: Token.wrap(borrowedTokenAddress),
             vTokenBorrowed: params.vTokenBorrowed,
             borrower: params.borrower,
             repayAmount: repayAmount,
-            collateralUnderlying: IERC20(collateralTokenAddress),
+            collateralUnderlying: Token.wrap(collateralTokenAddress),
             vTokenCollateral: params.vTokenCollateral
         });
 
@@ -93,21 +90,21 @@ contract LiquidationOperator is ExactOutputFlashSwap, FlashLoan {
         }
     }
 
-    function _onMoneyReceived(bytes memory data) internal override returns (IERC20 tokenIn, uint256 maxAmountIn) {
-        FlashLiquidationData memory data = abi.decode(data, (FlashLiquidationData));
+    function _onMoneyReceived(bytes memory data_) internal override returns (Token tokenIn, uint256 maxAmountIn) {
+        FlashLiquidationData memory data = abi.decode(data_, (FlashLiquidationData));
 
-        approveOrRevert(data.borrowedUnderlying, address(data.vTokenBorrowed), data.repayAmount);
+        data.borrowedUnderlying.approve(address(data.vTokenBorrowed), data.repayAmount);
         data.vTokenBorrowed.liquidateBorrow(data.borrower, data.repayAmount, data.vTokenCollateral);
-        approveOrRevert(data.borrowedUnderlying, address(data.vTokenBorrowed), 0);
+        data.borrowedUnderlying.approve(address(data.vTokenBorrowed), 0);
 
         _redeem(data.vTokenCollateral, data.vTokenCollateral.balanceOf(address(this)));
 
-        return (data.collateralUnderlying, data.collateralUnderlying.balanceOf(address(this)));
+        return (data.collateralUnderlying, data.collateralUnderlying.balanceOfSelf());
     }
 
-    function _onFlashCompleted(bytes memory data) internal override {
-        FlashLiquidationData memory data = abi.decode(data, (FlashLiquidationData));
-        transferAll(data.collateralUnderlying, address(this), data.beneficiary);
+    function _onFlashCompleted(bytes memory data_) internal override {
+        FlashLiquidationData memory data = abi.decode(data_, (FlashLiquidationData));
+        data.collateralUnderlying.transferAll(data.beneficiary);
     }
 
     /// @dev Redeems ERC-20 tokens from the given vToken
