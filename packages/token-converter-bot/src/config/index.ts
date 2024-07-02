@@ -14,8 +14,9 @@ export const pancakeSwapSubgraphUrlByNetwork = {
 export const subgraphUrlByNetwork = {
   bsctestnet:
     "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve-chapel?source=venusprotocol-keeper-bots",
-  bscmainnet:
-    "https://api.thegraph.com/subgraphs/name/venusprotocol/venus-protocol-reserve?source=venusprotocol-keeper-bots",
+  bscmainnet: `https://gateway-arbitrum.network.thegraph.com/api/${safelyGetEnvVar(
+    "THE_GRAPH_STUDIO_API_KEY",
+  )}/subgraphs/id/2ZCWgaBc8KoWW8kh7MRzf9KPdr7NTZ5cda9bxpFDk4wG`,
 };
 
 const getConfig = () => {
