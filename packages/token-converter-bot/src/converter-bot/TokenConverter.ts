@@ -6,6 +6,7 @@ import { Address, BaseError, ContractFunctionRevertedError, Hex, encodePacked, e
 import getConfig from "../config";
 import {
   coreVTokenAbi,
+  poolLensAbi,
   protocolShareReserveAbi,
   tokenConverterAbi,
   tokenConverterOperatorAbi,
@@ -19,7 +20,8 @@ import getPublicClient from "../config/clients/publicClient";
 import getWalletClient from "../config/clients/walletClient";
 import logger from "./logger";
 import getConverterConfigs from "./queries/getTokenConverterConfigs";
-import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
+import getTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
+import { MarketAddresses } from "./types";
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 const MAX_HOPS = 5;
@@ -100,7 +102,7 @@ export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
   private addresses: ReturnType<typeof getAddresses>;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
-  private v3SubgraphClient: UrqlClient;
+  private v3SubgraphClient: UrqlClient | undefined;
   private quoteProvider: QuoteProvider;
   private tokens: Map<Address, Currency>;
   private subscriber: undefined | ((msg: Message) => void);
@@ -126,10 +128,12 @@ export class TokenConverter {
       address: this.addresses.TokenConverterOperator,
       abi: tokenConverterOperatorAbi,
     };
-    this.v3SubgraphClient = createClient({
-      url: config.pancakeSwapSubgraphUrl,
-      requestPolicy: "network-only",
-    });
+    this.v3SubgraphClient = config.pancakeSwapSubgraphUrl
+      ? createClient({
+          url: config.pancakeSwapSubgraphUrl,
+          requestPolicy: "network-only",
+        })
+      : undefined;
     this.publicClient = getPublicClient();
     this.walletClient = getWalletClient();
     this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => this.publicClient });
@@ -311,9 +315,9 @@ export class TokenConverter {
 
   /**
    * Accrues interest on all passed markets
-   * @param allPools Tuple of [comprollerAddress, MarketAddress[]]
+   * @param allPools Tuple of [comprollerAddress, MarketAddresses[]]
    */
-  async accrueInterest(markets: Address[]) {
+  async accrueInterest(markets: MarketAddresses[]) {
     let error: string | string[];
     try {
       // Accrue Interest in all markets
@@ -322,13 +326,13 @@ export class TokenConverter {
           if (this.simulate) {
             await this.publicClient.simulateContract({
               account: this.walletClient.account.address,
-              address: market,
+              address: market.vTokenAddress,
               abi: coreVTokenAbi,
               functionName: "accrueInterest",
             });
           } else {
             await this.walletClient.writeContract({
-              address: market,
+              address: market.vTokenAddress,
               abi: coreVTokenAbi,
               functionName: "accrueInterest",
             });
@@ -355,39 +359,41 @@ export class TokenConverter {
   async reduceReserves() {
     let error;
     let trx;
-    try {
-      const totalReserves = await this.publicClient.readContract({
-        address: this.addresses.vBNB as Address,
-        abi: coreVTokenAbi,
-        functionName: "totalReserves",
-      });
+    if (this.addresses.vBNB && this.addresses.VBNBAdmin) {
+      try {
+        const totalReserves = await this.publicClient.readContract({
+          address: this.addresses.vBNB,
+          abi: coreVTokenAbi,
+          functionName: "totalReserves",
+        });
 
-      const cash = await this.publicClient.readContract({
-        address: this.addresses.vBNB as Address,
-        abi: coreVTokenAbi,
-        functionName: "getCash",
-      });
+        const cash = await this.publicClient.readContract({
+          address: this.addresses.vBNB,
+          abi: coreVTokenAbi,
+          functionName: "getCash",
+        });
 
-      if (cash > 0) {
-        if (this.simulate) {
-          await this.publicClient.simulateContract({
-            account: this.walletClient.account.address,
-            address: this.addresses.VBNBAdmin as Address,
-            abi: vBnbAdminAbi,
-            functionName: "reduceReserves",
-            args: [totalReserves < cash ? totalReserves : cash],
-          });
-        } else {
-          trx = await this.walletClient.writeContract({
-            address: this.addresses.VBNBAdmin as Address,
-            abi: vBnbAdminAbi,
-            functionName: "reduceReserves",
-            args: [totalReserves < cash ? totalReserves : cash],
-          });
+        if (cash > 0) {
+          if (this.simulate) {
+            await this.publicClient.simulateContract({
+              account: this.walletClient.account.address,
+              address: this.addresses.VBNBAdmin,
+              abi: vBnbAdminAbi,
+              functionName: "reduceReserves",
+              args: [totalReserves < cash ? totalReserves : cash],
+            });
+          } else {
+            trx = await this.walletClient.writeContract({
+              address: this.addresses.VBNBAdmin,
+              abi: vBnbAdminAbi,
+              functionName: "reduceReserves",
+              args: [totalReserves < cash ? totalReserves : cash],
+            });
+          }
         }
+      } catch (e) {
+        error = (e as Error).message;
       }
-    } catch (e) {
-      error = (e as Error).message;
     }
     this.sendMessage({ type: "ReduceReserves", error, trx });
   }
@@ -414,7 +420,7 @@ export class TokenConverter {
       assetOut,
       converter,
     });
-    const { results, blockNumber } = await readTokenConvertersTokenBalances(
+    const { results, blockNumber } = await getTokenConvertersTokenBalances(
       tokenConverterConfigs,
       this.walletClient.account.address,
       releaseFunds,
@@ -468,7 +474,7 @@ export class TokenConverter {
   async releaseFundsForConversions(conversions: BalanceResult[]) {
     const releaseFundsArgs = conversions.reduce((acc, curr) => {
       const { core, isolated } = curr.assetOutVTokens;
-      if (core) {
+      if (core && this.addresses.Unitroller) {
         acc[this.addresses.Unitroller as Address] = acc[this.addresses.Unitroller as Address]
           ? [...acc[this.addresses.Unitroller as Address], curr.assetOut.address]
           : [curr.assetOut.address];
@@ -501,13 +507,16 @@ export class TokenConverter {
           args: [],
         },
         {
-          address: this.addresses.VenusLens as Address,
-          abi: venusLensAbi,
+          address: (this.chainName === "bscmainnet" || this.chainName === "bsctestnet"
+            ? this.addresses.VenusLens
+            : this.addresses.PoolLens) as Address,
+          abi: this.chainName === "bscmainnet" || this.chainName === "bsctestnet" ? venusLensAbi : poolLensAbi,
           functionName: "vTokenUnderlyingPrice",
           args: [vTokenAddress],
         },
       ],
     });
+
     const [{ result: underlyingDecimals = 0 }, { result: { underlyingPrice } = { underlyingPrice: undefined } }] =
       result;
     let underlyingUsdValue = "0";
