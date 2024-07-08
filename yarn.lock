@@ -6725,21 +6725,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/keeper-bot-contracts@npm:^1.0.0":
-  version: 1.0.1
-  resolution: "@venusprotocol/keeper-bot-contracts@npm:1.0.1"
-  dependencies:
-    "@openzeppelin/contracts": 4.9.3
-    "@openzeppelin/contracts-upgradeable": 4.9.3
-    "@venusprotocol/governance-contracts": ^2.0.0
-    "@venusprotocol/isolated-pools": ^3.0.0
-    "@venusprotocol/protocol-reserve": ^2.0.0
-    "@venusprotocol/venus-protocol": ^8.0.0
-  checksum: 2a286d63e332e58ce5ecf655b1fea28b8e60bb19fa3598dcbf33a491f2dbb8ab9bb153638876daee31c62b8c1896b0de4ddcd3a7c8da0a0fab40068800f3e231
-  languageName: node
-  linkType: hard
-
-"@venusprotocol/keeper-bot-contracts@workspace:packages/smart-contracts":
+"@venusprotocol/keeper-bot-contracts@^1.0.0, @venusprotocol/keeper-bot-contracts@workspace:packages/smart-contracts":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/keeper-bot-contracts@workspace:packages/smart-contracts"
   dependencies:
