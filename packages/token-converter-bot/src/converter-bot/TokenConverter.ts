@@ -213,7 +213,7 @@ export class TokenConverter {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
 
-    // [amount transferred out of converter, amount transferred In]
+    // [amount transferred out of converter, amount transferred in]
     const { result: updatedAmountIn } = await this.publicClient.simulateContract({
       address: tokenConverter,
       abi: tokenConverterAbi,

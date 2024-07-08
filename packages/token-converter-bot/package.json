@@ -1,6 +1,6 @@
 {
   "name": "@venusprotocol/token-converter-bot",
-  "version": "1.0.2",
+  "version": "1.0.3-dev.1",
   "description": "",
   "scripts": {
     "lint": "yarn lint:ts && yarn prettier:check",
@@ -53,7 +53,8 @@
     "eslint-plugin-jest": "^27.9.0",
     "jest": "^29.7.0",
     "prettier": "2.7.1",
-    "semantic-release": "^23.0.8",
+    "semantic-release": "^23.1.1",
+    "semantic-release-monorepo": "^8.0.2",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.1",
     "typechain": "^8.3.2",

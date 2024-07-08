@@ -39,7 +39,7 @@
     "husky": "^8.0.3",
     "nyc": "^15.1.0",
     "prettier": "2.7.1",
-    "semantic-release": "^23.0.8",
+    "semantic-release": "^23.1.1",
     "semantic-release-monorepo": "^8.0.2",
     "ts-node": "^10.9.2"
   },
