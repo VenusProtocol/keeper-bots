@@ -11,8 +11,7 @@ import FullScreenBox from "../components/fullScreenBox.js";
 import { addressValidation } from "../utils/validation.js";
 
 export const options = zod.object({
-  converters: zod
-    .array(addressValidation)
+  converter: addressValidation
     .describe(
       option({
         description: "Token converter address",
@@ -133,7 +132,7 @@ export default function Convert({ options }: Props) {
     releaseFunds,
     assetIn,
     assetOut,
-    converters,
+    converter,
     profitable,
     loop,
     debug,
@@ -161,7 +160,7 @@ export default function Convert({ options }: Props) {
         const potentialConversions = await tokenConverter.queryConversions({
           assetIn,
           assetOut,
-          converters,
+          converter,
           releaseFunds: !!releaseFunds,
         });
 
@@ -189,7 +188,7 @@ export default function Convert({ options }: Props) {
             setTradeUsdValues(prevState => ({
               ...prevState,
               [getConverterConfigId({
-                converter: t.tokenConverter,
+                converter: t.tokenConverter.id,
                 tokenToReceiveFromConverter: t.assetOut.address,
                 tokenToSendToConverter: t.assetIn,
               })]: { underlyingPriceUsd, underlyingUsdValue },
@@ -199,6 +198,7 @@ export default function Convert({ options }: Props) {
               if (+underlyingUsdValue > maxTradeUsd) {
                 amountOut = parseUnits((maxTradeUsd / +underlyingPriceUsd.toString()).toString(), underlyingDecimals);
               }
+
               const arbitrageArgs = await tokenConverter.prepareConversion(
                 t.tokenConverter,
                 t.assetOut.address,
@@ -212,35 +212,7 @@ export default function Convert({ options }: Props) {
               };
 
               const maxMinIncome = ((amount * BigInt(10000 + minIncomeBp)) / 10000n - amount) * -1n;
-              if (t.accountBalanceAssetOut < minIncome * -1n) {
-                dispatch({
-                  type: "ExecuteTrade",
-                  error: "Insufficient wallet balance to pay min income",
-                  context: {
-                    converter: t.tokenConverter,
-                    tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn,
-                    amount,
-                    minIncome,
-                    percentage: Number((minIncome * 10000000n) / amount) / 10000000,
-                    maxMinIncome,
-                  },
-                });
-              } else if (minIncome < 1 && minIncome * -1n > maxMinIncome * -1n) {
-                dispatch({
-                  type: "ExecuteTrade",
-                  error: "Min income too high",
-                  context: {
-                    converter: t.tokenConverter,
-                    tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn,
-                    amount,
-                    minIncome,
-                    percentage: Number((minIncome * 10000000n) / amount) / 10000000,
-                    maxMinIncome,
-                  },
-                });
-              } else if (trade && ((profitable && minIncome > 0n) || !profitable)) {
+              if (trade && ((profitable && minIncome > 0n) || !profitable)) {
                 dispatch({
                   type: "ExecuteTrade",
                   context: {
@@ -254,13 +226,41 @@ export default function Convert({ options }: Props) {
                   },
                 });
                 await tokenConverter.arbitrage(t.tokenConverter, trade, amount, minIncome);
+              } else if (t.accountBalanceAssetOut < minIncome * -1n) {
+                dispatch({
+                  type: "ExecuteTrade",
+                  error: "Insufficient wallet balance to pay min income",
+                  context: {
+                    converter: t.tokenConverter.id,
+                    tokenToReceiveFromConverter: t.assetOut.address,
+                    tokenToSendToConverter: t.assetIn,
+                    amount,
+                    minIncome,
+                    percentage: Number((minIncome * 10000000n) / amount) / 10000000,
+                    maxMinIncome,
+                  },
+                });
+              } else if (minIncome < 1 && minIncome * -1n > maxMinIncome * -1n) {
+                dispatch({
+                  type: "ExecuteTrade",
+                  error: "Min income too high",
+                  context: {
+                    converter: t.tokenConverter.id,
+                    tokenToReceiveFromConverter: t.assetOut.address,
+                    tokenToSendToConverter: t.assetIn,
+                    amount,
+                    minIncome,
+                    percentage: Number((minIncome * 10000000n) / amount) / 10000000,
+                    maxMinIncome,
+                  },
+                });
               }
             }
           }),
         );
       } while (loop);
     };
-    if (converters || assetIn || assetOut) {
+    if (converter || assetIn || assetOut) {
       convert()
         .catch(e => {
           setError(e.message);
@@ -271,7 +271,7 @@ export default function Convert({ options }: Props) {
     }
   }, []);
 
-  if (!converters && !assetIn && !assetOut) {
+  if (!converter && !assetIn && !assetOut) {
     writeStdErr("converter, asset-in or asset-out must be present");
     return null;
   }

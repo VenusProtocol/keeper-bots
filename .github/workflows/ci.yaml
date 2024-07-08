@@ -8,6 +8,8 @@ on:
 jobs:
   lint:
     name: Lint
+    env:
+      THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
     runs-on: ubuntu-22.04
     steps:
       - name: Check out code
@@ -35,6 +37,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       NODE_OPTIONS: --max-old-space-size=4096
+      THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -81,6 +84,8 @@ jobs:
 
   deploy:
     name: Deploy
+    env:
+      THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
     runs-on: ubuntu-22.04
     steps:
       - name: Check out code

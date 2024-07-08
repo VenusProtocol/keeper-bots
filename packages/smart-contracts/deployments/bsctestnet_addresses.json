@@ -2,6 +2,7 @@
   "name": "bsctestnet",
   "chainId": "97",
   "addresses": {
+    "LiquidationOperator": "0x08b057C034aBd74734aa3035Fb3E4Dd046eFEbA3",
     "TokenConverterOperator": "0x9222F8b71603318d5EEbBf0074c2Da07fEbbB9eb"
   }
 }
