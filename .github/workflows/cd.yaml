@@ -35,6 +35,7 @@ jobs:
       - name: Release Keeper Bot Contracts
         if: ${{ always() }}
         env:
+          THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.VENUS_TOOLS_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GIT_AUTHOR_NAME: Venus Tools
@@ -53,6 +54,7 @@ jobs:
       - name: Release Token Converter Bot
         if: ${{ always() }}
         env:
+          THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.VENUS_TOOLS_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GIT_AUTHOR_NAME: Venus Tools
@@ -70,6 +72,7 @@ jobs:
       - name: Release Cli
         if: ${{ always() }}
         env:
+          THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.VENUS_TOOLS_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           GIT_AUTHOR_NAME: Venus Tools
