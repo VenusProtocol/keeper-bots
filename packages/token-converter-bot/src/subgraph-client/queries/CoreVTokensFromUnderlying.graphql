@@ -1,0 +1,5 @@
+query CoreVTokensFromUnderlying($address: Bytes!) {
+  markets(where: { underlyingAddress: $address }) {
+    id
+  }
+}

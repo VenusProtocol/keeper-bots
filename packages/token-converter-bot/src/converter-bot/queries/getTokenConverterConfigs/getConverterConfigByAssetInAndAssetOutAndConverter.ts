@@ -8,7 +8,7 @@ const getTokenConverterByAssetInAndAssetOutAndConverter = async (
   assetOut: Address,
   tokenConverter: Address,
 ) => {
-  const subgraphClient = new SubgraphClient(getConfig().subgraphUrl);
+  const subgraphClient = new SubgraphClient(getConfig().protocolReserveSubgraphUrl);
   const {
     data: { tokenConverterConfigs },
   } = await subgraphClient.getTokenConverterByAssetInAndAssetOutAndConverter(assetIn, assetOut, tokenConverter);

@@ -8,6 +8,8 @@ import {
   TokenConverterByAssetOutDocument,
   TokenConverterDocument,
   TokenConvertersDocument,
+  CoreVTokensFromUnderlyingDocument,
+  IsolatedVTokensFromUnderlyingDocument
 } from "./.graphclient";
 
 class SubgraphClient {
@@ -54,13 +56,23 @@ class SubgraphClient {
     });
     return result;
   }
-  
+
   async getTokenConverterByAssetInAndAssetOutAndConverter(tokenAddressIn: string, tokenAddressOut: string, tokenConverter: string) {
     const result = await this.query(TokenConverterByAssetInAndAssetOutAndConverterDocument, {
       tokenAddressIn: tokenAddressIn.toLowerCase(),
       tokenAddressOut: tokenAddressOut.toLowerCase(),
       tokenConverter: tokenConverter.toLowerCase()
     });
+    return result;
+  }
+
+  async getCoreVTokensFromUnderlying(underlyingAddress: string) {
+    const result = await this.query(CoreVTokensFromUnderlyingDocument, { underlyingAddress: underlyingAddress.toLowerCase() });
+    return result;
+  }
+
+  async getIsolatedVTokensFromUnderlying(underlyingAddress: string) {
+    const result = await this.query(IsolatedVTokensFromUnderlyingDocument, { underlyingAddress: underlyingAddress.toLowerCase() });
     return result;
   }
 }
