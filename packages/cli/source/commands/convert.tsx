@@ -198,8 +198,9 @@ export default function Convert({ options }: Props) {
               if (+underlyingUsdValue > maxTradeUsd) {
                 amountOut = parseUnits((maxTradeUsd / +underlyingPriceUsd.toString()).toString(), underlyingDecimals);
               }
+
               const arbitrageArgs = await tokenConverter.prepareConversion(
-                t.tokenConverter.id,
+                t.tokenConverter,
                 t.assetOut.address,
                 t.assetIn,
                 amountOut,
