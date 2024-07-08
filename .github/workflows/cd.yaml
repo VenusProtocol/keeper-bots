@@ -25,6 +25,8 @@ jobs:
         run: yarn
 
       - name: Generate subgraph types
+        env:
+          THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
         run: |
           yarn workspace @venusprotocol/token-converter-bot run generate-abis
           yarn workspace @venusprotocol/token-converter-bot run generate-subgraph-types
