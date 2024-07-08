@@ -202,7 +202,7 @@ export class TokenConverter {
    * @param swapFrom Token we want to receive to the converter
    * @param swapTo Token we want to send to the converter
    * @param amount The amount we will receive from the converter of swapFrom
-   * @returns [SmartRouterTrade, [amount transferred out of converter, amount transferred In]]
+   * @returns [SmartRouterTrade, [amount transferred out of converter, amount transferred in]]
    */
   async getBestTrade(
     tokenConverter: Address,

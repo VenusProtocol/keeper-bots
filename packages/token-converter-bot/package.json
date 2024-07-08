@@ -9,7 +9,7 @@
     "prettier": "prettier --write \"**/*.{js,json,md,ts,yaml,yml}\"",
     "test": "jest",
     "coverage": "jest --coverage",
-    "build": "tsc",
+    "build": "yarn generate-subgraph-types && yarn generate-abis && tsc",
     "prettier:check": "prettier --check \"**/*.{js,json,md,ts,yaml,yml}\"",
     "generate-abis": "yarn wagmi generate",
     "generate-subgraph-types": "rm -rf ./src/subgraph-client/.graphclient && yarn graphclient build --dir ./src/subgraph-client"

@@ -51,6 +51,8 @@ jobs:
         run: yarn
       
       - name: Build Token Converter Bots
+        env:
+          THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
         run: yarn workspace @venusprotocol/token-converter-bot run build
 
       - name: Release Token Converter Bot
