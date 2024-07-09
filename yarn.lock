@@ -6661,7 +6661,7 @@ __metadata:
     "@graphql-mesh/graphql": ^0.98.4
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
-    "@venusprotocol/token-converter-bot": 1.0.3
+    "@venusprotocol/token-converter-bot": 1.0.5
     "@venusprotocol/venus-protocol": ^8.1.0
     ava: ^5.2.0
     chalk: ^5.2.0
@@ -6930,9 +6930,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/token-converter-bot@npm:1.0.3":
-  version: 1.0.3
-  resolution: "@venusprotocol/token-converter-bot@npm:1.0.3"
+"@venusprotocol/token-converter-bot@npm:1.0.5":
+  version: 1.0.5
+  resolution: "@venusprotocol/token-converter-bot@npm:1.0.5"
   dependencies:
     "@graphprotocol/client-cli": 3.0.0
     "@pancakeswap/sdk": ^5.8.0
@@ -6947,7 +6947,7 @@ __metadata:
     urql: ^3.0.3
     viem: ^2.7.1
     winston: ^3.11.0
-  checksum: 39da168667726c1f4f871ad75474f70ef12f8d7ef50b421519c344653e9af47eacb305f336919e5264073644fda4eba93af58398db04d517bf9bd2e28b8ee5da
+  checksum: 088467556182afde22ff72a07edf0d0b538a5039e37d745181c8e6a8c016e616284c7bb7aefa6eda73da05b02138620f5d3996a6f91f816512221bb742de526d
   languageName: node
   linkType: hard
 

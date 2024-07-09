@@ -4,7 +4,7 @@ import "./utils/env.js";
 
 const app = new Pastel({
   importMeta: import.meta,
-  description: "CLI for interacting with the Venus Protocol and perform maintenance tasks"
+  description: "CLI for interacting with the Venus Protocol and perform maintenance tasks."
 });
 
 await app.run();
