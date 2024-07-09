@@ -144,9 +144,6 @@ export default function Convert({ options }: Props) {
 
   const [{ completed, messages, releasedFunds }, dispatch] = useReducer(reducer, defaultState);
   const [error, setError] = useState("");
-  const [_tradeUsdValues, setTradeUsdValues] = useState<
-    Record<string, { underlyingPriceUsd: string; underlyingUsdValue: string }>
-  >({});
 
   useEffect(() => {
     const convert = async () => {
@@ -180,15 +177,6 @@ export default function Convert({ options }: Props) {
               vTokenAddress,
               amountOut,
             );
-
-            setTradeUsdValues(prevState => ({
-              ...prevState,
-              [getConverterConfigId({
-                converter: t.tokenConverter.id,
-                tokenToReceiveFromConverter: t.assetOut.address,
-                tokenToSendToConverter: t.assetIn,
-              })]: { underlyingPriceUsd, underlyingUsdValue },
-            }));
 
             if (+underlyingUsdValue > minTradeUsd) {
               if (+underlyingUsdValue > maxTradeUsd) {
