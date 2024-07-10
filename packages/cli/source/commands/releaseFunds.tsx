@@ -5,10 +5,9 @@ import { useEffect, useReducer } from "react";
 import zod from "zod";
 import {
   TokenConverter,
+  MarketAddresses,
   getCoreMarkets,
   getIsolatedMarkets,
-  getUnderlyingToVTokens,
-  getUnderlyingByComptroller,
   getAddresses,
 } from "@venusprotocol/token-converter-bot";
 import usePublicClient from "../queries/usePublicClient.js";
@@ -76,15 +75,12 @@ interface Props {
 const reduceToTokensWithBalances = async (
   publicClient: ReturnType<typeof usePublicClient>,
   tokenConverter: TokenConverter,
-  underlyingByComptroller: Record<Address, readonly Address[]>,
+  markets: MarketAddresses[],
 ) => {
   const addresses = getAddresses();
-  const underlyingToVTokens = getUnderlyingToVTokens();
-  const underlyingByComptrollerEntries = Object.entries(underlyingByComptroller);
 
-  const tokenSet = new Set([...Object.values(underlyingByComptroller)].flat());
+  const tokenSet = new Set(markets.map(m => m.underlyingAddress));
 
-  const withBalances: Record<Address, readonly Address[]> = {};
   const tokenSetArray = Array.from(tokenSet);
   const response = await publicClient.multicall({
     contracts: [
@@ -98,32 +94,25 @@ const reduceToTokensWithBalances = async (
       }),
     ],
   });
-
   for (const [idx, result] of response.entries()) {
     const token = tokenSetArray[idx]! as Address;
-    const vToken = underlyingToVTokens[token];
+    const vToken = markets.find(m => m.underlyingAddress === token);
     if (result.result) {
       const { underlyingUsdValue } = await tokenConverter.getUsdValue(
-        token,
-        vToken!.core || vToken!.isolated![0]![1],
+        vToken?.underlyingAddress!,
+        vToken?.vTokenAddress!,
         result.result as bigint,
       );
+
       if (+underlyingUsdValue < 100) {
         tokenSet.delete(token);
       }
     } else {
       tokenSet.delete(token);
     }
-
-    for (const [comptroller] of underlyingByComptrollerEntries) {
-      const haveBalance = underlyingByComptroller[comptroller as Address]!.filter(t => tokenSet.has(t));
-      if (haveBalance.length > 0) {
-        withBalances[comptroller as Address] = haveBalance;
-      }
-    }
   }
 
-  return withBalances;
+  return tokenSet;
 };
 
 /**
@@ -131,7 +120,6 @@ const reduceToTokensWithBalances = async (
  * Command to release funds
  */
 function ReleaseFunds({ options = {} }: Props) {
-  const underlyingByComptroller = getUnderlyingByComptroller();
   const { accrueInterest, reduceReserves, debug, simulate } = options;
 
   const [{ releasedFunds }, dispatch] = useReducer(reducer, defaultState);
@@ -146,21 +134,29 @@ function ReleaseFunds({ options = {} }: Props) {
         simulate: !!simulate,
         verbose: false,
       });
+      const corePoolMarkets = await getCoreMarkets();
+      const isolatedPoolsMarkets = await getIsolatedMarkets();
+      const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
+      const allMarkets = allPools.reduce((acc, curr) => {
+        return acc.concat(curr[1]);
+      }, [] as { underlyingAddress: Address; vTokenAddress: Address }[]);
       if (accrueInterest) {
-        const corePoolMarkets = await getCoreMarkets();
-        const isolatedPoolsMarkets = await getIsolatedMarkets();
-        const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
-        const allMarkets = allPools.reduce((acc, curr) => {
-          acc.concat(curr[1]);
-          return acc;
-        }, [] as Address[]);
         await tokenConverter.accrueInterest(allMarkets);
       }
       if (reduceReserves) {
         await tokenConverter.reduceReserves();
       }
       // Query for funds that are available to be released
-      const withBalances = await reduceToTokensWithBalances(publicClient, tokenConverter, underlyingByComptroller);
+      const tokensWithBalances = await reduceToTokensWithBalances(publicClient, tokenConverter, allMarkets);
+
+      const withBalances = allPools.reduce((acc, curr) => {
+        const tokensWithBalance = curr[1].filter(t => tokensWithBalances.has(t.underlyingAddress));
+        if (tokensWithBalance.length) {
+          acc[curr[0]] = tokensWithBalance.map(t => t.vTokenAddress);
+        }
+        return acc;
+      }, {} as Record<Address, readonly Address[]>);
+      //
       await tokenConverter.releaseFunds(withBalances);
     };
     releaseFunds().finally(exit);
