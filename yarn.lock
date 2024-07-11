@@ -6726,24 +6726,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/isolated-pools@npm:^3.0.0":
-  version: 3.4.0
-  resolution: "@venusprotocol/isolated-pools@npm:3.4.0"
-  dependencies:
-    "@nomiclabs/hardhat-ethers": ^2.2.3
-    "@openzeppelin/contracts": ^4.8.3
-    "@openzeppelin/contracts-upgradeable": ^4.8.3
-    "@openzeppelin/hardhat-upgrades": ^1.21.0
-    "@solidity-parser/parser": ^0.13.2
-    "@venusprotocol/solidity-utilities": ^2.0.0
-    ethers: ^5.7.0
-    hardhat-deploy: ^0.11.14
-    module-alias: ^2.2.2
-  checksum: e9ad6e06bfda7248a8d080bc73b3b985ac71d84463dbc233459a6a96208dd37985376b0c7d1dc83e22cec6bf37ad00f956277d46a8466689f5ef104c386ee6c6
-  languageName: node
-  linkType: hard
-
-"@venusprotocol/isolated-pools@npm:^3.3.0":
+"@venusprotocol/isolated-pools@npm:^3.0.0, @venusprotocol/isolated-pools@npm:^3.3.0":
   version: 3.3.0
   resolution: "@venusprotocol/isolated-pools@npm:3.3.0"
   dependencies:
