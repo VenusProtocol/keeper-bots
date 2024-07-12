@@ -5,16 +5,20 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { VTokenInterface } from "@venusprotocol/isolated-pools/contracts/VTokenInterfaces.sol";
 
+import { LiquidityProvider } from "../flash-swap/common.sol";
 import { FlashHandler } from "../flash-swap/FlashHandler.sol";
 import { ExactOutputFlashSwap } from "../flash-swap/ExactOutputFlashSwap.sol";
 import { FlashLoan } from "../flash-swap/FlashLoan.sol";
-import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
+import { IPancakeSwapRouter } from "../third-party/interfaces/IPancakeSwapRouter.sol";
+import { IUniswapRouter } from "../third-party/interfaces/IUniswapRouter.sol";
 import { Token } from "../util/Token.sol";
 import { checkDeadline, validatePathStart, validatePathEnd } from "../util/validators.sol";
 
 contract LiquidationOperator is ExactOutputFlashSwap, FlashLoan {
     /// @notice Liquidation parameters
     struct FlashLiquidationParameters {
+        /// @notice AMM providing liquidity (either Uniswap or PancakeSwap)
+        LiquidityProvider liquidityProvider;
         /// @notice The receiver of the liquidated collateral
         address beneficiary;
         /// @notice vToken for the borrowed underlying
@@ -53,8 +57,12 @@ contract LiquidationOperator is ExactOutputFlashSwap, FlashLoan {
     /// @notice Thrown if vToken.redeem(...) returns a nonzero error code
     error RedeemFailed(uint256 errorCode);
 
-    /// @param swapRouter_ PancakeSwap SmartRouter contract
-    constructor(ISmartRouter swapRouter_) FlashHandler(swapRouter_) {}
+    /// @param uniswapSwapRouter_ Uniswap SwapRouter contract
+    /// @param pcsSwapRouter_ PancakeSwap SmartRouter contract
+    constructor(
+        IUniswapRouter uniswapSwapRouter_,
+        IPancakeSwapRouter pcsSwapRouter_
+    ) FlashHandler(uniswapSwapRouter_, pcsSwapRouter_) {}
 
     /// @notice Liquidates a borrower's position using flash swap or a flash loan
     /// @param params Liquidation parameters
@@ -83,10 +91,10 @@ contract LiquidationOperator is ExactOutputFlashSwap, FlashLoan {
         });
 
         if (collateralTokenAddress == borrowedTokenAddress) {
-            _flashLoan(params.repayAmount, params.path, abi.encode(data));
+            _flashLoan(params.liquidityProvider, params.repayAmount, params.path, abi.encode(data));
         } else {
             validatePathEnd(params.path, collateralTokenAddress);
-            _flashSwap(params.repayAmount, params.path, abi.encode(data));
+            _flashSwap(params.liquidityProvider, params.repayAmount, params.path, abi.encode(data));
         }
     }
 

@@ -12,6 +12,7 @@ import { ethers } from "hardhat";
 
 import { IERC20__factory, LiquidationOperator, LiquidationOperator__factory } from "../typechain";
 import ADDRESSES from "./config/addresses";
+import { LiquidityProviders } from "./constants";
 import { connect, deploy, forking, getBlockTimestamp, initUser } from "./framework";
 
 interface LiquidationOperatorFixture {
@@ -57,7 +58,7 @@ forking({ bscmainnet: 36612930 } as const, network => {
       await comptroller
         .connect(timelock)
         .setCollateralFactor(vUSDT.address, parseUnits("0.3", 18), parseUnits("0.3", 18));
-      const operator = await deploy(LiquidationOperator__factory, addresses.PancakeSwapRouter);
+      const operator = await deploy(LiquidationOperator__factory, addresses.UniswapRouter, addresses.PancakeSwapRouter);
       return { operator };
     };
 
@@ -74,6 +75,7 @@ forking({ bscmainnet: 36612930 } as const, network => {
       let now: number;
 
       const makeCommonParams = () => ({
+        liquidityProvider: LiquidityProviders["PancakeSwap"],
         beneficiary: beneficiary.address,
         vTokenBorrowed: vBSW.address,
         borrower: borrowerAddress,
@@ -140,6 +142,7 @@ forking({ bscmainnet: 36612930 } as const, network => {
       let now: number;
 
       const makeCommonParams = () => ({
+        liquidityProvider: LiquidityProviders["PancakeSwap"],
         beneficiary: beneficiary.address,
         vTokenBorrowed: vUSDT.address,
         borrower: borrowerAddress,
