@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0;
+pragma solidity ^0.8.25;
 
-interface ISmartRouter {
+interface IRouter {
     struct ExactInputParams {
         bytes path;
         address recipient;
@@ -19,8 +19,6 @@ interface ISmartRouter {
     function exactInput(ExactInputParams calldata params) external payable returns (uint256 amountOut);
 
     function exactOutput(ExactOutputParams calldata params) external payable returns (uint256 amountIn);
-
-    function deployer() external view returns (address);
 
     function WETH9() external view returns (address);
 }

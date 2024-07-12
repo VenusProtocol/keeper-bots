@@ -6649,6 +6649,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@uniswap/v3-core@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "@uniswap/v3-core@npm:1.0.1"
+  checksum: 4bfd8b218391a3d9efde44e0f984cfec3bc25889cd4d1386766828521006e71b210a3583ee32b52f3c81d384af9e8c39f471f2229e9af4d50da6801446ecb3e4
+  languageName: node
+  linkType: hard
+
 "@urql/core@npm:^3.2.0":
   version: 3.2.2
   resolution: "@urql/core@npm:3.2.2"
@@ -6771,6 +6778,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": ^6.13.1
     "@typescript-eslint/parser": ^6.13.1
     "@uniswap/permit2-sdk": ^1.2.1
+    "@uniswap/v3-core": ^1.0.1
     "@venusprotocol/governance-contracts": ^2.0.0
     "@venusprotocol/isolated-pools": ^3.3.0
     "@venusprotocol/protocol-reserve": ^2.3.0-dev.1
