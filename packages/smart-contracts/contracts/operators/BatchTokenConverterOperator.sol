@@ -1,43 +1,39 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.25;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IAbstractTokenConverter } from "@venusprotocol/protocol-reserve/contracts/TokenConverter/IAbstractTokenConverter.sol";
 
 import { FlashHandler } from "../flash-swap/FlashHandler.sol";
 import { ExactOutputFlashSwap } from "../flash-swap/ExactOutputFlashSwap.sol";
 import { Token } from "../util/Token.sol";
-import { checkDeadline, validatePath } from "../util/validators.sol";
+import { DelegateMulticall } from "../util/DelegateMulticall.sol";
+import { checkDeadline as _checkDeadline, validatePath } from "../util/validators.sol";
 import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
+import { ISignatureTransfer } from "../third-party/permit2/ISignatureTransfer.sol";
 
-/// @title TokenConverterOperator
-/// @notice Converts tokens in a TokenConverter using an exact-output flash swap
-/// @dev Expects a reversed (exact output) path, i.e. the path starting with the token
-///   that it _sends_ to TokenConverter and ends with the token that it _receives_ from
-///   TokenConverter, e.g. if TokenConverter has BTC and wants USDT, the path should be
-///   USDT->(TokenB)->(TokenC)->...->BTC. This contract will then:
-///     1. Compute the amount of USDT required for the conversion
-///     2. Flash-swap TokenB to USDT (`tokenToSendToConverter`)
-///     3. Use TokenConverter to convert USDT to BTC (`tokenToReceiveFromConverter`)
-///     4. Swap some portion of BTC to an exact amount of TokenB (`tokenToPay`)
-///     5. Repay for the swap in TokenB
-///     6. Transfer the rest of BTC to the caller
-///   The exact output converter differs from an exact input version in that it sends the
-///   income in `tokenToReceiveFromConverter` to the beneficiary, while an exact input
-///   version would send the income in `tokenToSendToConverter`. The former is supposedly
-///   a bit more efficient since there's no slippage associated with the income conversion.
-contract TokenConverterOperator is ExactOutputFlashSwap {
+/// @title BatchTokenConverterOperator
+/// @notice Converts tokens in a TokenConverter using an exact-output flash swap,
+///   allowing for batch calls via multicall and permit2-style approvals.
+///   Note that this contract is NOT designed to be operational outside of a single
+///   transaction, e.g. anyone can withdraw all of its token holdings, so it's
+///   important to use convert(...) and claimAll(...) in one transaction via batch().
+///   See `DelegateMulticall` documentation for more detais on how to use this
+///   contract securely.
+/// @dev Conversions happen similar to TokenConverterOperator
+contract BatchTokenConverterOperator is ExactOutputFlashSwap, DelegateMulticall {
+    using SafeERC20 for IERC20;
+
     /// @notice Conversion parameters
     struct ConversionParameters {
-        /// @notice The receiver of the arbitrage income
-        address beneficiary;
         /// @notice The token currently in the TokenConverter
         Token tokenToReceiveFromConverter;
         /// @notice The amount (in `tokenToReceiveFromConverter` tokens) to receive as a result of conversion
         uint256 amount;
         /// @notice Minimal income to get from the arbitrage transaction (in `tokenToReceiveFromConverter`).
         ///   This value can be negative to indicate that the sender is willing to pay for the transaction
-        ///   execution. In this case, abs(minIncome) will be withdrawn from the sender's wallet, the
-        ///   arbitrage will be executed, and the excess  (if any) will be sent to the beneficiary.
+        ///   execution. In this case, a `sponsorWithPermit(...)` call should be made before the conversion.
         int256 minIncome;
         /// @notice The token the TokenConverter would get
         Token tokenToSendToConverter;
@@ -46,14 +42,10 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         /// @notice Reversed (exact output) path to trade from `tokenToReceiveFromConverter`
         /// to `tokenToSendToConverter`
         bytes path;
-        /// @notice Deadline for the transaction execution
-        uint256 deadline;
     }
 
     /// @notice Conversion data to pass between calls
     struct ConversionData {
-        /// @notice The receiver of the arbitrage income
-        address beneficiary;
         /// @notice The token the TokenConverter would receive
         Token tokenToSendToConverter;
         /// @notice The amount (in `amountToSendToConverter` tokens) to send to converter
@@ -68,6 +60,8 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         IAbstractTokenConverter converter;
     }
 
+    ISignatureTransfer public immutable PERMIT2;
+
     /// @notice Thrown if the amount of to receive from TokenConverter is less than expected
     /// @param expected Expected amount of tokens
     /// @param actual Actual amount of tokens
@@ -81,12 +75,32 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
 
     /// @param swapRouter_ PancakeSwap SmartRouter contract
     // solhint-disable-next-line no-empty-blocks
-    constructor(ISmartRouter swapRouter_) FlashHandler(swapRouter_) {}
+    constructor(ISmartRouter swapRouter_, ISignatureTransfer permit2_) FlashHandler(swapRouter_) {
+        PERMIT2 = permit2_;
+    }
 
-    /// @notice Converts tokens in a TokenConverter using a flash swap
+    /// @notice Transfers the specified token amounts from sender to this contract
+    /// @param permit Permit2-style batch transfer permit
+    /// @param signature Permit signature
+    function sponsorWithPermit(
+        ISignatureTransfer.PermitBatchTransferFrom calldata permit,
+        bytes calldata signature
+    ) external {
+        uint256 tokensCount = permit.permitted.length;
+        ISignatureTransfer.SignatureTransferDetails[]
+            memory transferDetails = new ISignatureTransfer.SignatureTransferDetails[](tokensCount);
+        for (uint256 i; i < tokensCount; ++i) {
+            transferDetails[i] = ISignatureTransfer.SignatureTransferDetails({
+                to: address(this),
+                requestedAmount: permit.permitted[i].amount
+            });
+        }
+        PERMIT2.permitTransferFrom(permit, transferDetails, msg.sender, signature);
+    }
+
+    /// @notice Same as convert(...) but does not perform the deadline check
     /// @param params Conversion parameters
     function convert(ConversionParameters calldata params) external {
-        checkDeadline(params.deadline);
         validatePath(params.path, params.tokenToSendToConverter.addr(), params.tokenToReceiveFromConverter.addr());
 
         (uint256 amountToReceive, uint256 amountToPay) = params.converter.getUpdatedAmountIn(
@@ -98,12 +112,7 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
             revert InsufficientLiquidity(params.amount, amountToReceive);
         }
 
-        if (params.minIncome < 0) {
-            params.tokenToReceiveFromConverter.transferToSelf(msg.sender, _u(-params.minIncome));
-        }
-
         ConversionData memory data = ConversionData({
-            beneficiary: params.beneficiary,
             tokenToSendToConverter: params.tokenToSendToConverter,
             amountToSendToConverter: amountToPay,
             tokenToReceiveFromConverter: params.tokenToReceiveFromConverter,
@@ -113,6 +122,27 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         });
 
         _flashSwap(amountToPay, params.path, abi.encode(data));
+    }
+
+    /// @notice Claim refund or income to beneficiary
+    /// @param token ERC-20 token address
+    /// @param amount Amount to transfer
+    /// @param beneficiary Receiver of the token
+    function claimTo(Token token, uint256 amount, address beneficiary) external {
+        token.transfer(beneficiary, amount);
+    }
+
+    /// @notice Claim the entire token balance to beneficiary
+    /// @param token ERC-20 token address
+    /// @param beneficiary Receiver of the token
+    function claimAllTo(Token token, address beneficiary) external {
+        token.transferAll(beneficiary);
+    }
+
+    /// @notice Reverts if transaction execution deadline has passed
+    /// @param deadline Deadline timestamp
+    function checkDeadline(uint256 deadline) external view {
+        _checkDeadline(deadline);
     }
 
     function _onMoneyReceived(bytes memory data) internal override returns (Token tokenIn, uint256 maxAmountIn) {
@@ -128,11 +158,6 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         return (decoded.tokenToReceiveFromConverter, _u(_i(receivedAmount) - decoded.minIncome));
     }
 
-    function _onFlashCompleted(bytes memory data) internal override {
-        ConversionData memory decoded = abi.decode(data, (ConversionData));
-        decoded.tokenToReceiveFromConverter.transferAll(decoded.beneficiary);
-    }
-
     /// @dev Get `tokenToReceive` from TokenConverter, paying with `tokenToPay`
     /// @param converter TokenConverter contract
     /// @param tokenToPay Token to be sent to TokenConverter
@@ -144,8 +169,8 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
         Token tokenToReceive,
         uint256 amountToReceive
     ) internal returns (uint256) {
-        uint256 balanceBefore = tokenToReceive.balanceOfSelf();
-        uint256 maxAmountToPay = tokenToPay.balanceOfSelf();
+        uint256 balanceBefore = tokenToReceive.balanceOf(address(this));
+        uint256 maxAmountToPay = tokenToPay.balanceOf(address(this));
 
         tokenToPay.approve(address(converter), maxAmountToPay);
         converter.convertForExactTokens(
@@ -156,7 +181,7 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
             address(this)
         );
         tokenToPay.approve(address(converter), 0);
-        uint256 tokensReceived = tokenToReceive.balanceOfSelf() - balanceBefore;
+        uint256 tokensReceived = tokenToReceive.balanceOf(address(this)) - balanceBefore;
         return tokensReceived;
     }
 
