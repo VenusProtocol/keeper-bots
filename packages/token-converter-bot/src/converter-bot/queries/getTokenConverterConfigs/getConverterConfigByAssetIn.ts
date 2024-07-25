@@ -5,9 +5,7 @@ import SubgraphClient from "../../../subgraph-client";
 
 const readTokenConverterConfigs = async (assetIn: Address) => {
   const subgraphClient = new SubgraphClient(getConfig().protocolReserveSubgraphUrl);
-  const {
-    data: { tokenConverterConfigs },
-  } = await subgraphClient.getTokenConverterByAssetIn(assetIn);
+  const { data: { tokenConverterConfigs = [] } = {} } = await subgraphClient.getTokenConverterConfigsByAssetIn(assetIn);
 
   return tokenConverterConfigs;
 };
