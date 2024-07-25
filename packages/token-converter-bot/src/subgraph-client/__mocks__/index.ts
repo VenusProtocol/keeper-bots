@@ -1,14 +1,14 @@
 export default class SubgraphClient {
-  getTokenConverters = async () => ({ data: { tokenConverterConfigs: [] } })
+  getTokenConverterConfigs = async () => ({ data: { tokenConverterConfigs: [] } })
 
-  getTokenConverter = async () => ({ data: { tokenConverterConfigs: [] } })
+  getTokenConverterConfigsByTokenConverter = async () => ({ data: { tokenConverterConfigs: [] } })
 
-  getTokenConverterByAssetOut = async () => ({ data: { tokenConverterConfigs: [] } })
+  getTokenConverterConfigsByAssetOut = async () => ({ data: { tokenConverterConfigs: [] } })
 
-  getTokenConverterByAssetIn = async () => ({ data: { tokenConverterConfigs: [] } })
+  getTokenConverterConfigsByAssetIn = async () => ({ data: { tokenConverterConfigs: [] } })
 
-  getTokenConverterByAssetInAndAssetOut = async () => ({ data: { tokenConverterConfigs: [] } })
+  getTokenConverterConfigsByAssetInAndAssetOut = async () => ({ data: { tokenConverterConfigs: [] } })
 
-  getTokenConverterByAssetInAndAssetOutAndConverter = async () => ({ data: { tokenConverterConfigs: [] } })
+  getTokenConverterConfigsByAssetInAndAssetOutAndConverter = async () => ({ data: { tokenConverterConfigs: [] } })
 
 }

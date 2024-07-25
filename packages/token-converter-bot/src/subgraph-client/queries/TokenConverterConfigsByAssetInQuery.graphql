@@ -1,4 +1,4 @@
-query TokenConverterByAssetIn($tokenAddressIn: Bytes!) {
+query TokenConverterConfigsByAssetIn($tokenAddressIn: Bytes!) {
   tokenConverterConfigs(
       where: { and: [{ tokenAddressIn: $tokenAddressIn }, { or: [{ access: ALL }, { access: ONLY_FOR_USERS }] }] }
     ) {

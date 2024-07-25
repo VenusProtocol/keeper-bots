@@ -1,4 +1,4 @@
-query TokenConverters {
+query TokenConverterConfigs {
   tokenConverterConfigs(
        where: { or: [{ access: ALL }, { access: ONLY_FOR_USERS }] }
     ) {

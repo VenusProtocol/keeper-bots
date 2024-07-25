@@ -1,6 +1,6 @@
 import { Address } from "viem";
 
-import { TokenConvertersQuery } from "../../../subgraph-client/.graphclient";
+import { TokenConverterConfigsQuery } from "../../../subgraph-client/.graphclient";
 import { default as getAllConverterConfigs } from "./getAllConverterConfigs";
 import { default as getConverterConfigByAssetIn } from "./getConverterConfigByAssetIn";
 import { default as getConverterConfigByAssetInAndAssetOut } from "./getConverterConfigByAssetInAndAssetOut";
@@ -8,7 +8,7 @@ import { default as getConverterConfigByAssetInAndAssetOutAndConverter } from ".
 import { default as getConverterConfigByAssetOut } from "./getConverterConfigByAssetOut";
 import { default as getConverterConfigsByConverter } from "./getConverterConfigsByConverter";
 
-type TokenConverterConfigs = TokenConvertersQuery["tokenConverterConfigs"];
+type TokenConverterConfigs = TokenConverterConfigsQuery["tokenConverterConfigs"];
 
 const getConverterConfigs = async ({
   assetOut,

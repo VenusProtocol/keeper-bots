@@ -1,7 +1,8 @@
-query TokenConverterByAssetInAndAssetOut($tokenAddressIn: Bytes!, $tokenAddressOut: Bytes!) {
+query TokenConverterConfigsByAssetInAndAssetOutAndConverter($tokenAddressIn: Bytes!, $tokenAddressOut: Bytes!, $tokenConverter: String!) {
   tokenConverterConfigs(
        where: {
         and: [
+          {tokenConverter: $tokenConverter}
           { tokenAddressIn: $tokenAddressIn }
           { tokenAddressOut: $tokenAddressOut }
           { or: [{ access: ALL }, { access: ONLY_FOR_USERS }] }
