@@ -6,6 +6,8 @@ import ethereumIsolated from "@venusprotocol/isolated-pools/deployments/ethereum
 import sepoliaIsolated from "@venusprotocol/isolated-pools/deployments/sepolia_addresses.json";
 import bscmainnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bscmainnet_addresses.json";
 import bsctestnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bsctestnet_addresses.json";
+// import ethereumTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/ethereum_addresses.json";
+// import sepoliaTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/sepolia_addresses.json";
 import bscmainnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bscmainnet_addresses.json";
 import bsctestnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bsctestnet_addresses.json";
 import ethereumProtocolReserve from "@venusprotocol/protocol-reserve/deployments/ethereum_addresses.json";
@@ -27,7 +29,7 @@ const addressesConfig = {
     WETHPrimeConverter: ethereumProtocolReserve.addresses.WETHPrimeConverter as Address,
     ProtocolShareReserve: ethereumProtocolReserve.addresses.ProtocolShareReserve as Address,
     PoolRegistry: ethereumIsolated.addresses.PoolRegistry as Address,
-    TokenConverterOperator: "0x" as Address,
+    TokenConverterOperator: "0x6eF49b4e0772Fe78128F981d42D54172b55eCF9F" as Address,
     Unitroller: undefined,
     VBNBAdmin: undefined,
     vBNB: undefined,
@@ -43,7 +45,7 @@ const addressesConfig = {
     WETHPrimeConverter: sepoliaProtocolReserve.addresses.WETHPrimeConverter as Address,
     ProtocolShareReserve: sepoliaProtocolReserve.addresses.ProtocolShareReserve as Address,
     PoolRegistry: sepoliaIsolated.addresses.PoolRegistry as Address,
-    TokenConverterOperator: "0x" as Address,
+    TokenConverterOperator: "0xD5c00F011F95E36631F3a99cc94274888E76755C" as Address,
     Unitroller: undefined,
     VBNBAdmin: undefined,
     vBNB: undefined,
@@ -90,7 +92,7 @@ const addressesConfig = {
 
 const getAddresses = () => {
   const { network } = getConfig();
-  return addressesConfig[network];
+  return addressesConfig[network.name];
 };
 
 type Addresses = typeof addressesConfig;

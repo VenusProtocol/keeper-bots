@@ -1,5 +1,5 @@
-query IsolatedVTokensFromUnderlying($address: Bytes!) {
-  markets(where: { underlyingAddress: $address }) {
+query IsolatedVTokensFromUnderlying($underlyingAddress: Bytes!) {
+  markets(where: { underlyingAddress: $underlyingAddress }) {
     id
     pool {
       id

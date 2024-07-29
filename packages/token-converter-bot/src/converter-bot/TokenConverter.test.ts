@@ -10,6 +10,7 @@ import {
   vBnbAdminAbi,
 } from "../config/abis/generated";
 import TokenConverter from "./TokenConverter";
+import { PancakeSwapProvider } from "./providers";
 import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
 
 jest.mock("@pancakeswap/smart-router/evm");
@@ -47,8 +48,9 @@ const stringifyBigInt = (_: string, val: unknown) => {
 
 const createTokenConverterInstance = ({ simulate = false }: { simulate: boolean } = { simulate: false }) => {
   const subscriberMock = jest.fn();
-  const tokenConverter = new TokenConverter({ subscriber: subscriberMock, verbose: false, simulate });
-  return { tokenConverter, subscriberMock };
+  const pancakeSwapProvider = new PancakeSwapProvider({ subscriber: subscriberMock, verbose: false })
+  const tokenConverter = new TokenConverter({ subscriber: subscriberMock, verbose: false, simulate, swapProvider: pancakeSwapProvider });
+  return { tokenConverter, pancakeSwapProvider, subscriberMock };
 };
 
 describe("Token Converter", () => {
@@ -179,9 +181,9 @@ describe("Token Converter", () => {
   });
 
   describe("encodeExactInputPath", () => {
-    const { tokenConverter } = createTokenConverterInstance();
+    const { pancakeSwapProvider } = createTokenConverterInstance();
 
-    expect(tokenConverter.encodeExactInputPath(mockRoute)).toEqual(
+    expect(pancakeSwapProvider.encodeExactInputPath(mockRoute)).toEqual(
       "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
     );
   });
@@ -660,10 +662,10 @@ describe("Token Converter", () => {
         args: [
           {
             beneficiary: "0x4CCeBa2d7D2B4fdcE4304d3e09a1fea9fbEb1528",
-            tokenToReceiveFromConverter: mockTrade.inputAmount.currency.address,
+            tokenToReceiveFromConverter: mockTrade.inputToken.address,
             amount: 1000000000000000000000n,
             minIncome: 10000n,
-            tokenToSendToConverter: mockTrade.outputAmount.currency.address,
+            tokenToSendToConverter: mockTrade.outputToken.address,
             converter: addresses.USDCPrimeConverter,
             path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
             deadline: 1713214169n,
@@ -719,10 +721,10 @@ describe("Token Converter", () => {
         args: [
           {
             beneficiary: "0x4CCeBa2d7D2B4fdcE4304d3e09a1fea9fbEb1528",
-            tokenToReceiveFromConverter: mockTrade.inputAmount.currency.address,
+            tokenToReceiveFromConverter: mockTrade.inputToken.address,
             amount: 1000000000000000000000n,
             minIncome: -10000n,
-            tokenToSendToConverter: mockTrade.outputAmount.currency.address,
+            tokenToSendToConverter: mockTrade.outputToken.address,
             converter: addresses.USDCPrimeConverter,
             path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
             deadline: 1713214169n,

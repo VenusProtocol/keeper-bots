@@ -62,13 +62,13 @@ export const mockRoute = {
 };
 
 export const mockTrade = {
-  routes: [mockRoute],
-  inputAmount: CurrencyAmount.fromRawAmount(
-    new Token(56, "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c", 18, "WBNB"),
-    8904975230019520420n,
-  ),
-  outputAmount: CurrencyAmount.fromRawAmount(
-    new Token(56, "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63", 18, "XVS"),
-    517926942058379677423n,
-  ),
+  path: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c000cf6bb5389c92bdda8a3747ddb454cb7a64626c63' as const,
+  inputToken: {
+    address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c" as const,
+    amount: 8904975230019520420n,
+  },
+  outputToken: {
+    address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63" as const,
+    amount: 517926942058379677423n,
+  },
 };

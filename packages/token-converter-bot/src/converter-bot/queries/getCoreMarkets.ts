@@ -8,7 +8,7 @@ import type { PoolAddressArray } from "../types";
 
 export const getCoreMarkets = async (): Promise<PoolAddressArray[]> => {
   const config = getConfig();
-  if (config.network === "bscmainnet" || config.network === "bsctestnet") {
+  if (config.network.name === "bscmainnet" || config.network.name === "bsctestnet") {
     const addresses = getAddresses();
     const publicClient = getPublicClient();
     const markets = await publicClient.readContract({

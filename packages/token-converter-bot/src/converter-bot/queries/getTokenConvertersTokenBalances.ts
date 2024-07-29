@@ -40,7 +40,7 @@ const formatResults = async (
     const { coreVTokens, isolatedVTokens } = await getVTokensFromUnderlying(assetOut);
     const balance = {
       assetOutVTokens: {
-        core: coreVTokens[0].id as Address,
+        core: coreVTokens[0]?.id as Address,
         isolated: isolatedVTokens.map(v => [v.pool.id, v.id] as [Address, Address]),
       },
       tokenConverter,

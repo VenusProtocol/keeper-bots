@@ -14,7 +14,7 @@ const readPrivateKeyFromEnv = (chainName: string): PrivateKeyAccount => {
 
 const getWalletClient = () => {
   const config = getConfig();
-  const chainName = config.network;
+  const chainName = config.network.name;
   return createWalletClient({
     chain: chains[chainName],
     transport: http(config.rpcUrl),
