@@ -26,6 +26,7 @@ class SwapProvider {
   getOutputCurrency = <P = Pool, T = Token>(pool: P, inputToken: T): T => {
     // @ts-expect-error library types don't match
     const { token0, token1 } = pool;
+    console.log("token0.equals(inputToken)", token0.equals(inputToken));
     return token0.equals(inputToken) ? token1 : token0;
   };
 
