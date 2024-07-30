@@ -15,7 +15,7 @@ import {
   ISignatureTransfer__factory,
 } from "../typechain";
 import ADDRESSES from "./config/addresses";
-import { LiquidityProviderId, LiquidityProviderName, LiquidityProviders } from "./constants";
+import { LiquidityProviderName, LiquidityProviders } from "./constants";
 import { connect, deploy, faucet, forking, getBlockTimestamp, initUser } from "./framework";
 
 interface TokenConverterOperatorFixture {

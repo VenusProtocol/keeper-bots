@@ -27,7 +27,7 @@ export const getCoreMarkets = async (): Promise<PoolAddressArray[]> => {
     });
 
     const marketsWithUnderlying = markets.map((m, idx) => {
-      return { underlyingAddress: underlyingAddresses[idx].result as Address, vTokenAddress: m };
+      return { underlyingAddress: underlyingAddresses[idx].result as unknown as Address, vTokenAddress: m };
     });
 
     return [[addresses.Unitroller as Address, marketsWithUnderlying]];

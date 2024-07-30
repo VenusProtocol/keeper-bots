@@ -6678,7 +6678,7 @@ __metadata:
     "@graphql-mesh/graphql": ^0.98.4
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
-    "@venusprotocol/token-converter-bot": 1.0.5
+    "@venusprotocol/token-converter-bot": 1.1.0
     "@venusprotocol/venus-protocol": ^9.1.0
     ava: ^5.2.0
     chalk: ^5.2.0
@@ -6726,7 +6726,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/isolated-pools@npm:^3.0.0, @venusprotocol/isolated-pools@npm:^3.3.0":
+"@venusprotocol/isolated-pools@npm:^3.0.0":
+  version: 3.4.0
+  resolution: "@venusprotocol/isolated-pools@npm:3.4.0"
+  dependencies:
+    "@nomiclabs/hardhat-ethers": ^2.2.3
+    "@openzeppelin/contracts": ^4.8.3
+    "@openzeppelin/contracts-upgradeable": ^4.8.3
+    "@openzeppelin/hardhat-upgrades": ^1.21.0
+    "@solidity-parser/parser": ^0.13.2
+    "@venusprotocol/solidity-utilities": ^2.0.0
+    ethers: ^5.7.0
+    hardhat-deploy: ^0.11.14
+    module-alias: ^2.2.2
+  checksum: e9ad6e06bfda7248a8d080bc73b3b985ac71d84463dbc233459a6a96208dd37985376b0c7d1dc83e22cec6bf37ad00f956277d46a8466689f5ef104c386ee6c6
+  languageName: node
+  linkType: hard
+
+"@venusprotocol/isolated-pools@npm:^3.3.0":
   version: 3.3.0
   resolution: "@venusprotocol/isolated-pools@npm:3.3.0"
   dependencies:
@@ -6743,7 +6760,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/keeper-bot-contracts@npm:^1.0.0, @venusprotocol/keeper-bot-contracts@npm:^1.1.0-dev.1":
+"@venusprotocol/keeper-bot-contracts@npm:1.1.0":
   version: 1.1.0
   resolution: "@venusprotocol/keeper-bot-contracts@npm:1.1.0"
   dependencies:
@@ -6834,27 +6851,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@venusprotocol/oracle@npm:^1.7.3":
-  version: 1.10.0
-  resolution: "@venusprotocol/oracle@npm:1.10.0"
-  dependencies:
-    "@chainlink/contracts": ^0.5.1
-    "@defi-wonderland/smock": ^2.3.4
-    "@nomicfoundation/hardhat-network-helpers": ^1.0.8
-    "@openzeppelin/contracts": ^4.6.0
-    "@openzeppelin/contracts-upgradeable": ^4.7.3
-    "@venusprotocol/governance-contracts": ^1.4.0
-    "@venusprotocol/solidity-utilities": 1.3.0
-    "@venusprotocol/venus-protocol": ^6.0.0
-    ethers: ^5.6.8
-    hardhat: ^2.16.1
-    hardhat-deploy: ^0.11.14
-    module-alias: ^2.2.2
-    solidity-docgen: ^0.6.0-beta.29
-  checksum: 44de308a3ba728e094b11de0da776dc53690601e9e462c83c087c6c3cb8cedb49d2b4cdda4c8a6dc215d9884369a3e99b11fed1d41d4fe9108d35fc7ff0e893d
-  languageName: node
-  linkType: hard
-
 "@venusprotocol/oracle@npm:^2.0.0":
   version: 2.3.0
   resolution: "@venusprotocol/oracle@npm:2.3.0"
@@ -6929,17 +6925,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/solidity-utilities@npm:1.3.0, @venusprotocol/solidity-utilities@npm:^1.1.0, @venusprotocol/solidity-utilities@npm:^1.2.0, @venusprotocol/solidity-utilities@npm:^1.3.0":
-  version: 1.3.0
-  resolution: "@venusprotocol/solidity-utilities@npm:1.3.0"
-  checksum: d1109365a5e01959c47b25fb129373db93792e60bf1bc0ed324b63c2a64f6e4a7878ebf016cfade94bc41a2c1245d3e861fdc6b8c5844ac210ed1d73e7307e72
-  languageName: node
-  linkType: hard
-
 "@venusprotocol/solidity-utilities@npm:2.0.0":
   version: 2.0.0
   resolution: "@venusprotocol/solidity-utilities@npm:2.0.0"
   checksum: 87a2ce2fd1d702bc04c4e98d675b904176c7f2489476e8da586d1782b48faae92aa4f2ba894737773d189ba72a6b274f1464cf2e0308e62758303d0adde749e6
+  languageName: node
+  linkType: hard
+
+"@venusprotocol/solidity-utilities@npm:^1.1.0, @venusprotocol/solidity-utilities@npm:^1.2.0, @venusprotocol/solidity-utilities@npm:^1.3.0":
+  version: 1.3.0
+  resolution: "@venusprotocol/solidity-utilities@npm:1.3.0"
+  checksum: d1109365a5e01959c47b25fb129373db93792e60bf1bc0ed324b63c2a64f6e4a7878ebf016cfade94bc41a2c1245d3e861fdc6b8c5844ac210ed1d73e7307e72
   languageName: node
   linkType: hard
 
@@ -6980,28 +6976,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/token-converter-bot@npm:1.0.5":
-  version: 1.0.5
-  resolution: "@venusprotocol/token-converter-bot@npm:1.0.5"
-  dependencies:
-    "@graphprotocol/client-cli": 3.0.0
-    "@pancakeswap/sdk": ^5.8.0
-    "@pancakeswap/smart-router": ^5.1.3
-    "@pancakeswap/v3-core": ^1.0.2
-    "@venusprotocol/keeper-bot-contracts": ^1.0.0
-    "@venusprotocol/oracle": ^1.7.3
-    "@wagmi/cli": ^2.0.4
-    abitype: 0.10.0
-    graphql: ^16.8.1
-    hardhat: ^2.19.5
-    urql: ^3.0.3
-    viem: ^2.7.1
-    winston: ^3.11.0
-  checksum: 088467556182afde22ff72a07edf0d0b538a5039e37d745181c8e6a8c016e616284c7bb7aefa6eda73da05b02138620f5d3996a6f91f816512221bb742de526d
-  languageName: node
-  linkType: hard
-
-"@venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
+"@venusprotocol/token-converter-bot@1.1.0, @venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/token-converter-bot@workspace:packages/token-converter-bot"
   dependencies:
@@ -7016,7 +6991,7 @@ __metadata:
     "@types/node": ^20.10.0
     "@typescript-eslint/eslint-plugin": ^6.13.1
     "@typescript-eslint/parser": ^6.13.1
-    "@venusprotocol/keeper-bot-contracts": ^1.1.0-dev.1
+    "@venusprotocol/keeper-bot-contracts": 1.1.0
     "@venusprotocol/oracle": ^2.0.0
     "@venusprotocol/solidity-utilities": ^1.1.0
     "@wagmi/cli": ^2.0.4

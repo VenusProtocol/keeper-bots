@@ -33,7 +33,7 @@ export const getIsolatedMarkets = async (): Promise<PoolAddressArray[]> => {
     pool.comptroller,
     pool.vTokens.map((vToken, vTokenIdx) => ({
       vTokenAddress: vToken.vToken,
-      underlyingAddress: underlyingAddressesByPool[poolIdx][vTokenIdx].result as Address,
+      underlyingAddress: underlyingAddressesByPool[poolIdx][vTokenIdx].result as unknown as Address,
     })),
   ]);
 };
