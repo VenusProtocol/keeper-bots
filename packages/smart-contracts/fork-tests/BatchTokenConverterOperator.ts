@@ -15,6 +15,7 @@ import {
   ISignatureTransfer__factory,
 } from "../typechain";
 import ADDRESSES from "./config/addresses";
+import { LiquidityProviderId, LiquidityProviderName, LiquidityProviders } from "./constants";
 import { connect, deploy, faucet, forking, getBlockTimestamp, initUser } from "./framework";
 
 interface TokenConverterOperatorFixture {
@@ -25,7 +26,7 @@ const makePath = (parts: string[]) => hexlify(concat(parts));
 
 const negate = (value: BigNumber) => BigNumber.from(0).sub(value);
 
-forking({ bsctestnet: 37472590, bscmainnet: 35878500 } as const, network => {
+forking({ bsctestnet: 37472590, bscmainnet: 40380000 } as const, network => {
   const addresses = ADDRESSES[network];
 
   describe("TokenConverterOperator", () => {
@@ -40,10 +41,21 @@ forking({ bsctestnet: 37472590, bscmainnet: 35878500 } as const, network => {
     const usdtToReceive = parseUnits("100", usdtDecimals);
     const minIncome = parseUnits("-5", usdtDecimals);
     const sponsorAmount = negate(minIncome);
-    const path = {
-      bsctestnet: makePath([addresses.XVS, "0x0001f4", addresses.USDT]),
-      bscmainnet: makePath([addresses.XVS, "0x0009c4", addresses.WBNB, "0x000064", addresses.USDT]),
-    }[network];
+    const getPath = (liquidityProvider: LiquidityProviderName) => {
+      const path = {
+        bsctestnet: {
+          ["PancakeSwap"]: makePath([addresses.XVS, "0x0001f4", addresses.USDT]),
+        },
+        bscmainnet: {
+          ["Uniswap"]: makePath([addresses.XVS, "0x0001f4", addresses.WBNB, "0x000064", addresses.USDT]),
+          ["PancakeSwap"]: makePath([addresses.XVS, "0x0009c4", addresses.WBNB, "0x000064", addresses.USDT]),
+        },
+      }[network][liquidityProvider];
+      if (path === undefined) {
+        throw new Error("Unsupported liquidity provider / network combination");
+      }
+      return path;
+    };
 
     let operator: BatchTokenConverterOperator;
     let root: SignerWithAddress;
@@ -52,12 +64,22 @@ forking({ bsctestnet: 37472590, bscmainnet: 35878500 } as const, network => {
     let deadline: number;
     let chainId: number;
 
+    const liquidityProviders = {
+      bsctestnet: ["PancakeSwap"],
+      bscmainnet: ["PancakeSwap", "Uniswap"],
+    } as const;
+
     const tokenConverterOperatorFixture = async (): Promise<TokenConverterOperatorFixture> => {
       const [root] = await ethers.getSigners();
       await faucet(xvs, addresses.xvsHolder, root, parseUnits("10000", 18));
       await faucet(usdt, addresses.usdtHolder, root, parseUnits("10000", usdtDecimals));
       await usdt.connect(root).approve(permit2.address, ethers.constants.MaxUint256);
-      const operator = await deploy(BatchTokenConverterOperator__factory, addresses.PancakeSwapRouter, PERMIT2_ADDRESS);
+      const operator = await deploy(
+        BatchTokenConverterOperator__factory,
+        addresses.UniswapRouter,
+        addresses.PancakeSwapRouter,
+        PERMIT2_ADDRESS,
+      );
       return { operator };
     };
 
@@ -76,14 +98,15 @@ forking({ bsctestnet: 37472590, bscmainnet: 35878500 } as const, network => {
       await converter.connect(root).updateAssetsState(addresses.Unitroller, addresses.USDT);
     });
 
-    const makeCommonParams = () => ({
+    const makeCommonParams = (liquidityProvider: LiquidityProviderName) => ({
+      liquidityProvider: LiquidityProviders[liquidityProvider],
       tokenToReceiveFromConverter: addresses.USDT,
       beneficiary: beneficiary.address,
       amount: usdtToReceive,
       minIncome: minIncome,
       tokenToSendToConverter: addresses.XVS,
       converter: addresses.XVSVaultConverter,
-      path,
+      path: getPath(liquidityProvider),
     });
 
     const makePermit = async (permitted: TokenPermissions[], nonce: number) => {
@@ -119,42 +142,44 @@ forking({ bsctestnet: 37472590, bscmainnet: 35878500 } as const, network => {
         });
       });
 
-      describe("convert", () => {
-        beforeEach(async () => {
-          await usdt.connect(root).transfer(operator.address, sponsorAmount);
-        });
+      for (const liquidityProvider of liquidityProviders[network]) {
+        describe(`converts via ${liquidityProvider}`, () => {
+          beforeEach(async () => {
+            await usdt.connect(root).transfer(operator.address, sponsorAmount);
+          });
 
-        it("fails if path start != token to send to converter", async () => {
-          const wrongPath = makePath([addresses.USDT, "0x0001f4", addresses.XVS]);
-          const tx = operator.connect(root).convert({ ...makeCommonParams(), path: wrongPath });
-          await expect(tx)
-            .to.be.revertedWithCustomError(operator, "InvalidSwapStart")
-            .withArgs(addresses.XVS, addresses.USDT);
-        });
+          it("fails if path start != token to send to converter", async () => {
+            const wrongPath = makePath([addresses.USDT, "0x0001f4", addresses.XVS]);
+            const tx = operator.connect(root).convert({ ...makeCommonParams(liquidityProvider), path: wrongPath });
+            await expect(tx)
+              .to.be.revertedWithCustomError(operator, "InvalidSwapStart")
+              .withArgs(addresses.XVS, addresses.USDT);
+          });
 
-        it("fails if path end != token to receive from converter", async () => {
-          const wrongPath = makePath([addresses.XVS, "0x0009c4", addresses.WBNB]);
-          const tx = operator.connect(root).convert({ ...makeCommonParams(), path: wrongPath });
-          await expect(tx)
-            .to.be.revertedWithCustomError(operator, "InvalidSwapEnd")
-            .withArgs(addresses.USDT, addresses.WBNB);
-        });
+          it("fails if path end != token to receive from converter", async () => {
+            const wrongPath = makePath([addresses.XVS, "0x0009c4", addresses.WBNB]);
+            const tx = operator.connect(root).convert({ ...makeCommonParams(liquidityProvider), path: wrongPath });
+            await expect(tx)
+              .to.be.revertedWithCustomError(operator, "InvalidSwapEnd")
+              .withArgs(addresses.USDT, addresses.WBNB);
+          });
 
-        it("transfers USDT from the token converter", async () => {
-          const tx = await operator.connect(root).convert(makeCommonParams());
-          await expect(tx).to.emit(usdt, "Transfer").withArgs(converter.address, operator.address, usdtToReceive);
-        });
+          it("transfers USDT from the token converter", async () => {
+            const tx = await operator.connect(root).convert(makeCommonParams(liquidityProvider));
+            await expect(tx).to.emit(usdt, "Transfer").withArgs(converter.address, operator.address, usdtToReceive);
+          });
 
-        it("transfers XVS to the token converter", async () => {
-          const tx = await operator.connect(root).convert(makeCommonParams());
-          await expect(tx).to.emit(xvs, "Transfer").withArgs(operator.address, anyValue, anyValue);
-        });
+          it("transfers XVS to the token converter", async () => {
+            const tx = await operator.connect(root).convert(makeCommonParams(liquidityProvider));
+            await expect(tx).to.emit(xvs, "Transfer").withArgs(operator.address, anyValue, anyValue);
+          });
 
-        it("keeps USDT in the operator contract", async () => {
-          await operator.connect(root).convert(makeCommonParams());
-          expect(await usdt.balanceOf(operator.address)).to.be.gt(0);
+          it("keeps USDT in the operator contract", async () => {
+            await operator.connect(root).convert(makeCommonParams(liquidityProvider));
+            expect(await usdt.balanceOf(operator.address)).to.be.gt(0);
+          });
         });
-      });
+      }
     });
 
     describe("batch calls", () => {
@@ -189,34 +214,38 @@ forking({ bsctestnet: 37472590, bscmainnet: 35878500 } as const, network => {
         expect(errorResult.deadline).to.equal(tooEarly);
       });
 
-      it("executes the full conversion in a batch fashion", async () => {
-        const { permit, signature } = await makePermit([{ token: usdt.address, amount: sponsorAmount }], 1);
-        await operator
-          .connect(root)
-          .batch([
-            delegateToSelf(operator.interface.encodeFunctionData("checkDeadline", [deadline])),
-            delegateToSelf(operator.interface.encodeFunctionData("sponsorWithPermit", [permit, signature])),
-            delegateToSelf(operator.interface.encodeFunctionData("convert", [makeCommonParams()])),
-            delegateToSelf(operator.interface.encodeFunctionData("claimAllTo", [usdt.address, root.address])),
-          ]);
-      });
+      for (const liquidityProvider of liquidityProviders[network]) {
+        describe(`converts via ${liquidityProvider}`, () => {
+          it("executes the full conversion in a batch fashion", async () => {
+            const { permit, signature } = await makePermit([{ token: usdt.address, amount: sponsorAmount }], 1);
+            await operator
+              .connect(root)
+              .batch([
+                delegateToSelf(operator.interface.encodeFunctionData("checkDeadline", [deadline])),
+                delegateToSelf(operator.interface.encodeFunctionData("sponsorWithPermit", [permit, signature])),
+                delegateToSelf(operator.interface.encodeFunctionData("convert", [makeCommonParams(liquidityProvider)])),
+                delegateToSelf(operator.interface.encodeFunctionData("claimAllTo", [usdt.address, root.address])),
+              ]);
+          });
 
-      it("returns success for each call", async () => {
-        const { permit, signature } = await makePermit([{ token: usdt.address, amount: sponsorAmount }], 1);
-        const results = await operator
-          .connect(root)
-          .callStatic.batch([
-            delegateToSelf(operator.interface.encodeFunctionData("checkDeadline", [deadline])),
-            delegateToSelf(operator.interface.encodeFunctionData("sponsorWithPermit", [permit, signature])),
-            delegateToSelf(operator.interface.encodeFunctionData("convert", [makeCommonParams()])),
-            delegateToSelf(operator.interface.encodeFunctionData("claimAllTo", [usdt.address, root.address])),
-          ]);
-        expect(results).to.have.lengthOf(4);
-        results.forEach(result => {
-          expect(result.success).to.be.true;
-          expect(result.returnData).to.equal("0x");
+          it("returns success for each call", async () => {
+            const { permit, signature } = await makePermit([{ token: usdt.address, amount: sponsorAmount }], 1);
+            const results = await operator
+              .connect(root)
+              .callStatic.batch([
+                delegateToSelf(operator.interface.encodeFunctionData("checkDeadline", [deadline])),
+                delegateToSelf(operator.interface.encodeFunctionData("sponsorWithPermit", [permit, signature])),
+                delegateToSelf(operator.interface.encodeFunctionData("convert", [makeCommonParams(liquidityProvider)])),
+                delegateToSelf(operator.interface.encodeFunctionData("claimAllTo", [usdt.address, root.address])),
+              ]);
+            expect(results).to.have.lengthOf(4);
+            results.forEach(result => {
+              expect(result.success).to.be.true;
+              expect(result.returnData).to.equal("0x");
+            });
+          });
         });
-      });
+      }
     });
   });
 });

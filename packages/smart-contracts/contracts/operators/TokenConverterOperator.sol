@@ -3,11 +3,13 @@ pragma solidity 0.8.25;
 
 import { IAbstractTokenConverter } from "@venusprotocol/protocol-reserve/contracts/TokenConverter/IAbstractTokenConverter.sol";
 
+import { LiquidityProvider } from "../flash-swap/common.sol";
 import { FlashHandler } from "../flash-swap/FlashHandler.sol";
 import { ExactOutputFlashSwap } from "../flash-swap/ExactOutputFlashSwap.sol";
 import { Token } from "../util/Token.sol";
 import { checkDeadline, validatePath } from "../util/validators.sol";
-import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
+import { IPancakeSwapRouter } from "../third-party/interfaces/IPancakeSwapRouter.sol";
+import { IUniswapRouter } from "../third-party/interfaces/IUniswapRouter.sol";
 
 /// @title TokenConverterOperator
 /// @notice Converts tokens in a TokenConverter using an exact-output flash swap
@@ -28,6 +30,8 @@ import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
 contract TokenConverterOperator is ExactOutputFlashSwap {
     /// @notice Conversion parameters
     struct ConversionParameters {
+        /// @notice AMM providing liquidity (either Uniswap or PancakeSwap)
+        LiquidityProvider liquidityProvider;
         /// @notice The receiver of the arbitrage income
         address beneficiary;
         /// @notice The token currently in the TokenConverter
@@ -79,9 +83,13 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
     /// @notice Thrown on math overflow
     error Overflow();
 
-    /// @param swapRouter_ PancakeSwap SmartRouter contract
+    /// @param uniswapSwapRouter_ Uniswap SwapRouter contract
+    /// @param pcsSwapRouter_ PancakeSwap SmartRouter contract
     // solhint-disable-next-line no-empty-blocks
-    constructor(ISmartRouter swapRouter_) FlashHandler(swapRouter_) {}
+    constructor(
+        IUniswapRouter uniswapSwapRouter_,
+        IPancakeSwapRouter pcsSwapRouter_
+    ) FlashHandler(uniswapSwapRouter_, pcsSwapRouter_) {}
 
     /// @notice Converts tokens in a TokenConverter using a flash swap
     /// @param params Conversion parameters
@@ -112,7 +120,7 @@ contract TokenConverterOperator is ExactOutputFlashSwap {
             converter: params.converter
         });
 
-        _flashSwap(amountToPay, params.path, abi.encode(data));
+        _flashSwap(params.liquidityProvider, amountToPay, params.path, abi.encode(data));
     }
 
     function _onMoneyReceived(bytes memory data) internal override returns (Token tokenIn, uint256 maxAmountIn) {

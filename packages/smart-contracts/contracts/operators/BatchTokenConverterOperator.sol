@@ -5,12 +5,14 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IAbstractTokenConverter } from "@venusprotocol/protocol-reserve/contracts/TokenConverter/IAbstractTokenConverter.sol";
 
+import { LiquidityProvider } from "../flash-swap/common.sol";
 import { FlashHandler } from "../flash-swap/FlashHandler.sol";
 import { ExactOutputFlashSwap } from "../flash-swap/ExactOutputFlashSwap.sol";
 import { Token } from "../util/Token.sol";
 import { DelegateMulticall } from "../util/DelegateMulticall.sol";
 import { checkDeadline as _checkDeadline, validatePath } from "../util/validators.sol";
-import { ISmartRouter } from "../third-party/pancakeswap-v8/ISmartRouter.sol";
+import { IPancakeSwapRouter } from "../third-party/interfaces/IPancakeSwapRouter.sol";
+import { IUniswapRouter } from "../third-party/interfaces/IUniswapRouter.sol";
 import { ISignatureTransfer } from "../third-party/permit2/ISignatureTransfer.sol";
 
 /// @title BatchTokenConverterOperator
@@ -27,6 +29,8 @@ contract BatchTokenConverterOperator is ExactOutputFlashSwap, DelegateMulticall 
 
     /// @notice Conversion parameters
     struct ConversionParameters {
+        /// @notice AMM providing liquidity (either Uniswap or PancakeSwap)
+        LiquidityProvider liquidityProvider;
         /// @notice The token currently in the TokenConverter
         Token tokenToReceiveFromConverter;
         /// @notice The amount (in `tokenToReceiveFromConverter` tokens) to receive as a result of conversion
@@ -73,9 +77,14 @@ contract BatchTokenConverterOperator is ExactOutputFlashSwap, DelegateMulticall 
     /// @notice Thrown on math overflow
     error Overflow();
 
-    /// @param swapRouter_ PancakeSwap SmartRouter contract
-    // solhint-disable-next-line no-empty-blocks
-    constructor(ISmartRouter swapRouter_, ISignatureTransfer permit2_) FlashHandler(swapRouter_) {
+    /// @param uniswapSwapRouter_ Uniswap SwapRouter contract
+    /// @param pcsSwapRouter_ PancakeSwap SmartRouter contract
+    /// @param permit2_ Permit2 contract
+    constructor(
+        IUniswapRouter uniswapSwapRouter_,
+        IPancakeSwapRouter pcsSwapRouter_,
+        ISignatureTransfer permit2_
+    ) FlashHandler(uniswapSwapRouter_, pcsSwapRouter_) {
         PERMIT2 = permit2_;
     }
 
@@ -121,7 +130,7 @@ contract BatchTokenConverterOperator is ExactOutputFlashSwap, DelegateMulticall 
             converter: params.converter
         });
 
-        _flashSwap(amountToPay, params.path, abi.encode(data));
+        _flashSwap(params.liquidityProvider, amountToPay, params.path, abi.encode(data));
     }
 
     /// @notice Claim refund or income to beneficiary
