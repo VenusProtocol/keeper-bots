@@ -2,7 +2,7 @@ import { Percent } from "@pancakeswap/sdk";
 import { SmartRouter } from "@pancakeswap/smart-router/evm";
 import { erc20Abi } from "viem";
 
-import { mockRoute, mockTrade } from "../__mocks__";
+import { mockRoute, mockTrade, mockUniswapRoute } from "../__mocks__";
 import {
   coreVTokenAbi,
   protocolShareReserveAbi,
@@ -10,7 +10,7 @@ import {
   vBnbAdminAbi,
 } from "../config/abis/generated";
 import TokenConverter from "./TokenConverter";
-import { PancakeSwapProvider } from "./providers";
+import { PancakeSwapProvider, UniswapProvider } from "./providers";
 import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
 
 jest.mock("@pancakeswap/smart-router/evm");
@@ -18,6 +18,7 @@ jest.mock("./queries/getTokenConvertersTokenBalances");
 jest.mock("../subgraph-client");
 jest.mock("../config/clients/walletClient");
 jest.mock("../config/clients/publicClient");
+// jest.mock("./providers");
 
 const addresses = {
   usdcHolder: "0x2Ce1d0ffD7E869D9DF33e28552b12DdDed326706" as const,
@@ -36,24 +37,34 @@ const addresses = {
   stableCoinComptroller: "0x10b57706AD2345e590c2eA4DC02faef0d9f5b08B" as const,
   protocolShareReserve: "0xCa01D5A9A248a830E9D93231e791B1afFed7c446" as const,
   VBNBAdmin: "0x9A7890534d9d91d473F28cB97962d176e2B65f1d" as const,
-  tokenConverterOperator: "0x9Db8ABe20D004ab172DBE07c6Ea89680A5a3c337" as const,
-};
-
-const stringifyBigInt = (_: string, val: unknown) => {
-  if (typeof val === "bigint") {
-    return val.toString();
-  }
-  return val;
+  tokenConverterOperator: "0xa0EC2A2489D57CD8385A565F38168cC539586B07" as const,
 };
 
 const createTokenConverterInstance = ({ simulate = false }: { simulate: boolean } = { simulate: false }) => {
   const subscriberMock = jest.fn();
-  const pancakeSwapProvider = new PancakeSwapProvider({ subscriber: subscriberMock, verbose: false })
-  const tokenConverter = new TokenConverter({ subscriber: subscriberMock, verbose: false, simulate, swapProvider: pancakeSwapProvider });
+  const pancakeSwapProvider = new PancakeSwapProvider({ subscriber: subscriberMock, verbose: false });
+  (pancakeSwapProvider.publicClient.multicall as jest.Mock).mockImplementation(() => [
+    { result: 18 },
+    { result: "USDT" },
+  ]);
+  (pancakeSwapProvider.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
+    result: [1000000000000000000n, 1000000000000000000n],
+  }));
+  const tokenConverter = new TokenConverter({
+    subscriber: subscriberMock,
+    verbose: false,
+    simulate,
+    swapProvider: pancakeSwapProvider,
+  });
   return { tokenConverter, pancakeSwapProvider, subscriberMock };
 };
 
 describe("Token Converter", () => {
+  beforeEach(() => {
+    (SmartRouter.getPriceImpact as jest.Mock).mockImplementation(() => new Percent(2n, 1000n));
+    (SmartRouter.getBestTrade as jest.Mock).mockImplementation(() => mockRoute);
+  });
+
   describe("getBestTrade", () => {
     test("should throw error if not trade found", async () => {
       const { tokenConverter } = createTokenConverterInstance();
@@ -64,6 +75,8 @@ describe("Token Converter", () => {
       (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
+
+      (SmartRouter.getBestTrade as jest.Mock).mockImplementationOnce(() => null);
 
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       expect(
@@ -110,9 +123,6 @@ describe("Token Converter", () => {
         result: [1000000000000000000n, 1000000000000000000n],
       }));
 
-      (SmartRouter.getPriceImpact as jest.Mock).mockImplementationOnce(() => new Percent(2n, 1000n));
-      (SmartRouter.getBestTrade as jest.Mock).mockImplementationOnce(() => mockRoute);
-
       expect(
         await tokenConverter.getBestTrade(
           addresses.USDCPrimeConverter,
@@ -120,11 +130,24 @@ describe("Token Converter", () => {
           addresses.USDC,
           1000000000000000000000n,
         ),
-      ).toEqual([mockRoute, [1000000000000000000n, 1000000000000000000n]]);
+      ).toEqual([
+        {
+          inputToken: {
+            address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+            amount: "8",
+          },
+          outputToken: {
+            address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+            amount: "517",
+          },
+          path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        },
+        [1000000000000000000n, 1000000000000000000n],
+      ]);
     });
 
     test("should call getBestTrade again if price impact is high with lower amount", async () => {
-      const { tokenConverter, subscriberMock } = createTokenConverterInstance();
+      const { tokenConverter, subscriberMock, pancakeSwapProvider } = createTokenConverterInstance();
       (tokenConverter.publicClient.multicall as jest.Mock).mockImplementation(() => [
         { result: 18 },
         { result: "USDT" },
@@ -133,30 +156,42 @@ describe("Token Converter", () => {
         result: [1000000000000000000n, 1000000000000000000n],
       }));
 
-      const tokenConverterMock = jest
-        .spyOn(TokenConverter.prototype, "getBestTrade")
-        .mockImplementationOnce(tokenConverter.getBestTrade);
+      const pancakeSwapProviderMock = jest
+        .spyOn(PancakeSwapProvider.prototype, "getBestTrade")
+        .mockImplementationOnce(pancakeSwapProvider.getBestTrade);
 
       let called = false;
-      (SmartRouter.getPriceImpact as jest.Mock).mockImplementation(() => {
+      (SmartRouter.getPriceImpact as jest.Mock).mockImplementationOnce(() => {
         if (called) {
-          return new Percent(2n, 1000n);
+          return new Percent(2n, 10000n);
         }
         called = true;
         return new Percent(9n, 1000n);
       });
-      (SmartRouter.getBestTrade as jest.Mock).mockImplementation(() => mockRoute);
 
       expect(
-        await tokenConverter.getBestTrade(
+        await pancakeSwapProvider.getBestTrade(
           addresses.USDCPrimeConverter,
           addresses.WBNB,
           addresses.USDC,
           1000000000000000000000n,
         ),
-      ).toEqual([mockRoute, [1000000000000000000n, 1000000000000000000n]]);
+      ).toEqual([
+        {
+          inputToken: {
+            address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+            amount: "8",
+          },
+          outputToken: {
+            address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+            amount: "517",
+          },
+          path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        },
+        [1000000000000000000n, 1000000000000000000n],
+      ]);
 
-      expect(tokenConverterMock).toHaveBeenNthCalledWith(
+      expect(pancakeSwapProviderMock).toHaveBeenNthCalledWith(
         3,
         addresses.USDCPrimeConverter,
         addresses.WBNB,
@@ -175,16 +210,23 @@ describe("Token Converter", () => {
           priceImpact: "0.90",
         },
       });
-
-      (SmartRouter.getBestTrade as jest.Mock).mockReset();
     });
   });
 
-  describe("encodeExactInputPath", () => {
+  describe("encodeExactInputPath - PancakeSwapProvider", () => {
     const { pancakeSwapProvider } = createTokenConverterInstance();
 
-    expect(pancakeSwapProvider.encodeExactInputPath(mockRoute)).toEqual(
+    expect(pancakeSwapProvider.encodeExactInputPath(mockRoute.routes[0])).toEqual(
       "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    );
+  });
+
+  describe("encodeExactInputPath - UniswapProvider", () => {
+    const subscriberMock = jest.fn();
+    const uniswapProvider = new UniswapProvider({ subscriber: subscriberMock, verbose: false });
+
+    expect(uniswapProvider.encodeExactInputPath(mockUniswapRoute.trade.routes[0])).toEqual(
+      "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630001f4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
     );
   });
 
@@ -667,8 +709,9 @@ describe("Token Converter", () => {
             minIncome: 10000n,
             tokenToSendToConverter: mockTrade.outputToken.address,
             converter: addresses.USDCPrimeConverter,
-            path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+            path: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c000cf6bb5389c92bdda8a3747ddb454cb7a64626c63",
             deadline: 1713214169n,
+            liquidityProvider: 1,
           },
         ],
       });
@@ -685,8 +728,9 @@ describe("Token Converter", () => {
           beneficiary: "0x4CCeBa2d7D2B4fdcE4304d3e09a1fea9fbEb1528",
           converter: "0x2ecEdE6989d8646c992344fF6C97c72a3f811A13",
           deadline: 1713214169n,
+          liquidityProvider: 1,
           minIncome: 10000n,
-          path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+          path: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c000cf6bb5389c92bdda8a3747ddb454cb7a64626c63",
           tokenToReceiveFromConverter: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
           tokenToSendToConverter: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
         },
@@ -726,8 +770,9 @@ describe("Token Converter", () => {
             minIncome: -10000n,
             tokenToSendToConverter: mockTrade.outputToken.address,
             converter: addresses.USDCPrimeConverter,
-            path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+            path: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c000cf6bb5389c92bdda8a3747ddb454cb7a64626c63",
             deadline: 1713214169n,
+            liquidityProvider: 1,
           },
         ],
       });
@@ -742,8 +787,9 @@ describe("Token Converter", () => {
           beneficiary: "0x4CCeBa2d7D2B4fdcE4304d3e09a1fea9fbEb1528",
           converter: "0x2ecEdE6989d8646c992344fF6C97c72a3f811A13",
           deadline: 1713214169n,
+          liquidityProvider: 1,
           minIncome: -10000n,
-          path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+          path: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c000cf6bb5389c92bdda8a3747ddb454cb7a64626c63",
           tokenToReceiveFromConverter: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
           tokenToSendToConverter: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
         },
@@ -774,8 +820,9 @@ describe("Token Converter", () => {
           beneficiary: "0x4CCeBa2d7D2B4fdcE4304d3e09a1fea9fbEb1528",
           converter: "0x2ecEdE6989d8646c992344fF6C97c72a3f811A13",
           deadline: 1713214169n,
+          liquidityProvider: 1,
           minIncome: -10000n,
-          path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+          path: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c000cf6bb5389c92bdda8a3747ddb454cb7a64626c63",
           tokenToReceiveFromConverter: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
           tokenToSendToConverter: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
         },
@@ -794,29 +841,28 @@ describe("Token Converter", () => {
         result: [1000000000000000000n, 1000000000000000000n],
       }));
 
-      (SmartRouter.getPriceImpact as jest.Mock).mockImplementation(() => new Percent(2n, 1000n));
-      (SmartRouter.getBestTrade as jest.Mock).mockImplementation(() => mockRoute);
-
       expect(
-        JSON.stringify(
-          await tokenConverter.prepareConversion(
-            addresses.USDCPrimeConverter,
-            addresses.WBNB,
-            addresses.USDC,
-            1000000000000000000000n,
-          ),
-          stringifyBigInt,
+        await tokenConverter.prepareConversion(
+          addresses.USDCPrimeConverter,
+          addresses.WBNB,
+          addresses.USDC,
+          1000000000000000000000n,
         ),
-      ).toEqual(
-        JSON.stringify(
-          {
-            trade: mockRoute,
-            amount: "1000000000000000000",
-            minIncome: "-7904975230019520420",
+      ).toEqual({
+        trade: {
+          inputToken: {
+            amount: "8",
+            address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
           },
-          stringifyBigInt,
-        ),
-      );
+          outputToken: {
+            amount: "517",
+            address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+          },
+          path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        },
+        amount: 1000000000000000000n,
+        minIncome: 999999999999999992n,
+      });
 
       expect(subscriberMock).toHaveBeenCalledWith({
         type: "GetBestTrade",
@@ -825,13 +871,13 @@ describe("Token Converter", () => {
         blockNumber: undefined,
         context: {
           converter: "0x2ecEdE6989d8646c992344fF6C97c72a3f811A13",
-          pancakeSwapTrade: {
+          swap: {
             inputToken: {
-              amount: "8.904975230019520420",
+              amount: "8",
               token: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
             },
             outputToken: {
-              amount: "517.926942058379677423",
+              amount: "517",
               token: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
             },
           },

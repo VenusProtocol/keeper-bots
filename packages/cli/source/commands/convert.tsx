@@ -7,7 +7,7 @@ import { TokenConverter, PancakeSwapProvider, UniswapProvider } from "@venusprot
 import { stringifyBigInt, getConverterConfigId } from "../utils/index.js";
 import { Options, Title, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/convert.js";
-import getEnvValue from '../utils/getEnvValue.js';
+import getEnvValue from "../utils/getEnvValue.js";
 import FullScreenBox from "../components/fullScreenBox.js";
 import { addressValidation } from "../utils/validation.js";
 
@@ -147,13 +147,15 @@ export default function Convert({ options }: Props) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const network = getEnvValue('NETWORK')
+    const network = getEnvValue("NETWORK");
     const convert = async () => {
       const tokenConverter = new TokenConverter({
         subscriber: dispatch,
         simulate: !!simulate,
         verbose: debug,
-        swapProvider: network?.includes('bsc') ? new PancakeSwapProvider({ subscriber: dispatch }) : new UniswapProvider({ subscriber: dispatch, })
+        swapProvider: network?.includes("bsc")
+          ? new PancakeSwapProvider({ subscriber: dispatch })
+          : new UniswapProvider({ subscriber: dispatch }),
       });
 
       do {
@@ -216,7 +218,6 @@ export default function Convert({ options }: Props) {
                 });
 
                 await tokenConverter.arbitrage(t.tokenConverter, trade, amount, minIncome);
-
               } else if (t.accountBalanceAssetOut < minIncome * -1n) {
                 dispatch({
                   type: "ExecuteTrade",
@@ -351,7 +352,9 @@ export default function Convert({ options }: Props) {
                 )}
                 {msg.type === "PotentialConversions" ? (
                   <Box flexGrow={1} flexDirection="column" minWidth={60} marginRight={1} marginLeft={1}>
-                    <Text>{msg.context.conversions.length} {msg.context.conversions.length > 1 ? 'Trades' : 'Trade'} found</Text>
+                    <Text>
+                      {msg.context.conversions.length} {msg.context.conversions.length > 1 ? "Trades" : "Trade"} found
+                    </Text>
                   </Box>
                 ) : null}
               </Box>

@@ -1,11 +1,11 @@
+import { Token } from "@uniswap/sdk-core";
+import { Pool } from "@uniswap/v3-sdk";
 import { Address } from "viem";
-import { Pool } from '@uniswap/v3-sdk';
-import { Token } from '@uniswap/sdk-core';
+
 import getPublicClient from "../../config/clients/publicClient";
 import getWalletClient from "../../config/clients/walletClient";
-import { Message, TradeRoute } from "../types";
 import logger from "../logger";
-
+import { Message, TradeRoute } from "../types";
 
 class SwapProvider {
   private subscriber: undefined | ((msg: Message) => void);
@@ -13,13 +13,10 @@ class SwapProvider {
   public publicClient: ReturnType<typeof getPublicClient>;
   public walletClient: ReturnType<typeof getWalletClient>;
 
-  // @ts-ignore
+  // @ts-expect-error defined in inheriting classes
   liquidityProviderId: number;
 
-  constructor({ subscriber, verbose }: {
-    subscriber?: (msg: Message) => void,
-    verbose?: boolean
-  }) {
+  constructor({ subscriber, verbose }: { subscriber?: (msg: Message) => void; verbose?: boolean }) {
     this.subscriber = subscriber;
     this.verbose = !!verbose;
     this.publicClient = getPublicClient();
@@ -27,16 +24,16 @@ class SwapProvider {
   }
 
   getOutputCurrency = <P = Pool, T = Token>(pool: P, inputToken: T): T => {
-    // @ts-ignore
+    // @ts-expect-error library types don't match
     const { token0, token1 } = pool;
     return token0.equals(inputToken) ? token1 : token0;
   };
 
   /**
- * Function to post message to subscriber
- * @param Message
- *
- */
+   * Function to post message to subscriber
+   * @param Message
+   *
+   */
   sendMessage({
     type,
     trx = undefined,
@@ -57,9 +54,18 @@ class SwapProvider {
     }
   }
 
-  async getBestTrade(tokenConverter: Address, swapFrom: Address, swapTo: Address, amount: bigint): Promise<[TradeRoute, readonly [bigint, bigint]]> {
-    throw new Error('Not Implemented Error');
+  async getBestTrade(
+    // eslint-disable-next-line
+    tokenConverter: Address,
+    // eslint-disable-next-line
+    swapFrom: Address,
+    // eslint-disable-next-line
+    swapTo: Address,
+    // eslint-disable-next-line
+    amount: bigint,
+  ): Promise<[TradeRoute, readonly [bigint, bigint]]> {
+    throw new Error("Not Implemented Error");
   }
 }
 
-export default SwapProvider
+export default SwapProvider;

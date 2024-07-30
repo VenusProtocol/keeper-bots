@@ -1,9 +1,5 @@
-import PancakeSwapProvider  from './pancake-swap'
-import UniswapProvider  from './uniswap'
-import SwapProvider from './swap-provider'
+import PancakeSwapProvider from "./pancake-swap";
+import SwapProvider from "./swap-provider";
+import UniswapProvider from "./uniswap";
 
-export {
-  PancakeSwapProvider,
-  UniswapProvider,
-  SwapProvider
-}
+export { PancakeSwapProvider, UniswapProvider, SwapProvider };

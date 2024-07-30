@@ -1,4 +1,4 @@
-import { chains } from './chains';
+import { chains } from "./chains";
 
 const safelyGetEnvVar = <T extends keyof typeof process.env>(key: T) => {
   const envVar = process.env[key];

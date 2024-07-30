@@ -1,5 +1,5 @@
 import { Address } from "viem";
-import { BaseRoute } from "@pancakeswap/smart-router/evm";
+
 import { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
 
 export type MarketAddresses = { underlyingAddress: Address; vTokenAddress: Address };
@@ -72,15 +72,14 @@ export type Message =
   | ArbitrageMessage
   | GetBestTradeMessage;
 
-
 export interface TradeRoute {
   inputToken: {
-    amount: bigint
-    address: Address
-  }
+    amount: bigint;
+    address: Address;
+  };
   outputToken: {
-    amount: bigint
-    address: Address
-  }
-  path: Address
+    amount: bigint;
+    address: Address;
+  };
+  path: Address;
 }

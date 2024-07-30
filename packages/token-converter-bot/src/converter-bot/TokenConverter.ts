@@ -1,5 +1,6 @@
 import { Fraction } from "@pancakeswap/sdk";
 import { Address, BaseError, ContractFunctionRevertedError, erc20Abi, formatUnits } from "viem";
+
 import getConfig from "../config";
 import {
   coreVTokenAbi,
@@ -14,10 +15,10 @@ import type { SUPPORTED_CHAINS } from "../config/chains";
 import getPublicClient from "../config/clients/publicClient";
 import getWalletClient from "../config/clients/walletClient";
 import logger from "./logger";
+import { SwapProvider } from "./providers";
 import getConverterConfigs from "./queries/getTokenConverterConfigs";
 import getTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
-import { MarketAddresses, Message, GetBestTradeMessage, TradeRoute } from "./types";
-import { SwapProvider } from './providers'
+import { GetBestTradeMessage, MarketAddresses, Message, TradeRoute } from "./types";
 
 const config = getConfig();
 
@@ -41,7 +42,7 @@ export class TokenConverter {
     verbose = false,
   }: {
     subscriber?: (msg: Message) => void;
-    swapProvider: SwapProvider,
+    swapProvider: SwapProvider;
     simulate: boolean;
     verbose: boolean;
   }) {
@@ -98,8 +99,7 @@ export class TokenConverter {
     swapTo: Address,
     amount: bigint,
   ): Promise<[TradeRoute, readonly [bigint, bigint]]> {
-    
-    return this.swapProvider.getBestTrade(tokenConverter, swapFrom, swapTo, amount)
+    return this.swapProvider.getBestTrade(tokenConverter, swapFrom, swapTo, amount);
   }
 
   /**
@@ -346,7 +346,7 @@ export class TokenConverter {
         bsctestnet: 4,
         ethereum: 12,
         sepolia: 12,
-      }
+      };
       await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: confirmations[this.chainName] });
     }
   }
@@ -358,12 +358,7 @@ export class TokenConverter {
    * @param amount Amount of token to receive from converter
    * @param expectedMinIncome Profitability or cost of conversion in token to receive
    */
-  async arbitrage(
-    converterAddress: Address,
-    trade: TradeRoute,
-    amount: bigint,
-    minIncome: bigint,
-  ) {
+  async arbitrage(converterAddress: Address, trade: TradeRoute, amount: bigint, minIncome: bigint) {
     const beneficiary = this.walletClient.account.address;
 
     const block = await this.publicClient.getBlock();
@@ -391,7 +386,6 @@ export class TokenConverter {
 
     let simulation = "simulation: ";
     try {
-
       if (minIncome < 0n && !this.simulate) {
         await this.checkAndRequestAllowance(
           trade.inputToken.address,
@@ -454,13 +448,12 @@ export class TokenConverter {
               token: trade.inputToken.address,
             },
             outputToken: {
-              amount: trade.outputToken.toString(),
+              amount: trade.outputToken.amount.toString(),
               token: trade.outputToken.address,
             },
           },
         };
       }
-
       this.sendMessage({
         type: "GetBestTrade",
         error,

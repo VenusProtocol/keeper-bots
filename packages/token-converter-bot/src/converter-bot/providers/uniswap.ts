@@ -1,16 +1,17 @@
-import { ethers } from 'ethers';
-import { Pool, Route } from '@uniswap/v3-sdk';
-import JSBI from 'jsbi';
-import { IRoute } from '@uniswap/router-sdk';
-import { AlphaRouter, SwapOptionsSwapRouter02, SwapType } from '@uniswap/smart-order-router';
-import { ChainId, Currency, Percent, Token, CurrencyAmount, TradeType, Fraction } from '@uniswap/sdk-core';
+import { IRoute } from "@uniswap/router-sdk";
+import { ChainId, Currency, CurrencyAmount, Fraction, Percent, Token, TradeType } from "@uniswap/sdk-core";
+import { AlphaRouter, SwapOptionsSwapRouter02, SwapType } from "@uniswap/smart-order-router";
+import { Pool, Route } from "@uniswap/v3-sdk";
+import { ethers } from "ethers";
+import JSBI from "jsbi";
 import { Address, Hex, encodePacked, erc20Abi } from "viem";
-import { tokenConverterAbi } from "../../config/abis/generated";
+
 import getConfig from "../../config";
+import { tokenConverterAbi } from "../../config/abis/generated";
 import type { SUPPORTED_CHAINS } from "../../config/chains";
 import { chains } from "../../config/chains";
 import { Message, TradeRoute } from "../types";
-import SwapProvider from './swap-provider';
+import SwapProvider from "./swap-provider";
 
 const config = getConfig();
 
@@ -18,22 +19,19 @@ class UniswapProvider extends SwapProvider {
   private chainName: SUPPORTED_CHAINS;
   private tokens: Map<Address, Token>;
 
-  constructor({ subscriber, verbose }: {
-    subscriber?: (msg: Message) => void,
-    verbose?: boolean
-  }) {
-    super({ subscriber, verbose })
+  constructor({ subscriber, verbose }: { subscriber?: (msg: Message) => void; verbose?: boolean }) {
+    super({ subscriber, verbose });
     this.tokens = new Map();
     this.chainName = config.network.name;
     this.liquidityProviderId = 0;
   }
 
   /**
- * Helper function got retrieving and caching a Uniswap sdk Token
- * @param address Address of the token to fetch
- * @error Throws if token can't be fetched
- *
- */
+   * Helper function got retrieving and caching a Uniswap sdk Token
+   * @param address Address of the token to fetch
+   * @error Throws if token can't be fetched
+   *
+   */
   async getToken(address: Address): Promise<Token> {
     if (this.tokens.has(address)) {
       return this.tokens.get(address) as Token;
@@ -59,7 +57,7 @@ class UniswapProvider extends SwapProvider {
       return token;
     }
     throw new Error(`Unable to fetch token details for ${address}`);
-  };
+  }
 
   async getBestTrade(
     tokenConverter: Address,
@@ -78,48 +76,53 @@ class UniswapProvider extends SwapProvider {
       args: [amount, swapTo, swapFrom],
     });
 
-    const provider = new ethers.providers.JsonRpcProvider(config.rpcUrl)
+    const provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
     const router = new AlphaRouter({
       chainId: config.network.id as ChainId,
       provider,
-    })
+    });
     const options: SwapOptionsSwapRouter02 = {
       recipient: this.walletClient.account.address,
       slippageTolerance: new Percent(50, 10_000),
       deadline: Math.floor(Date.now() / 1000 + 1800),
-      type: SwapType.SWAP_ROUTER_02
-    }
-    let error
-    let trade
+      type: SwapType.SWAP_ROUTER_02,
+    };
+    let error;
+    let trade;
     try {
       const response = await router.route(
-        CurrencyAmount.fromRawAmount(
-          swapToToken,
-          JSBI.BigInt(updatedAmountIn[1].toString())
-        ),
+        CurrencyAmount.fromRawAmount(swapToToken, JSBI.BigInt(updatedAmountIn[1].toString())),
         swapFromToken,
         TradeType.EXACT_OUTPUT,
-        options
-      )
+        options,
+      );
 
       if (response) {
-        const inputCurrency = response.trade.swaps[0].inputAmount
-        const outputCurrency = response.trade.swaps[response.trade.swaps.length - 1].outputAmount
+        const inputCurrency = response.trade.swaps[0].inputAmount;
+        const outputCurrency = response.trade.swaps[response.trade.swaps.length - 1].outputAmount;
 
         trade = {
           inputToken: {
-            amount: BigInt(new Fraction(inputCurrency.numerator, inputCurrency.denominator).toFixed(0, { groupSeparator: "" })),
-            address: (inputCurrency?.currency as Token).address as Address
+            amount: BigInt(
+              new Fraction(inputCurrency.numerator, inputCurrency.denominator).toFixed(0, { groupSeparator: "" }),
+            ),
+            address: (inputCurrency?.currency as Token).address as Address,
           },
           outputToken: {
-            amount: BigInt(new Fraction(outputCurrency.numerator, outputCurrency.denominator).toFixed(0, { groupSeparator: "" })),
-            address: (outputCurrency?.currency as Token).address as Address
+            amount: BigInt(
+              new Fraction(outputCurrency.numerator, outputCurrency.denominator).toFixed(0, { groupSeparator: "" }),
+            ),
+            address: (outputCurrency?.currency as Token).address as Address,
           },
-          path: this.encodeExactInputPath(response.trade.routes[0] as IRoute<Currency, Currency, Pool> & Route<Currency, Currency>),
-        }
+          path: this.encodeExactInputPath(
+            response.trade.routes[0] as IRoute<Currency, Currency, Pool> & Route<Currency, Currency>,
+          ),
+        };
       }
     } catch (e) {
-      error = `Error getting best trade - ${(e as Error).message} toToken ${swapToToken.address} fromToken ${swapFromToken.address} amount ${JSBI.BigInt(updatedAmountIn[1].toString())}`;
+      error = `Error getting best trade - ${(e as Error).message} toToken ${swapToToken.address} fromToken ${
+        swapFromToken.address
+      } amount ${JSBI.BigInt(updatedAmountIn[1].toString())}`;
       throw new Error(error);
     }
 
@@ -131,10 +134,10 @@ class UniswapProvider extends SwapProvider {
   }
 
   /**
-* Formats the swap exact input swap path
-* @param route Uniswap SDK Route
-* @returns Encoded path
-*/
+   * Formats the swap exact input swap path
+   * @param route Uniswap SDK Route
+   * @returns Encoded path
+   */
   encodeExactInputPath(route: IRoute<Currency, Currency, Pool> & Route<Currency, Currency>): Hex {
     const firstInputToken = route.input as Token;
 
@@ -170,4 +173,4 @@ class UniswapProvider extends SwapProvider {
   }
 }
 
-export default UniswapProvider
+export default UniswapProvider;

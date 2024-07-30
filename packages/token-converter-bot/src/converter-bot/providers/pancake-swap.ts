@@ -1,9 +1,10 @@
-import { CurrencyAmount, Fraction, Percent, Token, TradeType } from "@pancakeswap/sdk";
+import { CurrencyAmount, Percent, Token, TradeType } from "@pancakeswap/sdk";
 import { BaseRoute, Pool, QuoteProvider, SmartRouter, V3Pool } from "@pancakeswap/smart-router/evm";
 import { Client as UrqlClient, createClient } from "urql/core";
-import { Address, erc20Abi, encodePacked, Hex } from "viem";
-import { tokenConverterAbi } from "../../config/abis/generated";
+import { Address, Hex, encodePacked, erc20Abi } from "viem";
+
 import getConfig from "../../config";
+import { tokenConverterAbi } from "../../config/abis/generated";
 import type { SUPPORTED_CHAINS } from "../../config/chains";
 import { chains } from "../../config/chains";
 import { Message, TradeRoute } from "../types";
@@ -19,16 +20,13 @@ class PancakeSwapProvider extends SwapProvider {
   private tokens: Map<Address, Token>;
   private quoteProvider: QuoteProvider;
 
-  constructor({ subscriber, verbose }: {
-    subscriber?: (msg: Message) => void,
-    verbose?: boolean,
-  }) {
-    super({ subscriber, verbose })
+  constructor({ subscriber, verbose }: { subscriber?: (msg: Message) => void; verbose?: boolean }) {
+    super({ subscriber, verbose });
     this.v3PancakeSubgraphClient = config.swapSubgraphUrl
       ? createClient({
-        url: config.swapSubgraphUrl,
-        requestPolicy: "network-only",
-      })
+          url: config.swapSubgraphUrl,
+          requestPolicy: "network-only",
+        })
       : undefined;
 
     this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => this.publicClient });
@@ -38,11 +36,11 @@ class PancakeSwapProvider extends SwapProvider {
   }
 
   /**
- * Helper function got retrieving and caching a PancakeSwap sdk Token
- * @param address Address of the token to fetch
- * @error Throws if token can't be fetched
- *
- */
+   * Helper function got retrieving and caching a PancakeSwap sdk Token
+   * @param address Address of the token to fetch
+   * @error Throws if token can't be fetched
+   *
+   */
   async getToken(address: Address): Promise<Token> {
     if (this.tokens.has(address)) {
       return this.tokens.get(address) as Token;
@@ -68,9 +66,14 @@ class PancakeSwapProvider extends SwapProvider {
       return token;
     }
     throw new Error(`Unable to fetch token details for ${address}`);
-  };
+  }
 
-  async getBestTrade(tokenConverter: Address, swapFrom: Address, swapTo: Address, amount: bigint): Promise<[TradeRoute, readonly [bigint, bigint]]> {
+  async getBestTrade(
+    tokenConverter: Address,
+    swapFrom: Address,
+    swapTo: Address,
+    amount: bigint,
+  ): Promise<[TradeRoute, readonly [bigint, bigint]]> {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
     const candidatePools = await SmartRouter.getV3CandidatePools({
@@ -103,16 +106,18 @@ class PancakeSwapProvider extends SwapProvider {
           quoterOptimization: true,
         },
       );
-      trade = {
-        inputToken: {
-          amount: response.inputAmount.toFixed(),
-          address: response.inputAmount.currency.address
-        },
-        outputToken: {
-          amount: response.outputAmount.toFixed(),
-          address: response.outputAmount.currency.address
-        },
-        path: this.encodeExactInputPath(response.trade.routes[0]),
+      if (response) {
+        trade = {
+          inputToken: {
+            amount: response.inputAmount.toFixed(0, { groupSeparator: "" }),
+            address: response.inputAmount.currency.address,
+          },
+          outputToken: {
+            amount: response.outputAmount.toFixed(0, { groupSeparator: "" }),
+            address: response.outputAmount.currency.address,
+          },
+          path: this.encodeExactInputPath(response.routes[0]),
+        };
       }
     } catch (e) {
       error = `Error getting best trade - ${(e as Error).message}`;
@@ -124,7 +129,6 @@ class PancakeSwapProvider extends SwapProvider {
     }
 
     const priceImpact = SmartRouter.getPriceImpact(trade);
-
     if (priceImpact.greaterThan(new Percent(5n, 1000n))) {
       this.sendMessage({
         type: "GetBestTrade",
@@ -136,16 +140,21 @@ class PancakeSwapProvider extends SwapProvider {
           priceImpact: priceImpact.toFixed(),
         },
       });
-      return this.getBestTrade(tokenConverter, swapFromToken.address, swapToToken.address, (updatedAmountIn[0] * 75n) / 100n);
+      return this.getBestTrade(
+        tokenConverter,
+        swapFromToken.address,
+        swapToToken.address,
+        (updatedAmountIn[0] * 75n) / 100n,
+      );
     }
     return [trade, updatedAmountIn];
   }
 
   /**
- * Formats the swap exact input swap path
- * @param route SmartRouter Route
- * @returns Encoded path
- */
+   * Formats the swap exact input swap path
+   * @param route SmartRouter Route
+   * @returns Encoded path
+   */
   encodeExactInputPath(route: BaseRoute): Hex {
     const firstInputToken: Token = route.inputAmount.currency;
 
@@ -182,4 +191,3 @@ class PancakeSwapProvider extends SwapProvider {
 }
 
 export default PancakeSwapProvider;
-
