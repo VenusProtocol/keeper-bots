@@ -6678,7 +6678,7 @@ __metadata:
     "@graphql-mesh/graphql": ^0.98.4
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
-    "@venusprotocol/token-converter-bot": 1.1.0
+    "@venusprotocol/token-converter-bot": 1.1.1
     "@venusprotocol/venus-protocol": ^9.1.0
     ava: ^5.2.0
     chalk: ^5.2.0
@@ -6976,7 +6976,28 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/token-converter-bot@1.1.0, @venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
+"@venusprotocol/token-converter-bot@npm:1.1.1":
+  version: 1.1.1
+  resolution: "@venusprotocol/token-converter-bot@npm:1.1.1"
+  dependencies:
+    "@graphprotocol/client-cli": 3.0.0
+    "@pancakeswap/sdk": ^5.8.0
+    "@pancakeswap/smart-router": ^5.1.3
+    "@pancakeswap/v3-core": ^1.0.2
+    "@venusprotocol/keeper-bot-contracts": 1.1.0
+    "@venusprotocol/oracle": ^2.0.0
+    "@wagmi/cli": ^2.0.4
+    abitype: 0.10.0
+    graphql: ^16.8.1
+    hardhat: ^2.19.5
+    urql: ^3.0.3
+    viem: ^2.7.1
+    winston: ^3.11.0
+  checksum: f080922deeada06d9420b7601e555857ec6313e3875504a1daa97b3af3a44bd8d416e03e537e18a0db86acb1dc7ab82714d0b1e7bbac1861e9f7feb97cb2b687
+  languageName: node
+  linkType: hard
+
+"@venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/token-converter-bot@workspace:packages/token-converter-bot"
   dependencies:
