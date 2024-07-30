@@ -1,5 +1,7 @@
 {
   "name": "ethereum",
   "chainId": "1",
-  "addresses": {}
+  "addresses": {
+    "TokenConverterOperator": "0x6eF49b4e0772Fe78128F981d42D54172b55eCF9F"
+  }
 }
