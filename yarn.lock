@@ -6977,7 +6977,7 @@ __metadata:
     "@graphql-mesh/graphql": ^0.98.4
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
-    "@venusprotocol/token-converter-bot": 1.1.1
+    "@venusprotocol/token-converter-bot": ^1.1.1
     "@venusprotocol/venus-protocol": ^9.1.0
     ava: ^5.2.0
     chalk: ^5.2.0
@@ -7025,7 +7025,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/isolated-pools@npm:^3.0.0, @venusprotocol/isolated-pools@npm:^3.3.0":
+"@venusprotocol/isolated-pools@npm:^3.3.0":
   version: 3.3.0
   resolution: "@venusprotocol/isolated-pools@npm:3.3.0"
   dependencies:
@@ -7042,17 +7042,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/keeper-bot-contracts@npm:1.1.0":
-  version: 1.1.0
-  resolution: "@venusprotocol/keeper-bot-contracts@npm:1.1.0"
+"@venusprotocol/keeper-bot-contracts@npm:1.2.0-dev.4":
+  version: 1.2.0-dev.4
+  resolution: "@venusprotocol/keeper-bot-contracts@npm:1.2.0-dev.4"
   dependencies:
     "@openzeppelin/contracts": 4.9.3
     "@openzeppelin/contracts-upgradeable": 4.9.3
+    "@uniswap/permit2-sdk": ^1.2.1
+    "@uniswap/v3-core": ^1.0.1
     "@venusprotocol/governance-contracts": ^2.0.0
-    "@venusprotocol/isolated-pools": ^3.0.0
-    "@venusprotocol/protocol-reserve": ^2.0.0
-    "@venusprotocol/venus-protocol": ^8.0.0
-  checksum: 6f668b9b0e7f2d8893c7c513519e47cb9905fc1d9d2b1aaa63e485cf2f78a1272f0dc0a881075cde6f94fe95f81c3c1134519666434d47d480e009e1f5dd7cf6
+    "@venusprotocol/isolated-pools": ^3.3.0
+    "@venusprotocol/protocol-reserve": ^2.3.0-dev.1
+    "@venusprotocol/venus-protocol": ^9.1.0
+  checksum: dd87949cc6ed93f7117758552e2fd11aa7e20c9599bfc35c87ce15c88e545b64f6f589212cabe8eedd964e84998d14c2363ae7d9d6d71c5b33c3c2eab768a949
   languageName: node
   linkType: hard
 
@@ -7221,7 +7223,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/solidity-utilities@npm:^2.0.0, @venusprotocol/solidity-utilities@npm:^2.0.1, @venusprotocol/solidity-utilities@npm:^2.0.3":
+"@venusprotocol/solidity-utilities@npm:^2.0.0, @venusprotocol/solidity-utilities@npm:^2.0.3":
   version: 2.0.3
   resolution: "@venusprotocol/solidity-utilities@npm:2.0.3"
   checksum: 5f196d61989e1b276b6f2d515c0410f3af07deee9bec58a6657e61d46b1810b2da6e2880d1ec737fd410f23a035c2db47b6a3ab2274cac229cabfcf03d4424ac
@@ -7258,7 +7260,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/token-converter-bot@1.1.1, @venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
+"@venusprotocol/token-converter-bot@^1.1.1, @venusprotocol/token-converter-bot@workspace:packages/token-converter-bot":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/token-converter-bot@workspace:packages/token-converter-bot"
   dependencies:
@@ -7276,9 +7278,8 @@ __metadata:
     "@uniswap/sdk": ^3.0.3
     "@uniswap/sdk-core": ^5.3.1
     "@uniswap/smart-order-router": ^3.36.0
-    "@venusprotocol/keeper-bot-contracts": 1.1.0
+    "@venusprotocol/keeper-bot-contracts": 1.2.0-dev.4
     "@venusprotocol/oracle": ^2.0.0
-    "@venusprotocol/solidity-utilities": ^1.1.0
     "@wagmi/cli": ^2.0.4
     abitype: 0.10.0
     eslint: ^7.32.0
@@ -7330,24 +7331,6 @@ __metadata:
     dotenv: ^16.0.1
     module-alias: ^2.2.2
   checksum: 0a39304b6f2e0db05a20dacf6d678f3245be878a121e7d1ddeb503c28974dea9cbec0228be3d03f77abb97d1adb8e6e8ad8708cb730a5833e62c4e6735fb6eea
-  languageName: node
-  linkType: hard
-
-"@venusprotocol/venus-protocol@npm:^8.0.0":
-  version: 8.1.0
-  resolution: "@venusprotocol/venus-protocol@npm:8.1.0"
-  dependencies:
-    "@nomicfoundation/hardhat-ethers": ^3.0.0
-    "@openzeppelin/contracts": 4.9.3
-    "@openzeppelin/contracts-upgradeable": ^4.8.0
-    "@venusprotocol/governance-contracts": ^2.0.0
-    "@venusprotocol/protocol-reserve": ^2.0.0
-    "@venusprotocol/solidity-utilities": ^2.0.1
-    "@venusprotocol/token-bridge": ^2.0.0
-    bignumber.js: ^9.1.2
-    dotenv: ^16.0.1
-    module-alias: ^2.2.2
-  checksum: d6520c254944bf85b157d0d771ef4bafe75f31a9879f724ae9b68564ab216b8977d3dc3dd245cb3c04a2318866ce11c6ce78ea4aeddb4893fe4f90c6fc683fae
   languageName: node
   linkType: hard
 
