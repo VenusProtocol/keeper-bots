@@ -3,6 +3,6 @@
   "chainId": "56",
   "addresses": {
     "LiquidationOperator": "0x35c7c3a10407bdc5b611587b2d28fadcd9f6a947",
-    "TokenConverterOperator": "0x9Db8ABe20D004ab172DBE07c6Ea89680A5a3c337"
+    "TokenConverterOperator": "0xa0EC2A2489D57CD8385A565F38168cC539586B07"
   }
 }

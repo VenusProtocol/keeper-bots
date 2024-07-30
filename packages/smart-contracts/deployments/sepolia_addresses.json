@@ -1,5 +1,7 @@
 {
   "name": "sepolia",
   "chainId": "11155111",
-  "addresses": {}
+  "addresses": {
+    "TokenConverterOperator": "0xD5c00F011F95E36631F3a99cc94274888E76755C"
+  }
 }
