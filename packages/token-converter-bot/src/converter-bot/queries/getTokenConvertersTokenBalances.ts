@@ -3,10 +3,13 @@ import "dotenv/config";
 import { Address, decodeFunctionResult, encodeFunctionData, erc20Abi, parseAbi } from "viem";
 
 import { protocolShareReserveAbi } from "../../config/abis/generated";
-import getAddresses, { getUnderlyingByComptroller, getUnderlyingToVTokens } from "../../config/addresses";
+import getAddresses from "../../config/addresses";
 import getPublicClient from "../../config/clients/publicClient";
 import { MULTICALL_ABI, MULTICALL_ADDRESS } from "../constants";
+import getCoreMarkets from "./getCoreMarkets";
+import getIsolatedMarkets from "./getIsolatedMarkets";
 import { TokenConverterConfigs } from "./getTokenConverterConfigs";
+import getVTokensFromUnderlying from "./getVTokensFromUnderlying";
 
 export interface BalanceResult {
   tokenConverter: Address;
@@ -19,7 +22,10 @@ export interface BalanceResult {
   accountBalanceAssetOut: bigint;
 }
 
-const formatResults = (results: bigint[], tokenConverterConfigs: TokenConverterConfigs): BalanceResult[] => {
+const formatResults = async (
+  results: bigint[],
+  tokenConverterConfigs: TokenConverterConfigs,
+): Promise<BalanceResult[]> => {
   const chunkSize = 2;
   const balances: BalanceResult[] = [];
 
@@ -31,9 +37,12 @@ const formatResults = (results: bigint[], tokenConverterConfigs: TokenConverterC
 
     const curr = results.slice(i, i + chunkSize);
 
-    const vToken = getUnderlyingToVTokens()[assetOut];
+    const { coreVTokens, isolatedVTokens } = await getVTokensFromUnderlying(assetOut);
     const balance = {
-      assetOutVTokens: vToken,
+      assetOutVTokens: {
+        core: coreVTokens[0].id as Address,
+        isolated: isolatedVTokens.map(v => [v.pool.id, v.id] as [Address, Address]),
+      },
       tokenConverter,
       assetIn,
       assetOut: { address: assetOut, balance: BigInt(curr[0].toString()) },
@@ -45,11 +54,13 @@ const formatResults = (results: bigint[], tokenConverterConfigs: TokenConverterC
   return balances;
 };
 
-const reduceConfigsToComptrollerAndTokens = (tokenConfigs: TokenConverterConfigs) => {
-  const underlyingByComptrollerEntries = Object.entries(getUnderlyingByComptroller());
+const reduceConfigsToComptrollerAndTokens = async (tokenConfigs: TokenConverterConfigs) => {
+  const corePoolMarkets = await getCoreMarkets();
+  const isolatedPoolsMarkets = await getIsolatedMarkets();
+  const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
   const pools = tokenConfigs.reduce((acc, curr) => {
-    for (const [comptroller, tokens] of underlyingByComptrollerEntries) {
-      if (tokens.includes(curr.tokenAddressOut) && acc[comptroller]) {
+    for (const [comptroller, tokens] of allPools) {
+      if (tokens.findIndex(t => t.underlyingAddress === curr.tokenAddressOut) && acc[comptroller]) {
         acc[comptroller].push(curr.tokenAddressOut);
       } else {
         acc[comptroller] = [curr.tokenAddressOut];
@@ -88,7 +99,7 @@ export const getTokenConvertersTokenBalances = async (
 ): Promise<{ results: BalanceResult[]; blockNumber: bigint }> => {
   const addresses = getAddresses();
   const publicClient = getPublicClient();
-  const pools = reduceConfigsToComptrollerAndTokens(tokenConverterConfigs);
+  const pools = await reduceConfigsToComptrollerAndTokens(tokenConverterConfigs);
   let releaseFundsCalls: { target: string; allowFailure: boolean; callData: string }[] = [];
   if (releaseFunds) {
     releaseFundsCalls = Object.entries(pools).map(node => ({
@@ -131,7 +142,7 @@ export const getTokenConvertersTokenBalances = async (
   const results = result.map(({ returnData }: { success: boolean; returnData: string }) =>
     decodeBalanceOfData(returnData as `0x${string}`),
   );
-  const formattedResults = formatResults(results, tokenConverterConfigs);
+  const formattedResults = await formatResults(results, tokenConverterConfigs);
 
   return { results: formattedResults, blockNumber };
 };

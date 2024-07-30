@@ -1,6 +1,6 @@
 {
   "name": "@venusprotocol/keeper-bot-contracts",
-  "version": "1.1.0",
+  "version": "1.2.0-dev.4",
   "description": "Smart contracts to support keeper bot tasks",
   "scripts": {
     "test": "hardhat test",
@@ -26,10 +26,12 @@
   "dependencies": {
     "@openzeppelin/contracts": "4.9.3",
     "@openzeppelin/contracts-upgradeable": "4.9.3",
+    "@uniswap/permit2-sdk": "^1.2.1",
+    "@uniswap/v3-core": "^1.0.1",
     "@venusprotocol/governance-contracts": "^2.0.0",
-    "@venusprotocol/isolated-pools": "^3.0.0",
-    "@venusprotocol/protocol-reserve": "^2.0.0",
-    "@venusprotocol/venus-protocol": "^8.0.0"
+    "@venusprotocol/isolated-pools": "^3.3.0",
+    "@venusprotocol/protocol-reserve": "^2.3.0-dev.1",
+    "@venusprotocol/venus-protocol": "^9.1.0"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.7.0",
@@ -46,7 +48,6 @@
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",
-    "@venusprotocol/oracle": "^2.0.0",
     "@venusprotocol/solidity-utilities": "^2.0.0",
     "@wagmi/cli": "^2.0.4",
     "chai": "^4.3.10",

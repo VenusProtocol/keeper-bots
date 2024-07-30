@@ -3,17 +3,16 @@ import { Address } from "viem";
 import getConfig from "../../../config";
 import SubgraphClient from "../../../subgraph-client";
 
-const getTokenConverterByAssetInAndAssetOutAndConverter = async (
+const getTokenConverterConfigsByAssetInAndAssetOutAndConverter = async (
   assetIn: Address,
   assetOut: Address,
   tokenConverter: Address,
 ) => {
-  const subgraphClient = new SubgraphClient(getConfig().subgraphUrl);
-  const {
-    data: { tokenConverterConfigs },
-  } = await subgraphClient.getTokenConverterByAssetInAndAssetOutAndConverter(assetIn, assetOut, tokenConverter);
+  const subgraphClient = new SubgraphClient(getConfig().protocolReserveSubgraphUrl);
+  const { data: { tokenConverterConfigs = [] } = {} } =
+    await subgraphClient.getTokenConverterConfigsByAssetInAndAssetOutAndConverter(assetIn, assetOut, tokenConverter);
 
   return tokenConverterConfigs;
 };
 
-export default getTokenConverterByAssetInAndAssetOutAndConverter;
+export default getTokenConverterConfigsByAssetInAndAssetOutAndConverter;

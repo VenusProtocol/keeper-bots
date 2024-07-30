@@ -2,7 +2,7 @@ import { useEffect, useState, useReducer } from "react";
 import { option } from "pastel";
 import { Box, Spacer, Text, useApp, useStderr } from "ink";
 import zod from "zod";
-import { Address, parseUnits } from "viem";
+import { parseUnits } from "viem";
 import { TokenConverter } from "@venusprotocol/token-converter-bot";
 import { stringifyBigInt, getConverterConfigId } from "../utils/index.js";
 import { Options, Title, BorderBox } from "../components/index.js";
@@ -174,11 +174,7 @@ export default function Convert({ options }: Props) {
         await Promise.allSettled(
           potentialConversions.map(async (t: any) => {
             let amountOut = t.assetOut.balance;
-            const vTokenAddress =
-              t.assetOutVTokens.core ||
-              ((t.assetOutVTokens.isolated &&
-                t.assetOutVTokens.isolated[0] &&
-                t.assetOutVTokens.isolated[0][1]) as Address);
+            const vTokenAddress = t.assetOutVTokens[0];
             const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(
               t.assetOut.address,
               vTokenAddress,

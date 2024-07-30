@@ -4,10 +4,10 @@ import getConfig from "../../../config";
 import SubgraphClient from "../../../subgraph-client";
 
 const readTokenConverterConfigs = async (assetOut: Address) => {
-  const subgraphClient = new SubgraphClient(getConfig().subgraphUrl);
-  const {
-    data: { tokenConverterConfigs },
-  } = await subgraphClient.getTokenConverterByAssetOut(assetOut);
+  const subgraphClient = new SubgraphClient(getConfig().protocolReserveSubgraphUrl);
+  const { data: { tokenConverterConfigs = [] } = {} } = await subgraphClient.getTokenConverterConfigsByAssetOut(
+    assetOut,
+  );
 
   return tokenConverterConfigs;
 };

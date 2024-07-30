@@ -1,4 +1,4 @@
-query TokenConverter($id: String!) {
+query TokenConverterConfigsByTokenConverter($id: String!) {
   tokenConverterConfigs(
       where: {
         or: [{ access: ALL, tokenConverter:  $id, }, { access: ONLY_FOR_USERS, tokenConverter:  $id, }],

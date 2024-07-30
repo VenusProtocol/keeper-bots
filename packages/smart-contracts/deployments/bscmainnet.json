@@ -263,13 +263,18 @@
       ]
     },
     "TokenConverterOperator": {
-      "address": "0x9Db8ABe20D004ab172DBE07c6Ea89680A5a3c337",
+      "address": "0xa0EC2A2489D57CD8385A565F38168cC539586B07",
       "abi": [
         {
           "inputs": [
             {
-              "internalType": "contract ISmartRouter",
-              "name": "swapRouter_",
+              "internalType": "contract IUniswapRouter",
+              "name": "uniswapSwapRouter_",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IPancakeSwapRouter",
+              "name": "pcsSwapRouter_",
               "type": "address"
             }
           ],
@@ -383,7 +388,7 @@
         },
         {
           "inputs": [],
-          "name": "DEPLOYER",
+          "name": "PCS_DEPLOYER",
           "outputs": [
             {
               "internalType": "address",
@@ -396,10 +401,36 @@
         },
         {
           "inputs": [],
-          "name": "SWAP_ROUTER",
+          "name": "PCS_ROUTER",
           "outputs": [
             {
-              "internalType": "contract ISmartRouter",
+              "internalType": "contract IPancakeSwapRouter",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "UNISWAP_FACTORY",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "UNISWAP_ROUTER",
+          "outputs": [
+            {
+              "internalType": "contract IUniswapRouter",
               "name": "",
               "type": "address"
             }
@@ -412,12 +443,17 @@
             {
               "components": [
                 {
+                  "internalType": "enum LiquidityProvider",
+                  "name": "liquidityProvider",
+                  "type": "uint8"
+                },
+                {
                   "internalType": "address",
                   "name": "beneficiary",
                   "type": "address"
                 },
                 {
-                  "internalType": "contract IERC20",
+                  "internalType": "Token",
                   "name": "tokenToReceiveFromConverter",
                   "type": "address"
                 },
@@ -432,7 +468,7 @@
                   "type": "int256"
                 },
                 {
-                  "internalType": "contract IERC20",
+                  "internalType": "Token",
                   "name": "tokenToSendToConverter",
                   "type": "address"
                 },
@@ -481,6 +517,29 @@
             }
           ],
           "name": "pancakeV3SwapCallback",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "int256",
+              "name": "amount0Delta",
+              "type": "int256"
+            },
+            {
+              "internalType": "int256",
+              "name": "amount1Delta",
+              "type": "int256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "data",
+              "type": "bytes"
+            }
+          ],
+          "name": "uniswapV3SwapCallback",
           "outputs": [],
           "stateMutability": "nonpayable",
           "type": "function"

@@ -190,7 +190,10 @@ describe("Token Converter", () => {
     test("should successfully simulate accrue interest", async () => {
       const { tokenConverter, subscriberMock } = createTokenConverterInstance({ simulate: true });
 
-      await tokenConverter.accrueInterest([addresses.vUSDT, addresses.vUSDC]);
+      await tokenConverter.accrueInterest([
+        { vTokenAddress: addresses.vUSDT, underlyingAddress: addresses.USDT },
+        { vTokenAddress: addresses.vUSDC, underlyingAddress: addresses.USDC },
+      ]);
 
       expect(tokenConverter.publicClient.simulateContract).toHaveBeenNthCalledWith(1, {
         account: tokenConverter.walletClient.account.address,
@@ -218,7 +221,10 @@ describe("Token Converter", () => {
     test("should successfully accrue interest", async () => {
       const { tokenConverter, subscriberMock } = createTokenConverterInstance();
 
-      await tokenConverter.accrueInterest([addresses.vUSDT, addresses.vUSDC]);
+      await tokenConverter.accrueInterest([
+        { vTokenAddress: addresses.vUSDT, underlyingAddress: addresses.USDT },
+        { vTokenAddress: addresses.vUSDC, underlyingAddress: addresses.USDC },
+      ]);
 
       expect(tokenConverter.walletClient.writeContract).toHaveBeenNthCalledWith(1, {
         address: addresses.vUSDT,
@@ -247,7 +253,10 @@ describe("Token Converter", () => {
         throw new Error("NETWORK ERROR");
       });
 
-      await tokenConverter.accrueInterest([addresses.vUSDT, addresses.vUSDC]);
+      await tokenConverter.accrueInterest([
+        { vTokenAddress: addresses.vUSDT, underlyingAddress: addresses.USDT },
+        { vTokenAddress: addresses.vUSDC, underlyingAddress: addresses.USDC },
+      ]);
 
       expect(subscriberMock).toHaveBeenCalledWith({
         type: "AccrueInterest",
