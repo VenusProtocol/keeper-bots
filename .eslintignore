@@ -4,5 +4,5 @@ cache
 coverage
 dist
 typechain
-packages/token-converter-bot/src/config/abis/generated.ts
-packages/token-converter-bot/subgraph-client/.graphqlclient
+packages/keeper-bots/src/config/abis/generated.ts
+packages/keeper-bots/subgraph-client/.graphqlclient
