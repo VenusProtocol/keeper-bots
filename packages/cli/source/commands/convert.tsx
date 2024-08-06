@@ -3,10 +3,11 @@ import { option } from "pastel";
 import { Box, Spacer, Text, useApp, useStderr } from "ink";
 import zod from "zod";
 import { parseUnits } from "viem";
-import { TokenConverter } from "@venusprotocol/token-converter-bot";
+import { TokenConverter, PancakeSwapProvider, UniswapProvider } from "@venusprotocol/token-converter-bot";
 import { stringifyBigInt, getConverterConfigId } from "../utils/index.js";
 import { Options, Title, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/convert.js";
+import getEnvValue from "../utils/getEnvValue.js";
 import FullScreenBox from "../components/fullScreenBox.js";
 import { addressValidation } from "../utils/validation.js";
 
@@ -146,11 +147,15 @@ export default function Convert({ options }: Props) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const network = getEnvValue("NETWORK");
     const convert = async () => {
       const tokenConverter = new TokenConverter({
         subscriber: dispatch,
         simulate: !!simulate,
         verbose: debug,
+        swapProvider: network?.includes("bsc")
+          ? new PancakeSwapProvider({ subscriber: dispatch })
+          : new UniswapProvider({ subscriber: dispatch }),
       });
 
       do {
@@ -171,7 +176,7 @@ export default function Convert({ options }: Props) {
         await Promise.allSettled(
           potentialConversions.map(async (t: any) => {
             let amountOut = t.assetOut.balance;
-            const vTokenAddress = t.assetOutVTokens[0];
+            const vTokenAddress = t.assetOutVTokens.core || t.assetOutVTokens.isolated[1];
             const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(
               t.assetOut.address,
               vTokenAddress,
@@ -189,6 +194,7 @@ export default function Convert({ options }: Props) {
                 t.assetIn,
                 amountOut,
               );
+
               const { trade, amount, minIncome } = arbitrageArgs || {
                 trade: undefined,
                 amount: 0n,
@@ -196,6 +202,7 @@ export default function Convert({ options }: Props) {
               };
 
               const maxMinIncome = ((amount * BigInt(10000 + minIncomeBp)) / 10000n - amount) * -1n;
+
               if (trade && ((profitable && minIncome > 0n) || !profitable)) {
                 dispatch({
                   type: "ExecuteTrade",
@@ -209,6 +216,7 @@ export default function Convert({ options }: Props) {
                     maxMinIncome,
                   },
                 });
+
                 await tokenConverter.arbitrage(t.tokenConverter, trade, amount, minIncome);
               } else if (t.accountBalanceAssetOut < minIncome * -1n) {
                 dispatch({
@@ -344,7 +352,9 @@ export default function Convert({ options }: Props) {
                 )}
                 {msg.type === "PotentialConversions" ? (
                   <Box flexGrow={1} flexDirection="column" minWidth={60} marginRight={1} marginLeft={1}>
-                    <Text>{msg.context.conversions.length} Trades found</Text>
+                    <Text>
+                      {msg.context.conversions.length} {msg.context.conversions.length > 1 ? "Trades" : "Trade"} found
+                    </Text>
                   </Box>
                 ) : null}
               </Box>

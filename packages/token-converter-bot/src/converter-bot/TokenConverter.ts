@@ -1,143 +1,61 @@
-import { Currency, CurrencyAmount, Fraction, Percent, Token, TradeType } from "@pancakeswap/sdk";
-import { BaseRoute, Pool, QuoteProvider, SmartRouter, SmartRouterTrade, V3Pool } from "@pancakeswap/smart-router/evm";
-import { Client as UrqlClient, createClient } from "urql/core";
-import { Address, BaseError, ContractFunctionRevertedError, Hex, encodePacked, erc20Abi, formatUnits } from "viem";
+import { Fraction } from "@pancakeswap/sdk";
+import { Address, BaseError, ContractFunctionRevertedError, erc20Abi, formatUnits } from "viem";
 
 import getConfig from "../config";
 import {
   coreVTokenAbi,
   poolLensAbi,
   protocolShareReserveAbi,
-  tokenConverterAbi,
   tokenConverterOperatorAbi,
   vBnbAdminAbi,
   venusLensAbi,
 } from "../config/abis/generated";
 import getAddresses from "../config/addresses";
 import type { SUPPORTED_CHAINS } from "../config/chains";
-import { chains } from "../config/chains";
 import getPublicClient from "../config/clients/publicClient";
 import getWalletClient from "../config/clients/walletClient";
 import logger from "./logger";
+import { SwapProvider } from "./providers";
 import getConverterConfigs from "./queries/getTokenConverterConfigs";
 import getTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
-import { MarketAddresses } from "./types";
+import { GetBestTradeMessage, MarketAddresses, Message, TradeRoute } from "./types";
+
+const config = getConfig();
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
-const MAX_HOPS = 5;
-
-const getOutputCurrency = (pool: V3Pool, inputToken: Token): Token => {
-  const { token0, token1 } = pool;
-  return token0.equals(inputToken) ? token1 : token0;
-};
-
-export interface DefaultMessage {
-  trx: string | undefined;
-  error: string | undefined;
-  blockNumber?: bigint | undefined;
-  context?: unknown;
-}
-
-export interface ReduceReservesMessage extends DefaultMessage {
-  type: "ReduceReserves";
-}
-
-export interface ReleaseFundsMessage extends DefaultMessage {
-  type: "ReleaseFunds";
-  context: [Address, readonly Address[]];
-}
-
-export interface ArbitrageMessage extends DefaultMessage {
-  type: "Arbitrage";
-  context: {
-    beneficiary: Address;
-    tokenToReceiveFromConverter: Address;
-    amount: bigint;
-    minIncome: bigint;
-    tokenToSendToConverter: Address;
-    converter: string;
-    path: Address;
-    deadline: bigint;
-  };
-}
-
-export interface GetBestTradeMessage extends DefaultMessage {
-  type: "GetBestTrade";
-  context: {
-    converter: string;
-    tradeAmount?: { amountIn: bigint | undefined; amountOut: bigint | undefined };
-    pancakeSwapTrade?: {
-      inputToken: { amount: string; token: string };
-      outputToken: { amount: string; token: string };
-    };
-    tokenToReceiveFromConverter: string;
-    tokenToSendToConverter: string;
-    priceImpact?: string;
-  };
-}
-
-export interface PotentialConversionsMessage extends DefaultMessage {
-  type: "PotentialConversions";
-  trx: undefined;
-  context: { conversions: BalanceResult[] };
-}
-
-export interface AccrueInterestMessage {
-  type: "AccrueInterest";
-  trx: string | undefined;
-  error: string | string[] | undefined;
-  blockNumber?: bigint | undefined;
-  context: undefined;
-}
-
-export type Message =
-  | ReduceReservesMessage
-  | ReleaseFundsMessage
-  | PotentialConversionsMessage
-  | AccrueInterestMessage
-  | ArbitrageMessage
-  | GetBestTradeMessage;
 
 export class TokenConverter {
   private chainName: SUPPORTED_CHAINS;
   private addresses: ReturnType<typeof getAddresses>;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
-  private v3SubgraphClient: UrqlClient | undefined;
-  private quoteProvider: QuoteProvider;
-  private tokens: Map<Address, Currency>;
   private subscriber: undefined | ((msg: Message) => void);
   private simulate: boolean;
   private verbose: boolean;
+  private swapProvider: SwapProvider;
   public publicClient: ReturnType<typeof getPublicClient>;
   public walletClient: ReturnType<typeof getWalletClient>;
 
   constructor({
     subscriber,
+    swapProvider,
     simulate,
     verbose = false,
   }: {
     subscriber?: (msg: Message) => void;
+    swapProvider: SwapProvider;
     simulate: boolean;
     verbose: boolean;
   }) {
-    const config = getConfig();
     this.addresses = getAddresses();
-    this.chainName = config.network;
+    this.swapProvider = swapProvider;
+    this.chainName = config.network.name;
     this.subscriber = subscriber;
     this.operator = {
       address: this.addresses.TokenConverterOperator,
       abi: tokenConverterOperatorAbi,
     };
-    this.v3SubgraphClient = config.pancakeSwapSubgraphUrl
-      ? createClient({
-          url: config.pancakeSwapSubgraphUrl,
-          requestPolicy: "network-only",
-        })
-      : undefined;
     this.publicClient = getPublicClient();
     this.walletClient = getWalletClient();
-    this.quoteProvider = SmartRouter.createQuoteProvider({ onChainProvider: () => this.publicClient });
-    this.tokens = new Map();
     this.simulate = simulate;
     this.verbose = verbose;
   }
@@ -168,42 +86,9 @@ export class TokenConverter {
   }
 
   /**
-   * Helper function got retrieving and caching a PancackeSwap sdk Token
-   * @param address Address of the token to fetch
-   * @error Throws if token can't be fetched
-   *
-   */
-  private getToken = async (address: Address): Promise<Currency> => {
-    if (this.tokens.has(address)) {
-      return this.tokens.get(address) as Currency;
-    }
-    const [{ result: decimals }, { result: symbol }] = await this.publicClient.multicall({
-      contracts: [
-        {
-          address,
-          abi: erc20Abi,
-          functionName: "decimals",
-        },
-        {
-          address,
-          abi: erc20Abi,
-          functionName: "symbol",
-        },
-      ],
-    });
-
-    if (decimals && symbol) {
-      const token = new Token(chains[this.chainName].id, address, decimals, symbol);
-      this.tokens.set(address, token);
-      return token;
-    }
-    throw new Error(`Unable to fetch token details for ${address}`);
-  };
-
-  /**
    * Create a trade that will provide required amount in for exact output
    * @param tokenConverter Token converter to use
-   * @param swapFrom Token we want to receive to the converter
+   * @param swapFrom Token we want to receive from the converter
    * @param swapTo Token we want to send to the converter
    * @param amount The amount we will receive from the converter of swapFrom
    * @returns [SmartRouterTrade, [amount transferred out of converter, amount transferred in]]
@@ -213,104 +98,8 @@ export class TokenConverter {
     swapFrom: Address,
     swapTo: Address,
     amount: bigint,
-  ): Promise<[SmartRouterTrade<TradeType.EXACT_OUTPUT>, readonly [bigint, bigint]]> {
-    const swapFromToken = await this.getToken(swapFrom);
-    const swapToToken = await this.getToken(swapTo);
-
-    // [amount transferred out of converter, amount transferred in]
-    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
-      address: tokenConverter,
-      abi: tokenConverterAbi,
-      functionName: "getUpdatedAmountIn",
-      args: [amount, swapTo, swapFrom],
-    });
-
-    const candidatePools = await SmartRouter.getV3CandidatePools({
-      onChainProvider: () => this.publicClient,
-      subgraphProvider: () => this.v3SubgraphClient,
-      currencyA: swapFromToken,
-      currencyB: swapToToken,
-    });
-    let trade;
-    let error;
-
-    try {
-      trade = await SmartRouter.getBestTrade(
-        CurrencyAmount.fromRawAmount(swapToToken, updatedAmountIn[1]),
-        swapFromToken,
-        TradeType.EXACT_OUTPUT,
-        {
-          gasPriceWei: () => this.publicClient.getGasPrice(),
-          maxHops: MAX_HOPS,
-          maxSplits: 0,
-          poolProvider: SmartRouter.createStaticPoolProvider(candidatePools),
-          quoteProvider: this.quoteProvider,
-          quoterOptimization: true,
-        },
-      );
-    } catch (e) {
-      error = `Error getting best trade - ${(e as Error).message}`;
-      throw new Error(error);
-    }
-
-    if (!trade) {
-      throw new Error("No trade found");
-    }
-
-    const priceImpact = SmartRouter.getPriceImpact(trade);
-
-    if (priceImpact.greaterThan(new Percent(5n, 1000n))) {
-      this.sendMessage({
-        type: "GetBestTrade",
-        error: "High price impact",
-        context: {
-          converter: tokenConverter,
-          tokenToReceiveFromConverter: swapFrom,
-          tokenToSendToConverter: swapTo,
-          priceImpact: priceImpact.toFixed(),
-        },
-      });
-      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[0] * 75n) / 100n);
-    }
-    return [trade as SmartRouterTrade<TradeType.EXACT_OUTPUT>, updatedAmountIn];
-  }
-  /**
-   * Formats the swap exact input swap path
-   * @param route PancakeSwap SmartRouter Route
-   * @returns Encoded path
-   */
-  encodeExactInputPath(route: BaseRoute): Hex {
-    const firstInputToken: Token = route.inputAmount.currency;
-
-    const { path, types } = route.pools.reduce(
-      (
-        // eslint-disable-next-line @typescript-eslint/no-shadow
-        { inputToken, path, types }: { inputToken: Token; path: (string | number)[]; types: string[] },
-        pool_: Pool,
-        index: number,
-      ): { inputToken: Token; path: (string | number)[]; types: string[] } => {
-        if (!("fee" in pool_)) {
-          throw new Error("Undefined fee");
-        }
-        const pool = pool_ as V3Pool;
-        const outputToken = getOutputCurrency(pool, inputToken);
-        if (index === 0) {
-          return {
-            inputToken: outputToken,
-            types: ["address", "uint24", "address"],
-            path: [inputToken.address, pool.fee, outputToken.address],
-          };
-        }
-        return {
-          inputToken: outputToken,
-          types: [...types, "uint24", "address"],
-          path: [...path, pool.fee, outputToken.address],
-        };
-      },
-      { inputToken: firstInputToken, path: [], types: [] },
-    );
-
-    return encodePacked(types.reverse(), path.reverse());
+  ): Promise<[TradeRoute, readonly [bigint, bigint]]> {
+    return this.swapProvider.getBestTrade(tokenConverter, swapFrom, swapTo, amount);
   }
 
   /**
@@ -552,7 +341,13 @@ export class TokenConverter {
         functionName: "approve",
         args: [this.operator.address, amount],
       });
-      await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 });
+      const confirmations = {
+        bscmainnet: 4,
+        bsctestnet: 4,
+        ethereum: 12,
+        sepolia: 12,
+      };
+      await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: confirmations[this.chainName] });
     }
   }
 
@@ -563,12 +358,7 @@ export class TokenConverter {
    * @param amount Amount of token to receive from converter
    * @param expectedMinIncome Profitability or cost of conversion in token to receive
    */
-  async arbitrage(
-    converterAddress: Address,
-    trade: SmartRouterTrade<TradeType.EXACT_OUTPUT>,
-    amount: bigint,
-    minIncome: bigint,
-  ) {
+  async arbitrage(converterAddress: Address, trade: TradeRoute, amount: bigint, minIncome: bigint) {
     const beneficiary = this.walletClient.account.address;
 
     const block = await this.publicClient.getBlock();
@@ -577,13 +367,14 @@ export class TokenConverter {
       functionName: "convert" as const,
       args: [
         {
+          liquidityProvider: this.swapProvider.liquidityProviderId,
           beneficiary,
-          tokenToReceiveFromConverter: trade.inputAmount.currency.address as Address,
+          tokenToReceiveFromConverter: trade.inputToken.address as Address,
           amount,
           minIncome,
-          tokenToSendToConverter: trade.outputAmount.currency.address as Address,
+          tokenToSendToConverter: trade.outputToken.address as Address,
           converter: converterAddress,
-          path: this.encodeExactInputPath(trade.routes[0]),
+          path: trade.path,
           deadline: block.timestamp + REVERT_IF_NOT_MINED_AFTER,
         },
       ] as const,
@@ -597,7 +388,7 @@ export class TokenConverter {
     try {
       if (minIncome < 0n && !this.simulate) {
         await this.checkAndRequestAllowance(
-          trade.inputAmount.currency.address,
+          trade.inputToken.address,
           this.walletClient.account.address,
           this.addresses.TokenConverterOperator,
           -minIncome,
@@ -647,23 +438,22 @@ export class TokenConverter {
     } catch (e) {
       error = (e as Error).message;
     } finally {
-      let tradeContext: Pick<GetBestTradeMessage["context"], "tradeAmount" | "pancakeSwapTrade"> = {};
+      let tradeContext: Pick<GetBestTradeMessage["context"], "tradeAmount" | "swap"> = {};
       if (trade && tradeAmount) {
         tradeContext = {
           tradeAmount: { amountOut: tradeAmount && tradeAmount[0], amountIn: tradeAmount && tradeAmount[1] },
-          pancakeSwapTrade: {
+          swap: {
             inputToken: {
-              amount: trade.inputAmount.toFixed(trade.inputAmount.currency.decimals, { groupSeparator: "" }),
-              token: trade.inputAmount.currency.address,
+              amount: trade.inputToken.amount.toString(),
+              token: trade.inputToken.address,
             },
             outputToken: {
-              amount: trade.outputAmount.toFixed(trade.outputAmount.currency.decimals, { groupSeparator: "" }),
-              token: trade.outputAmount.currency.address,
+              amount: trade.outputToken.amount.toString(),
+              token: trade.outputToken.address,
             },
           },
         };
       }
-
       this.sendMessage({
         type: "GetBestTrade",
         error,
@@ -677,9 +467,9 @@ export class TokenConverter {
     }
 
     if (trade && tradeAmount) {
-      // the difference between the token you get from TokenConverter and the token you pay to PCS
+      // the difference between the token you get from TokenConverter and the token you pay to the MM
       const minIncome = BigInt(
-        new Fraction(tradeAmount[0], 1).subtract(trade.inputAmount).toFixed(0, { groupSeparator: "" }),
+        new Fraction(tradeAmount[0], 1).subtract(trade.inputToken.amount).toFixed(0, { groupSeparator: "" }),
       );
       return {
         trade,

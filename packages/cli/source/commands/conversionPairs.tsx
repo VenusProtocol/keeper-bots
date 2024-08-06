@@ -22,8 +22,8 @@ export default function ConversionPairs() {
       {configs.map(c => (
         <Box key={c.id} flexDirection="row">
           <Text>Token Converter: {c.tokenConverter.id} </Text>
-          <Text>Token In: {c.tokenAddressIn} </Text>
-          <Text>Token Out: {c.tokenAddressOut}</Text>
+          <Text>Token In: {c.tokenIn.address} </Text>
+          <Text>Token Out: {c.tokenOut.address}</Text>
         </Box>
       ))}
     </Box>

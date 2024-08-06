@@ -9,11 +9,14 @@ import {
   getCoreMarkets,
   getIsolatedMarkets,
   getAddresses,
+  PancakeSwapProvider,
+  UniswapProvider,
 } from "@venusprotocol/token-converter-bot";
 import usePublicClient from "../queries/usePublicClient.js";
 import { Options, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/releaseFunds.js";
 import FullScreenBox from "../components/fullScreenBox.js";
+import getEnvValue from "../utils/getEnvValue.js";
 
 export const options = zod.object({
   simulate: zod
@@ -128,11 +131,15 @@ function ReleaseFunds({ options = {} }: Props) {
   const publicClient = usePublicClient();
 
   useEffect(() => {
+    const network = getEnvValue("NETWORK");
     const releaseFunds = async () => {
       const tokenConverter = new TokenConverter({
         subscriber: dispatch,
         simulate: !!simulate,
         verbose: false,
+        swapProvider: network?.includes("bsc")
+          ? new PancakeSwapProvider({ subscriber: dispatch, verbose: false })
+          : new UniswapProvider({ subscriber: dispatch, verbose: false }),
       });
       const corePoolMarkets = await getCoreMarkets();
       const isolatedPoolsMarkets = await getIsolatedMarkets();
