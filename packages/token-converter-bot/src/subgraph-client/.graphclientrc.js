@@ -6,7 +6,7 @@ module.exports = {
       name: 'venus-protocol-reserve',
       handler: {
         graphql: {
-          endpoint: `https://gateway-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/2ZCWgaBc8KoWW8kh7MRzf9KPdr7NTZ5cda9bxpFDk4wG`,
+          endpoint: `https://gateway-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/bnwTFv6yd4FojhPFf5Hw4pzb8GwW25Du12yrnpD6erw`,
         }
       }
     },

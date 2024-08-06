@@ -6,6 +6,8 @@ import ethereumIsolated from "@venusprotocol/isolated-pools/deployments/ethereum
 import sepoliaIsolated from "@venusprotocol/isolated-pools/deployments/sepolia_addresses.json";
 import bscmainnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bscmainnet_addresses.json";
 import bsctestnetTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/bsctestnet_addresses.json";
+import ethereumTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/ethereum_addresses.json";
+import sepoliaTokenConverterBot from "@venusprotocol/keeper-bot-contracts/deployments/sepolia_addresses.json";
 import bscmainnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bscmainnet_addresses.json";
 import bsctestnetProtocolReserve from "@venusprotocol/protocol-reserve/deployments/bsctestnet_addresses.json";
 import ethereumProtocolReserve from "@venusprotocol/protocol-reserve/deployments/ethereum_addresses.json";
@@ -27,7 +29,7 @@ const addressesConfig = {
     WETHPrimeConverter: ethereumProtocolReserve.addresses.WETHPrimeConverter as Address,
     ProtocolShareReserve: ethereumProtocolReserve.addresses.ProtocolShareReserve as Address,
     PoolRegistry: ethereumIsolated.addresses.PoolRegistry as Address,
-    TokenConverterOperator: "0x" as Address,
+    TokenConverterOperator: ethereumTokenConverterBot.addresses.TokenConverterOperator as Address,
     Unitroller: undefined,
     VBNBAdmin: undefined,
     vBNB: undefined,
@@ -43,7 +45,7 @@ const addressesConfig = {
     WETHPrimeConverter: sepoliaProtocolReserve.addresses.WETHPrimeConverter as Address,
     ProtocolShareReserve: sepoliaProtocolReserve.addresses.ProtocolShareReserve as Address,
     PoolRegistry: sepoliaIsolated.addresses.PoolRegistry as Address,
-    TokenConverterOperator: "0x" as Address,
+    TokenConverterOperator: sepoliaTokenConverterBot.addresses.TokenConverterOperator as Address,
     Unitroller: undefined,
     VBNBAdmin: undefined,
     vBNB: undefined,
@@ -54,10 +56,6 @@ const addressesConfig = {
     ...(bscmainnetProtocolReserve.addresses as Record<keyof typeof bscmainnetProtocolReserve.addresses, Address>),
     ...(bscmainnetGovernance.addresses as Record<keyof typeof bscmainnetGovernance.addresses, Address>),
     ...(bscmainnetIsolated.addresses as Record<keyof typeof bscmainnetIsolated.addresses, Address>),
-    BUSD: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56" as const,
-    USDT: "0x55d398326f99059fF775485246999027B3197955" as const,
-    USDC: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d" as const,
-    WBNB: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c" as const,
     PancakeSwapRouter: "0x13f4EA83D0bd40E75C8222255bc855a974568Dd4" as const,
 
     BTCBPrimeConverter: bscmainnetProtocolReserve.addresses.BTCBPrimeConverter as Address,
@@ -90,7 +88,7 @@ const addressesConfig = {
 
 const getAddresses = () => {
   const { network } = getConfig();
-  return addressesConfig[network];
+  return addressesConfig[network.name];
 };
 
 type Addresses = typeof addressesConfig;

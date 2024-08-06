@@ -5,8 +5,16 @@ query TokenConverterConfigsByTokenConverter($id: String!) {
   }
     ) {
     id
-    tokenAddressIn
-    tokenAddressOut
+    tokenIn {
+      address
+      symbol
+      decimals
+    }
+    tokenOut {
+      address
+      symbol
+      decimals
+    }
     incentive
     access
     tokenConverter {

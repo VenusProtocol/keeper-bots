@@ -5,7 +5,7 @@ import { chains } from "../chains";
 
 const getPublicClient = () => {
   const config = getConfig();
-  const chainName = config.network;
+  const chainName = config.network.name;
   return createPublicClient({
     chain: chains[chainName],
     transport: http(config.rpcUrl),
