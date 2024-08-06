@@ -32,8 +32,8 @@ const formatResults = async (
   for (let i = 0; i < results.length; i += chunkSize) {
     const index = (i + chunkSize) / chunkSize - 1;
     const tokenConverter = tokenConverterConfigs[index].tokenConverter.id as Address;
-    const assetIn = tokenConverterConfigs[index].tokenAddressIn;
-    const assetOut = tokenConverterConfigs[index].tokenAddressOut;
+    const assetIn = tokenConverterConfigs[index].tokenIn.address;
+    const assetOut = tokenConverterConfigs[index].tokenOut.address;
 
     const curr = results.slice(i, i + chunkSize);
 
@@ -60,10 +60,10 @@ const reduceConfigsToComptrollerAndTokens = async (tokenConfigs: TokenConverterC
   const allPools = [...corePoolMarkets, ...isolatedPoolsMarkets];
   const pools = tokenConfigs.reduce((acc, curr) => {
     for (const [comptroller, tokens] of allPools) {
-      if (tokens.findIndex(t => t.underlyingAddress === curr.tokenAddressOut) && acc[comptroller]) {
-        acc[comptroller].push(curr.tokenAddressOut);
+      if (tokens.findIndex(t => t.underlyingAddress === curr.tokenOut.address) && acc[comptroller]) {
+        acc[comptroller].push(curr.tokenOut.address);
       } else {
-        acc[comptroller] = [curr.tokenAddressOut];
+        acc[comptroller] = [curr.tokenOut.address];
       }
     }
     return acc;
@@ -121,12 +121,12 @@ export const getTokenConvertersTokenBalances = async (
         ...tokenConverterConfigs.reduce((acc, curr) => {
           acc = acc.concat([
             {
-              target: curr.tokenAddressOut,
+              target: curr.tokenOut.address,
               callData: encodeBalanceOfData([curr.tokenConverter.id as Address]),
               allowFailure: false,
             },
             {
-              target: curr.tokenAddressOut,
+              target: curr.tokenOut.address,
               callData: encodeBalanceOfData([walletAddress]),
               allowFailure: false,
             },

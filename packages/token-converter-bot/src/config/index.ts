@@ -10,7 +10,7 @@ const safelyGetEnvVar = <T extends keyof typeof process.env>(key: T) => {
 
 export const swapSubgraphUrlByNetwork = {
   bsctestnet: "https://api.thegraph.com/subgraphs/name/pancakeswap/exchange-v3-chapel",
-  bscmainnet: `https://gateway-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/Hv1GncLY5docZoGtXjo4kwbTvxm3MAhVZqBZE4sUT9eZ`,
+  bscmainnet: `https://gateway-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`,
   ethereum: `https://gateway-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV`,
   sepolia: `https://gateway-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/B4QeFHkfWXjKCDzNn3BJtDRDfG6VeHzGXgkf4Jt3fRn5`,
 };
@@ -18,7 +18,7 @@ export const swapSubgraphUrlByNetwork = {
 export const protocolReserveSubgraphUrlByNetwork = {
   bsctestnet: `https://gateway-testnet-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/56kKcG5fTJfmCncsvq9n2quExvFUfSEds3Lpk5dkWkgE`,
   bscmainnet: `https://gateway-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/2ZCWgaBc8KoWW8kh7MRzf9KPdr7NTZ5cda9bxpFDk4wG`,
-  ethereum: `https://api.studio.thegraph.com/query/${process.env.MAINNET_GRAPH_ID}/venus-protocol-reserve-eth/v0.0.1`,
+  ethereum: `https://gateway-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/QmcFbWExHdYuV3XQNPrX5PA467jRvSrtUfMLxoA6t95nSn`,
   sepolia: `https://api.studio.thegraph.com/query/${process.env.TESTNET_GRAPH_ID}/venus-protocol-reserve-sepolia/version/latest`,
 };
 

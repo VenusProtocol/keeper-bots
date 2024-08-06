@@ -18,7 +18,6 @@ jest.mock("./queries/getTokenConvertersTokenBalances");
 jest.mock("../subgraph-client");
 jest.mock("../config/clients/walletClient");
 jest.mock("../config/clients/publicClient");
-// jest.mock("./providers");
 
 const addresses = {
   usdcHolder: "0x2Ce1d0ffD7E869D9DF33e28552b12DdDed326706" as const,
