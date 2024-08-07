@@ -11,7 +11,7 @@ import {
   getAddresses,
   PancakeSwapProvider,
   UniswapProvider,
-} from "@venusprotocol/token-converter-bot";
+} from "@venusprotocol/keeper-bots";
 import usePublicClient from "../queries/usePublicClient.js";
 import { Options, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/releaseFunds.js";

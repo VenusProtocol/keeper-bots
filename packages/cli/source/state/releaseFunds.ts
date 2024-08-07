@@ -1,4 +1,4 @@
-import { Message } from "@venusprotocol/token-converter-bot";
+import { Message } from "@venusprotocol/keeper-bots";
 
 interface State {
   releasedFunds: {

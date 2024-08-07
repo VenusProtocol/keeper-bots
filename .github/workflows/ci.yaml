@@ -26,8 +26,8 @@ jobs:
 
       - name: Prepare
         run: |
-          yarn workspace @venusprotocol/token-converter-bot run generate-abis
-          yarn workspace @venusprotocol/token-converter-bot run generate-subgraph-types
+          yarn workspace @venusprotocol/keeper-bots run generate-abis
+          yarn workspace @venusprotocol/keeper-bots run generate-subgraph-types
 
       - name: Check linting of solidity and typescript
         run: yarn lint
@@ -51,8 +51,8 @@ jobs:
 
       - name: Prepare tests
         run: |
-          yarn workspace @venusprotocol/token-converter-bot run generate-abis
-          yarn workspace @venusprotocol/token-converter-bot run generate-subgraph-types
+          yarn workspace @venusprotocol/keeper-bots run generate-abis
+          yarn workspace @venusprotocol/keeper-bots run generate-subgraph-types
 
       - name: Run hardhat compile and tests coverage
         run: |

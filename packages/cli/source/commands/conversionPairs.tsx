@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, Text, useApp } from "ink";
-import { TokenConverterConfigs, getAllConverterConfigs } from "@venusprotocol/token-converter-bot";
+import { TokenConverterConfigs, getAllConverterConfigs } from "@venusprotocol/keeper-bots";
 
 /**
  * Helper command to list available conversion pairs

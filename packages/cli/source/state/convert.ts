@@ -4,7 +4,7 @@ import {
   GetBestTradeMessage,
   ArbitrageMessage,
   PotentialConversionsMessage,
-} from "@venusprotocol/token-converter-bot";
+} from "@venusprotocol/keeper-bots";
 
 interface ExecuteTradeMessage {
   type: "ExecuteTrade";

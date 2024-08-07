@@ -18,8 +18,8 @@ artifacts
 !.yarn/versions
 
 # Generated files
-packages/token-converter-bot/src/config/abis/generated.ts
-packages/token-converter-bot/src/subgraph-client/.graphclient
+packages/keeper-bots/src/config/abis/generated.ts
+packages/keeper-bots/src/subgraph-client/.graphclient
 
 # Build
 dist
