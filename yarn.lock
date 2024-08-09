@@ -4438,15 +4438,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/curves@npm:1.2.0, @noble/curves@npm:~1.2.0":
-  version: 1.2.0
-  resolution: "@noble/curves@npm:1.2.0"
-  dependencies:
-    "@noble/hashes": 1.3.2
-  checksum: bb798d7a66d8e43789e93bc3c2ddff91a1e19fdb79a99b86cd98f1e5eff0ee2024a2672902c2576ef3577b6f282f3b5c778bebd55761ddbb30e36bf275e83dd0
-  languageName: node
-  linkType: hard
-
 "@noble/curves@npm:1.4.0":
   version: 1.4.0
   resolution: "@noble/curves@npm:1.4.0"
@@ -4472,24 +4463,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/hashes@npm:1.3.2":
-  version: 1.3.2
-  resolution: "@noble/hashes@npm:1.3.2"
-  checksum: fe23536b436539d13f90e4b9be843cc63b1b17666a07634a2b1259dded6f490be3d050249e6af98076ea8f2ea0d56f578773c2197f2aa0eeaa5fba5bc18ba474
-  languageName: node
-  linkType: hard
-
 "@noble/hashes@npm:1.4.0, @noble/hashes@npm:^1.4.0, @noble/hashes@npm:~1.4.0":
   version: 1.4.0
   resolution: "@noble/hashes@npm:1.4.0"
   checksum: 8ba816ae26c90764b8c42493eea383716396096c5f7ba6bea559993194f49d80a73c081f315f4c367e51bd2d5891700bcdfa816b421d24ab45b41cb03e4f3342
-  languageName: node
-  linkType: hard
-
-"@noble/hashes@npm:~1.3.0, @noble/hashes@npm:~1.3.2":
-  version: 1.3.3
-  resolution: "@noble/hashes@npm:1.3.3"
-  checksum: 8a6496d1c0c64797339bc694ad06cdfaa0f9e56cd0c3f68ae3666cfb153a791a55deb0af9c653c7ed2db64d537aa3e3054629740d2f2338bb1dcb7ab60cd205b
   languageName: node
   linkType: hard
 
@@ -5352,60 +5329,37 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/chains@npm:0.4.1":
-  version: 0.4.1
-  resolution: "@pancakeswap/chains@npm:0.4.1"
-  checksum: 8b49a6232f06ac12a04012e80da17ebe41ce65aa5b98f293988cef074bb424f8437ffd601d43f9194b4c8b9f41039b1ad91673b7f22a62454b35d743d971e077
-  languageName: node
-  linkType: hard
-
-"@pancakeswap/chains@npm:0.4.6, @pancakeswap/chains@npm:^0.4.1, @pancakeswap/chains@npm:^0.4.6":
+"@pancakeswap/chains@npm:0.4.6, @pancakeswap/chains@npm:^0.4.6":
   version: 0.4.6
   resolution: "@pancakeswap/chains@npm:0.4.6"
   checksum: 1aa4cea9aefb74d12811abbe67a5699ce7d4fda319ed2be2dbee4f346102aaf88cabad0511a74ed771ac2d615a94699a59a9c4e0d3707906cd61d57557d415a0
   languageName: node
   linkType: hard
 
-"@pancakeswap/gauges@npm:1.1.7":
-  version: 1.1.7
-  resolution: "@pancakeswap/gauges@npm:1.1.7"
+"@pancakeswap/gauges@npm:1.2.13":
+  version: 1.2.13
+  resolution: "@pancakeswap/gauges@npm:1.2.13"
   dependencies:
-    "@pancakeswap/chains": ^0.4.1
-    "@pancakeswap/tokens": ^0.6.11
-    "@pancakeswap/v3-sdk": ^3.8.0
-    viem: 1.19.11
-  checksum: d310bf1bb2567f93b1b2e949d0b64e1bbc3e61f2fc37c6aeebcadb7c1441c2df641926090121e2747da47621d950aa58ee87acf576bbd31781c8c173ad4b5dc3
+    "@pancakeswap/chains": ^0.4.6
+    "@pancakeswap/tokens": ^0.6.23
+    "@pancakeswap/v3-sdk": ^3.8.11
+    viem: ^2.17.3
+  checksum: a2d34a442c51d4d8167d32cd31a6af010b4d5f59d0544ba7e613fcc71cbb746e3613f4277662f59a43b345a55667dfaa3f17619b710651a799f16fa17ca37bcc
   languageName: node
   linkType: hard
 
-"@pancakeswap/multicall@npm:3.5.0":
-  version: 3.5.0
-  resolution: "@pancakeswap/multicall@npm:3.5.0"
+"@pancakeswap/multicall@npm:3.5.8":
+  version: 3.5.8
+  resolution: "@pancakeswap/multicall@npm:3.5.8"
   dependencies:
-    "@pancakeswap/chains": 0.4.1
-    "@pancakeswap/sdk": 5.8.0
-    viem: 1.19.11
-  checksum: 1ba8cef9cd8513b29b9c535a16bd5fa58f9d32706475b31e0de672b8cfe9b6684c0dd510825d1cedbb7479231b0fb66cf4d2371f6ca17c187a2151427317f458
+    "@pancakeswap/chains": 0.4.6
+    "@pancakeswap/sdk": 5.8.8
+    viem: ^2.17.3
+  checksum: 19fc854602f947d3bcbdd4cb659f055a14bd9f56458a26ce1416c4a2811a16d00ac4a81c45f880e31753547e89059376e108a33b9cd1d43bdf9aca4526a99c04
   languageName: node
   linkType: hard
 
-"@pancakeswap/sdk@npm:5.8.0":
-  version: 5.8.0
-  resolution: "@pancakeswap/sdk@npm:5.8.0"
-  dependencies:
-    "@pancakeswap/chains": ^0.4.1
-    "@pancakeswap/swap-sdk-core": 1.1.0
-    big.js: ^5.2.2
-    decimal.js-light: ^2.5.0
-    tiny-invariant: ^1.3.0
-    tiny-warning: ^1.0.3
-    toformat: ^2.0.0
-    viem: 1.19.11
-  checksum: 4ff444c47911bf43dd4b67e46e94645fd92875c06ef43ab4bc837c1d425afaedeaaadf8b7fbee19e6cc84dd15a22cb197ce389b2d483ba98619c23629e1323a6
-  languageName: node
-  linkType: hard
-
-"@pancakeswap/sdk@npm:5.8.8, @pancakeswap/sdk@npm:^5.8.0":
+"@pancakeswap/sdk@npm:5.8.8, @pancakeswap/sdk@npm:^5.8.8":
   version: 5.8.8
   resolution: "@pancakeswap/sdk@npm:5.8.8"
   dependencies:
@@ -5423,19 +5377,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/smart-router@npm:^5.1.3":
-  version: 5.1.8
-  resolution: "@pancakeswap/smart-router@npm:5.1.8"
+"@pancakeswap/smart-router@npm:^6.0.17":
+  version: 6.0.17
+  resolution: "@pancakeswap/smart-router@npm:6.0.17"
   dependencies:
-    "@pancakeswap/chains": 0.4.1
-    "@pancakeswap/gauges": 1.1.7
-    "@pancakeswap/multicall": 3.5.0
-    "@pancakeswap/sdk": 5.8.0
-    "@pancakeswap/stable-swap-sdk": 1.0.3
-    "@pancakeswap/swap-sdk-core": 1.1.0
-    "@pancakeswap/token-lists": 0.0.11
-    "@pancakeswap/tokens": 0.6.11
-    "@pancakeswap/v3-sdk": 3.8.0
+    "@pancakeswap/chains": 0.4.6
+    "@pancakeswap/gauges": 1.2.13
+    "@pancakeswap/multicall": 3.5.8
+    "@pancakeswap/sdk": 5.8.8
+    "@pancakeswap/stable-swap-sdk": 1.0.15
+    "@pancakeswap/swap-sdk-core": 1.2.0
+    "@pancakeswap/token-lists": 0.0.12
+    "@pancakeswap/tokens": 0.6.23
+    "@pancakeswap/v3-sdk": 3.8.11
     async-retry: ^1.3.1
     debug: ^4.3.4
     graphql: ^16.8.1
@@ -5444,34 +5398,21 @@ __metadata:
     mnemonist: ^0.38.3
     stats-lite: ^2.2.0
     tiny-invariant: ^1.3.0
-    viem: 1.19.11
+    viem: ^2.17.3
     zod: ^3.22.3
-  checksum: 34179cf477deddea5cb9dd3ae68755600be5f8d0dd27d0d47b2e2d66ce0aad173a55f419b314c757c2fc425b29a326a50a778598c3dbae9ef5fe6e0b74b0e33c
+  checksum: 7910e28d45f405a5e896d11353d5feeab3db4208bd74c3b7f0ce5a689d172351699aa0d8340ef0a751a923e3ecc7e9cc34af576ce4fb80fd610978a9df5bc3a6
   languageName: node
   linkType: hard
 
-"@pancakeswap/stable-swap-sdk@npm:1.0.3":
-  version: 1.0.3
-  resolution: "@pancakeswap/stable-swap-sdk@npm:1.0.3"
+"@pancakeswap/stable-swap-sdk@npm:1.0.15":
+  version: 1.0.15
+  resolution: "@pancakeswap/stable-swap-sdk@npm:1.0.15"
   dependencies:
-    "@pancakeswap/chains": 0.4.1
-    "@pancakeswap/swap-sdk-core": 1.1.0
-    "@pancakeswap/tokens": 0.6.11
+    "@pancakeswap/chains": 0.4.6
+    "@pancakeswap/swap-sdk-core": 1.2.0
+    "@pancakeswap/tokens": 0.6.23
     tiny-invariant: ^1.3.0
-  checksum: 0e44ef3ec979d7441dac97d0698e55f2b2074ea4ba28deb6bd15ac04288e3d1b7e4748733bf8b417cc6b553bfc64a95fd8df325bd1ccfced38cb6dcfd8a55492
-  languageName: node
-  linkType: hard
-
-"@pancakeswap/swap-sdk-core@npm:1.1.0":
-  version: 1.1.0
-  resolution: "@pancakeswap/swap-sdk-core@npm:1.1.0"
-  dependencies:
-    big.js: ^5.2.2
-    decimal.js-light: ^2.5.0
-    tiny-invariant: ^1.3.0
-    tiny-warning: ^1.0.3
-    toformat: ^2.0.0
-  checksum: 064ffd19d447057eef5c569cb250511eb1c134e6fe8af302efdd7a9eee57bd36444933ce825bdec3acb1955cfb3873f419237fa50ab69a1bed0907cdf12711e2
+  checksum: fcfad3d46f33a822ae257390d21f0428f4e35dbd7c9d870e5dddee68ca2be887c61d87be311145c7722f36bf14bbf20b6882b0ad9810627492434d3059e68a56
   languageName: node
   linkType: hard
 
@@ -5501,31 +5442,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/token-lists@npm:0.0.11":
-  version: 0.0.11
-  resolution: "@pancakeswap/token-lists@npm:0.0.11"
-  dependencies:
-    "@pancakeswap/swap-sdk-core": 1.1.0
-    ajv: ^6.12.3
-    lodash: ^4.17.21
-  peerDependencies:
-    "@reduxjs/toolkit": ^1.9.1
-    jotai: ^2.4.3
-    localforage: ^1.10.0
-    react: ^18.2.0
-  peerDependenciesMeta:
-    "@reduxjs/toolkit":
-      optional: true
-    jotai:
-      optional: true
-    localforage:
-      optional: true
-    react:
-      optional: true
-  checksum: 555b55ee290234e2e347e1b0118d2793b1d60da6ceb413c4cfe27d36b6c7e73bb004129fb6defcc5f644f121f062465a2b1e5c22e774fdc50136f7572bbddc5b
-  languageName: node
-  linkType: hard
-
 "@pancakeswap/token-lists@npm:0.0.12":
   version: 0.0.12
   resolution: "@pancakeswap/token-lists@npm:0.0.12"
@@ -5551,18 +5467,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/tokens@npm:0.6.11":
-  version: 0.6.11
-  resolution: "@pancakeswap/tokens@npm:0.6.11"
-  dependencies:
-    "@pancakeswap/chains": 0.4.1
-    "@pancakeswap/sdk": 5.8.0
-    "@pancakeswap/token-lists": 0.0.11
-  checksum: b8aa8984f7c730031f81ef5b7313a32d6c8e8fa39bed7e3e57e05da4ac05a6b19a29180b51d50c092bd98ae695dfb1b7b7b17903b03af1faab7961a508625623
-  languageName: node
-  linkType: hard
-
-"@pancakeswap/tokens@npm:^0.6.11":
+"@pancakeswap/tokens@npm:0.6.23, @pancakeswap/tokens@npm:^0.6.23":
   version: 0.6.23
   resolution: "@pancakeswap/tokens@npm:0.6.23"
   dependencies:
@@ -5593,24 +5498,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/v3-sdk@npm:3.8.0":
-  version: 3.8.0
-  resolution: "@pancakeswap/v3-sdk@npm:3.8.0"
-  dependencies:
-    "@pancakeswap/chains": 0.4.1
-    "@pancakeswap/sdk": 5.8.0
-    "@pancakeswap/swap-sdk-core": 1.1.0
-    big.js: ^5.2.2
-    decimal.js-light: ^2.5.0
-    tiny-invariant: ^1.3.0
-    tiny-warning: ^1.0.3
-    toformat: ^2.0.0
-    viem: 1.19.11
-  checksum: 64e97c64d0e57c12dcc78118e21953606d5d7024f6b8ae2e210f363af9f17c4fbd2b131baf5b762ac4d2adc465c197a085ebbce9b22e5ee25fe96015eb680a15
-  languageName: node
-  linkType: hard
-
-"@pancakeswap/v3-sdk@npm:^3.8.0":
+"@pancakeswap/v3-sdk@npm:3.8.11, @pancakeswap/v3-sdk@npm:^3.8.11":
   version: 3.8.11
   resolution: "@pancakeswap/v3-sdk@npm:3.8.11"
   dependencies:
@@ -5708,7 +5596,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@scure/base@npm:~1.1.0, @scure/base@npm:~1.1.2, @scure/base@npm:~1.1.6":
+"@scure/base@npm:~1.1.0, @scure/base@npm:~1.1.6":
   version: 1.1.7
   resolution: "@scure/base@npm:1.1.7"
   checksum: d9084be9a2f27971df1684af9e40bb750e86f549345e1bb3227fb61673c0c83569c92c1cb0a4ddccb32650b39d3cd3c145603b926ba751c9bc60c27317549b20
@@ -5723,17 +5611,6 @@ __metadata:
     "@noble/secp256k1": ~1.7.0
     "@scure/base": ~1.1.0
   checksum: b08494ab0d2b1efee7226d1b5100db5157ebea22a78bb87126982a76a186cb3048413e8be0ba2622d00d048a20acbba527af730de86c132a77de616eb9907a3b
-  languageName: node
-  linkType: hard
-
-"@scure/bip32@npm:1.3.2":
-  version: 1.3.2
-  resolution: "@scure/bip32@npm:1.3.2"
-  dependencies:
-    "@noble/curves": ~1.2.0
-    "@noble/hashes": ~1.3.2
-    "@scure/base": ~1.1.2
-  checksum: c5ae84fae43490853693b481531132b89e056d45c945fc8b92b9d032577f753dfd79c5a7bbcbf0a7f035951006ff0311b6cf7a389e26c9ec6335e42b20c53157
   languageName: node
   linkType: hard
 
@@ -5755,16 +5632,6 @@ __metadata:
     "@noble/hashes": ~1.2.0
     "@scure/base": ~1.1.0
   checksum: fbb594c50696fa9c14e891d872f382e50a3f919b6c96c55ef2fb10c7102c546dafb8f099a62bd114c12a00525b595dcf7381846f383f0ddcedeaa6e210747d2f
-  languageName: node
-  linkType: hard
-
-"@scure/bip39@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@scure/bip39@npm:1.2.1"
-  dependencies:
-    "@noble/hashes": ~1.3.0
-    "@scure/base": ~1.1.0
-  checksum: c5bd6f1328fdbeae2dcdd891825b1610225310e5e62a4942714db51066866e4f7bef242c7b06a1b9dcc8043a4a13412cf5c5df76d3b10aa9e36b82e9b6e3eeaa
   languageName: node
   linkType: hard
 
@@ -7171,7 +7038,7 @@ __metadata:
     "@graphql-mesh/graphql": ^0.98.4
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
-    "@venusprotocol/token-converter-bot": ^1.2.0-dev.1
+    "@venusprotocol/keeper-bots": ^1.0.0
     "@venusprotocol/venus-protocol": ^9.1.0
     ava: ^5.2.0
     chalk: ^5.2.0
@@ -7329,13 +7196,13 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@venusprotocol/keeper-bots@workspace:packages/keeper-bots":
+"@venusprotocol/keeper-bots@^1.0.0, @venusprotocol/keeper-bots@workspace:packages/keeper-bots":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/keeper-bots@workspace:packages/keeper-bots"
   dependencies:
     "@graphprotocol/client-cli": 3.0.0
-    "@pancakeswap/sdk": ^5.8.0
-    "@pancakeswap/smart-router": ^5.1.3
+    "@pancakeswap/sdk": ^5.8.8
+    "@pancakeswap/smart-router": ^6.0.17
     "@pancakeswap/v3-core": ^1.0.2
     "@typechain/hardhat": ^6.1.2
     "@types/chai": ^4.3.11
@@ -7492,31 +7359,6 @@ __metadata:
     ethers: ^5.7.0
     module-alias: ^2.2.2
   checksum: 022163873126822b7cd84bd470b2f7bdb439cad1ac78136a5956418803bdc873360de28ab8d1e50f28ab80add900d56660c8273ac132ba47bbd3c3890b67b046
-  languageName: node
-  linkType: hard
-
-"@venusprotocol/token-converter-bot@npm:^1.2.0-dev.1":
-  version: 1.2.0-dev.1
-  resolution: "@venusprotocol/token-converter-bot@npm:1.2.0-dev.1"
-  dependencies:
-    "@graphprotocol/client-cli": 3.0.0
-    "@pancakeswap/sdk": ^5.8.0
-    "@pancakeswap/smart-router": ^5.1.3
-    "@pancakeswap/v3-core": ^1.0.2
-    "@uniswap/sdk": ^3.0.3
-    "@uniswap/sdk-core": ^5.3.1
-    "@uniswap/smart-order-router": ^3.36.0
-    "@venusprotocol/keeper-bot-contracts": 1.2.0-dev.4
-    "@venusprotocol/oracle": ^2.0.0
-    "@wagmi/cli": ^2.0.4
-    abitype: 0.10.0
-    graphql: ^16.8.1
-    hardhat: ^2.19.5
-    jsbi: ^3.2.5
-    urql: ^3.0.3
-    viem: ^2.7.1
-    winston: ^3.11.0
-  checksum: b3e9ed37570c823a1c60b6cbb2c1236be00abda060f5423f29c6c261c1c3d2abd08b7c782a22c8c206b18089d4a0fa3d7bfd2922b95ecf705ccd02519275b70b
   languageName: node
   linkType: hard
 
@@ -7863,21 +7705,6 @@ __metadata:
     zod:
       optional: true
   checksum: 01a75393740036121414024aa7ed61e6a2104bfd90c91b6aa1a7778cf1edfa15b828779acbbb13ac641939d1ba9c836d143d9f7310699cd7496273bb24c599b3
-  languageName: node
-  linkType: hard
-
-"abitype@npm:0.9.8":
-  version: 0.9.8
-  resolution: "abitype@npm:0.9.8"
-  peerDependencies:
-    typescript: ">=5.0.4"
-    zod: ^3 >=3.19.1
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-    zod:
-      optional: true
-  checksum: d7d887f29d6821e3f7a400de9620511b80ead3f85c5c87308aaec97965d3493e6687ed816e88722b4f512249bd66dee9e69231b49af0e1db8f69400a62c87cf6
   languageName: node
   linkType: hard
 
@@ -15002,15 +14829,6 @@ __metadata:
   peerDependencies:
     ws: "*"
   checksum: e20eb2aee09ba96247465fda40c6d22c1153394c0144fa34fe6609f341af4c8c564f60ea3ba762335a7a9c306809349f9b863c8beedf2beea09b299834ad5398
-  languageName: node
-  linkType: hard
-
-"isows@npm:1.0.3":
-  version: 1.0.3
-  resolution: "isows@npm:1.0.3"
-  peerDependencies:
-    ws: "*"
-  checksum: 9cacd5cf59f67deb51e825580cd445ab1725ecb05a67c704050383fb772856f3cd5e7da8ad08f5a3bd2823680d77d099459d0c6a7037972a74d6429af61af440
   languageName: node
   linkType: hard
 
@@ -22212,27 +22030,6 @@ __metadata:
   version: 1.0.12
   resolution: "value-or-promise@npm:1.0.12"
   checksum: f53a66c75b7447c90bbaf946a757ca09c094629cb80ba742f59c980ec3a69be0a385a0e75505dedb4e757862f1a994ca4beaf083a831f24d3ffb3d4bb18cd1e1
-  languageName: node
-  linkType: hard
-
-"viem@npm:1.19.11":
-  version: 1.19.11
-  resolution: "viem@npm:1.19.11"
-  dependencies:
-    "@adraffy/ens-normalize": 1.10.0
-    "@noble/curves": 1.2.0
-    "@noble/hashes": 1.3.2
-    "@scure/bip32": 1.3.2
-    "@scure/bip39": 1.2.1
-    abitype: 0.9.8
-    isows: 1.0.3
-    ws: 8.13.0
-  peerDependencies:
-    typescript: ">=5.0.4"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  checksum: 33a26f361bb2597fe0b02dc98382eb66b83473c3a9765833969a45ac7b4017fa62d7ddc42f9d4d0f3473bec7096eb081651851473b4d0ff4ab56f71a2f6378a2
   languageName: node
   linkType: hard
 
