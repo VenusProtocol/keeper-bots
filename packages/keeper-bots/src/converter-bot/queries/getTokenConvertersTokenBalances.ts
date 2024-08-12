@@ -13,8 +13,12 @@ import getVTokensFromUnderlying from "./getVTokensFromUnderlying";
 
 export interface BalanceResult {
   tokenConverter: Address;
-  assetIn: Address;
-  assetOut: { address: Address; balance: bigint };
+  assetIn: {
+    address: Address;
+    symbol?: string | null;
+    decimals: number;
+  };
+  assetOut: { address: Address; balance: bigint; symbol?: string | null; decimals: number };
   assetOutVTokens: {
     core: `0x${string}` | undefined;
     isolated: [`0x${string}`, `0x${string}`][] | undefined;
@@ -32,12 +36,12 @@ const formatResults = async (
   for (let i = 0; i < results.length; i += chunkSize) {
     const index = (i + chunkSize) / chunkSize - 1;
     const tokenConverter = tokenConverterConfigs[index].tokenConverter.id as Address;
-    const assetIn = tokenConverterConfigs[index].tokenIn.address;
-    const assetOut = tokenConverterConfigs[index].tokenOut.address;
+    const assetIn = tokenConverterConfigs[index].tokenIn;
+    const assetOut = tokenConverterConfigs[index].tokenOut;
 
     const curr = results.slice(i, i + chunkSize);
 
-    const { coreVTokens, isolatedVTokens } = await getVTokensFromUnderlying(assetOut);
+    const { coreVTokens, isolatedVTokens } = await getVTokensFromUnderlying(assetOut.address);
     const balance = {
       assetOutVTokens: {
         core: coreVTokens[0]?.id as Address,
@@ -45,7 +49,7 @@ const formatResults = async (
       },
       tokenConverter,
       assetIn,
-      assetOut: { address: assetOut, balance: BigInt(curr[0].toString()) },
+      assetOut: { ...assetOut, balance: BigInt(curr[0].toString()) },
       accountBalanceAssetOut: BigInt(curr[1].toString()),
     };
 

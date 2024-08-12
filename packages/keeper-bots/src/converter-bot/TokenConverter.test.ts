@@ -530,15 +530,15 @@ describe("Token Converter", () => {
       const balanceResults: BalanceResult[] = [
         {
           tokenConverter: addresses.USDCPrimeConverter,
-          assetIn: addresses.USDC,
-          assetOut: { address: addresses.BUSD, balance: 600000000000000000000n },
+          assetIn: { address: addresses.USDC, symbol: "USDC", decimals: 18 },
+          assetOut: { address: addresses.BUSD, balance: 600000000000000000000n, symbol: "BUSD", decimals: 18 },
           assetOutVTokens: { core: addresses.vBNBCore, isolated: [] },
           accountBalanceAssetOut: 6000000000000000000n,
         },
         {
           tokenConverter: addresses.USDTPrimeConverter,
-          assetIn: addresses.USDT,
-          assetOut: { address: addresses.WBNB, balance: 400000000000000000000n },
+          assetIn: { address: addresses.USDT, symbol: "USDT", decimals: 18 },
+          assetOut: { address: addresses.WBNB, balance: 400000000000000000000n, symbol: "BUSD", decimals: 18 },
           assetOutVTokens: { core: undefined, isolated: [[addresses.stableCoinComptroller, addresses.vBNBIL]] },
           accountBalanceAssetOut: 4000000000000000000n,
         },
