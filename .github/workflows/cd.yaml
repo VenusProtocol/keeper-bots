@@ -50,12 +50,12 @@ jobs:
       - name: Install dependencies
         run: yarn
       
-      - name: Build Token Converter Bots
+      - name: Build Keeper Bots
         env:
           THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
         run: yarn workspace @venusprotocol/keeper-bots run build
 
-      - name: Release Token Converter Bot
+      - name: Release Keeper Bot
         if: ${{ always() }}
         env:
           THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
