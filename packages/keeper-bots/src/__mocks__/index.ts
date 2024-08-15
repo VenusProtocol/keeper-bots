@@ -1,4 +1,4 @@
-import { CurrencyAmount, Percent, Token } from "@pancakeswap/sdk";
+import { CurrencyAmount, Fraction, Percent, Token } from "@pancakeswap/sdk";
 import { RouteV3 } from "@uniswap/router-sdk";
 import { Token as UniswapToken } from "@uniswap/sdk-core";
 import { FeeAmount, Pool, Route as V3RouteSDK } from "@uniswap/v3-sdk";
@@ -113,11 +113,11 @@ export const mockTrade = {
   path: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c000cf6bb5389c92bdda8a3747ddb454cb7a64626c63" as const,
   inputToken: {
     address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c" as const,
-    amount: 8904975230019520420n,
+    amount: new Fraction(8904975230019520420n, 1),
   },
   outputToken: {
     address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63" as const,
-    amount: 517926942058379677423n,
+    amount: new Fraction(517926942058379677423n, 1),
   },
 };
 

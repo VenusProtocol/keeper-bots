@@ -93,6 +93,7 @@ class PancakeSwapProvider extends SwapProvider {
       functionName: "getUpdatedAmountIn",
       args: [amount, swapToToken.address, swapFromToken.address],
     });
+
     try {
       const response = await SmartRouter.getBestTrade(
         CurrencyAmount.fromRawAmount(swapToToken, updatedAmountIn[1]),
@@ -107,14 +108,15 @@ class PancakeSwapProvider extends SwapProvider {
           quoterOptimization: true,
         },
       );
+
       if (response) {
         trade = {
           inputToken: {
-            amount: response.inputAmount.toFixed(0, { groupSeparator: "" }),
+            amount: response.inputAmount,
             address: response.inputAmount.currency.address,
           },
           outputToken: {
-            amount: response.outputAmount.toFixed(0, { groupSeparator: "" }),
+            amount: response.outputAmount,
             address: response.outputAmount.currency.address,
           },
           path: this.encodeExactInputPath(response.routes[0]),

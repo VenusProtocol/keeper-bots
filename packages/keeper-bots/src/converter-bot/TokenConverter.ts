@@ -327,14 +327,14 @@ export class TokenConverter {
    * @param amount Amount to check/ request if an allowance has been granted
    */
   async checkAndRequestAllowance(token: Address, owner: Address, spender: Address, amount: bigint) {
-    const approvalAmount = await this.publicClient.readContract({
+    const allowance = await this.publicClient.readContract({
       address: token,
       abi: erc20Abi,
       functionName: "allowance",
       args: [owner, spender],
     });
 
-    if (approvalAmount < amount) {
+    if (allowance < amount) {
       const trx = await this.walletClient.writeContract({
         address: token,
         abi: erc20Abi,
@@ -444,16 +444,17 @@ export class TokenConverter {
           tradeAmount: { amountOut: tradeAmount && tradeAmount[0], amountIn: tradeAmount && tradeAmount[1] },
           swap: {
             inputToken: {
-              amount: trade.inputToken.amount.toString(),
+              amount: trade.inputToken.amount.toFixed(0),
               token: trade.inputToken.address,
             },
             outputToken: {
-              amount: trade.outputToken.amount.toString(),
+              amount: trade.outputToken.amount.toFixed(0),
               token: trade.outputToken.address,
             },
           },
         };
       }
+
       this.sendMessage({
         type: "GetBestTrade",
         error,
@@ -468,13 +469,11 @@ export class TokenConverter {
 
     if (trade && tradeAmount) {
       // the difference between the token you get from TokenConverter and the token you pay to the MM
-      const minIncome = BigInt(
-        new Fraction(tradeAmount[0], 1).subtract(trade.inputToken.amount).toFixed(0, { groupSeparator: "" }),
-      );
+      const minIncome = new Fraction(tradeAmount[0], 1).subtract(trade.inputToken.amount);
       return {
         trade,
         amount: tradeAmount[0],
-        minIncome,
+        minIncome: BigInt(minIncome.toFixed(0, { groupSeparator: "" })),
       };
     }
   }
