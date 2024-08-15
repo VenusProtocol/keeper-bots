@@ -176,7 +176,8 @@ export default function Convert({ options }: Props) {
         await Promise.allSettled(
           potentialConversions.map(async (t: any) => {
             let amountOut = t.assetOut.balance;
-            const vTokenAddress = t.assetOutVTokens.core || t.assetOutVTokens.isolated[1];
+
+            const vTokenAddress = t.assetOutVTokens.core || t.assetOutVTokens.isolated[0][1];
             const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(
               t.assetOut.address,
               vTokenAddress,
@@ -191,7 +192,7 @@ export default function Convert({ options }: Props) {
               const arbitrageArgs = await tokenConverter.prepareConversion(
                 t.tokenConverter,
                 t.assetOut.address,
-                t.assetIn,
+                t.assetIn.address,
                 amountOut,
               );
 
@@ -209,7 +210,7 @@ export default function Convert({ options }: Props) {
                   context: {
                     converter: t.tokenConverter,
                     tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn,
+                    tokenToSendToConverter: t.assetIn.address,
                     amount,
                     minIncome,
                     percentage: Number((minIncome * 10000000n) / amount) / 10000000,
@@ -225,7 +226,7 @@ export default function Convert({ options }: Props) {
                   context: {
                     converter: t.tokenConverter.id,
                     tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn,
+                    tokenToSendToConverter: t.assetIn.address,
                     amount,
                     minIncome,
                     percentage: Number((minIncome * 10000000n) / amount) / 10000000,
@@ -239,7 +240,7 @@ export default function Convert({ options }: Props) {
                   context: {
                     converter: t.tokenConverter.id,
                     tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn,
+                    tokenToSendToConverter: t.assetIn.address,
                     amount,
                     minIncome,
                     percentage: Number((minIncome * 10000000n) / amount) / 10000000,
