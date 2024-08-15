@@ -28,7 +28,9 @@ export const protocolReserveSubgraphUrlByNetwork = {
   bscmainnet: `https://gateway-arbitrum.network.thegraph.com/api/${safelyGetEnvVar(
     "THE_GRAPH_STUDIO_API_KEY",
   )}/subgraphs/id/2ZCWgaBc8KoWW8kh7MRzf9KPdr7NTZ5cda9bxpFDk4wG`,
-  ethereum: `https://gateway-arbitrum.network.thegraph.com/api/${process.env.THE_GRAPH_STUDIO_API_KEY}/subgraphs/id/QmcFbWExHdYuV3XQNPrX5PA467jRvSrtUfMLxoA6t95nSn`,
+  ethereum: `https://gateway-arbitrum.network.thegraph.com/api/${safelyGetEnvVar(
+    "THE_GRAPH_STUDIO_API_KEY",
+  )}/deployments/id/QmcFbWExHdYuV3XQNPrX5PA467jRvSrtUfMLxoA6t95nSn`,
   sepolia: `https://api.studio.thegraph.com/query/${process.env.TESTNET_GRAPH_ID}/venus-protocol-reserve-sepolia/version/latest`,
 };
 
