@@ -1,5 +1,6 @@
+import { Fraction } from "@pancakeswap/sdk";
 import { IRoute } from "@uniswap/router-sdk";
-import { ChainId, Currency, CurrencyAmount, Fraction, Percent, Token, TradeType } from "@uniswap/sdk-core";
+import { ChainId, Currency, CurrencyAmount, Percent, Token, TradeType } from "@uniswap/sdk-core";
 import { AlphaRouter, SwapOptionsSwapRouter02, SwapType } from "@uniswap/smart-order-router";
 import { Pool, Route } from "@uniswap/v3-sdk";
 import { ethers } from "ethers";
@@ -103,14 +104,16 @@ class UniswapProvider extends SwapProvider {
 
         trade = {
           inputToken: {
-            amount: BigInt(
-              new Fraction(inputCurrency.numerator, inputCurrency.denominator).toFixed(0, { groupSeparator: "" }),
+            amount: new Fraction(
+              BigInt(inputCurrency.numerator.toString()),
+              BigInt(inputCurrency.denominator.toString()),
             ),
             address: (inputCurrency?.currency as Token).address as Address,
           },
           outputToken: {
-            amount: BigInt(
-              new Fraction(outputCurrency.numerator, outputCurrency.denominator).toFixed(0, { groupSeparator: "" }),
+            amount: new Fraction(
+              BigInt(outputCurrency.numerator.toString()),
+              BigInt(outputCurrency.denominator.toString()),
             ),
             address: (outputCurrency?.currency as Token).address as Address,
           },

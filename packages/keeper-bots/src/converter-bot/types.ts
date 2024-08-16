@@ -1,3 +1,4 @@
+import { Fraction } from "@pancakeswap/sdk";
 import { Address } from "viem";
 
 import { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
@@ -74,11 +75,11 @@ export type Message =
 
 export interface TradeRoute {
   inputToken: {
-    amount: bigint;
+    amount: Fraction;
     address: Address;
   };
   outputToken: {
-    amount: bigint;
+    amount: Fraction;
     address: Address;
   };
   path: Address;

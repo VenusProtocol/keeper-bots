@@ -3,7 +3,7 @@ import { option } from "pastel";
 import { Box, Spacer, Text, useApp, useStderr } from "ink";
 import zod from "zod";
 import { parseUnits } from "viem";
-import { TokenConverter, PancakeSwapProvider, UniswapProvider } from "@venusprotocol/token-converter-bot";
+import { TokenConverter, PancakeSwapProvider, UniswapProvider, BalanceResult } from "@venusprotocol/keeper-bots";
 import { stringifyBigInt, getConverterConfigId } from "../utils/index.js";
 import { Options, Title, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/convert.js";
@@ -174,9 +174,10 @@ export default function Convert({ options }: Props) {
           await tokenConverter.releaseFundsForConversions(potentialConversions);
         }
         await Promise.allSettled(
-          potentialConversions.map(async (t: any) => {
+          potentialConversions.map(async (t: BalanceResult) => {
             let amountOut = t.assetOut.balance;
-            const vTokenAddress = t.assetOutVTokens.core || t.assetOutVTokens.isolated[1];
+
+            const vTokenAddress = t.assetOutVTokens.core || t.assetOutVTokens.isolated![0]![1];
             const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(
               t.assetOut.address,
               vTokenAddress,
@@ -191,7 +192,7 @@ export default function Convert({ options }: Props) {
               const arbitrageArgs = await tokenConverter.prepareConversion(
                 t.tokenConverter,
                 t.assetOut.address,
-                t.assetIn,
+                t.assetIn.address,
                 amountOut,
               );
 
@@ -209,7 +210,7 @@ export default function Convert({ options }: Props) {
                   context: {
                     converter: t.tokenConverter,
                     tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn,
+                    tokenToSendToConverter: t.assetIn.address,
                     amount,
                     minIncome,
                     percentage: Number((minIncome * 10000000n) / amount) / 10000000,
@@ -223,9 +224,9 @@ export default function Convert({ options }: Props) {
                   type: "ExecuteTrade",
                   error: "Insufficient wallet balance to pay min income",
                   context: {
-                    converter: t.tokenConverter.id,
+                    converter: t.tokenConverter,
                     tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn,
+                    tokenToSendToConverter: t.assetIn.address,
                     amount,
                     minIncome,
                     percentage: Number((minIncome * 10000000n) / amount) / 10000000,
@@ -237,9 +238,9 @@ export default function Convert({ options }: Props) {
                   type: "ExecuteTrade",
                   error: "Min income too high",
                   context: {
-                    converter: t.tokenConverter.id,
+                    converter: t.tokenConverter,
                     tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn,
+                    tokenToSendToConverter: t.assetIn.address,
                     amount,
                     minIncome,
                     percentage: Number((minIncome * 10000000n) / amount) / 10000000,

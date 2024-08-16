@@ -1,7 +1,7 @@
 import { createWalletClient, http } from "viem";
 import { PrivateKeyAccount, privateKeyToAccount } from "viem/accounts";
 
-import getConfig from "../";
+import getConfig from "..";
 import { chains } from "../chains";
 
 const readPrivateKeyFromEnv = (chainName: string): PrivateKeyAccount => {

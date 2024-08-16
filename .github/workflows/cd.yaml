@@ -28,8 +28,8 @@ jobs:
         env:
           THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
         run: |
-          yarn workspace @venusprotocol/token-converter-bot run generate-abis
-          yarn workspace @venusprotocol/token-converter-bot run generate-subgraph-types
+          yarn workspace @venusprotocol/keeper-bots run generate-abis
+          yarn workspace @venusprotocol/keeper-bots run generate-subgraph-types
 
       - name: Build Keeper Bot Contracts
         run: yarn workspace @venusprotocol/keeper-bot-contracts run build
@@ -50,12 +50,12 @@ jobs:
       - name: Install dependencies
         run: yarn
       
-      - name: Build Token Converter Bots
+      - name: Build Keeper Bots
         env:
           THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
-        run: yarn workspace @venusprotocol/token-converter-bot run build
+        run: yarn workspace @venusprotocol/keeper-bots run build
 
-      - name: Release Token Converter Bot
+      - name: Release Keeper Bot
         if: ${{ always() }}
         env:
           THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
@@ -65,7 +65,7 @@ jobs:
           GIT_AUTHOR_EMAIL: tools@venus.io
           GIT_COMMITTER_NAME: Venus Tools
           GIT_COMMITTER_EMAIL: tools@venus.io
-        run: yarn workspace @venusprotocol/token-converter-bot run semantic-release
+        run: yarn workspace @venusprotocol/keeper-bots run semantic-release
       
       - name: Install dependencies
         run: yarn

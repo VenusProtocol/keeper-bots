@@ -121,28 +121,53 @@ describe("Token Converter", () => {
       (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
+      const [trade, updatedAmountIn] = await tokenConverter.getBestTrade(
+        addresses.USDCPrimeConverter,
+        addresses.WBNB,
+        addresses.USDC,
+        1000000000000000000000n,
+      );
 
-      expect(
-        await tokenConverter.getBestTrade(
-          addresses.USDCPrimeConverter,
-          addresses.WBNB,
-          addresses.USDC,
-          1000000000000000000000n,
-        ),
-      ).toEqual([
-        {
-          inputToken: {
+      expect(trade.inputToken).toEqual({
+        address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        amount: {
+          currency: {
             address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-            amount: "8",
+            chainId: 56,
+            decimals: 18,
+            isNative: false,
+            isToken: true,
+            name: undefined,
+            projectLink: undefined,
+            symbol: "WBNB",
           },
-          outputToken: {
-            address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
-            amount: "517",
-          },
-          path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+          decimalScale: 1000000000000000000n,
+          denominator: 1n,
+          numerator: 8904975230019520420n,
         },
-        [1000000000000000000n, 1000000000000000000n],
-      ]);
+      });
+      expect(trade.outputToken).toEqual({
+        address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+        amount: {
+          currency: {
+            address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+            chainId: 56,
+            decimals: 18,
+            isNative: false,
+            isToken: true,
+            name: undefined,
+            projectLink: undefined,
+            symbol: "XVS",
+          },
+          decimalScale: 1000000000000000000n,
+          denominator: 1n,
+          numerator: 517926942058379677423n,
+        },
+      });
+      expect(trade.path).toEqual(
+        "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      );
+      expect(updatedAmountIn).toEqual([1000000000000000000n, 1000000000000000000n]);
     });
 
     test("should call getBestTrade again if price impact is high with lower amount", async () => {
@@ -168,27 +193,53 @@ describe("Token Converter", () => {
         return new Percent(9n, 1000n);
       });
 
-      expect(
-        await pancakeSwapProvider.getBestTrade(
-          addresses.USDCPrimeConverter,
-          addresses.WBNB,
-          addresses.USDC,
-          1000000000000000000000n,
-        ),
-      ).toEqual([
-        {
-          inputToken: {
+      const [trade, updatedAmountIn] = await pancakeSwapProvider.getBestTrade(
+        addresses.USDCPrimeConverter,
+        addresses.WBNB,
+        addresses.USDC,
+        1000000000000000000000n,
+      );
+
+      expect(trade.inputToken).toEqual({
+        address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        amount: {
+          currency: {
             address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
-            amount: "8",
+            chainId: 56,
+            decimals: 18,
+            isNative: false,
+            isToken: true,
+            name: undefined,
+            projectLink: undefined,
+            symbol: "WBNB",
           },
-          outputToken: {
-            address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
-            amount: "517",
-          },
-          path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+          decimalScale: 1000000000000000000n,
+          denominator: 1n,
+          numerator: 8904975230019520420n,
         },
-        [1000000000000000000n, 1000000000000000000n],
-      ]);
+      });
+      expect(trade.outputToken).toEqual({
+        address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+        amount: {
+          currency: {
+            address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+            chainId: 56,
+            decimals: 18,
+            isNative: false,
+            isToken: true,
+            name: undefined,
+            projectLink: undefined,
+            symbol: "XVS",
+          },
+          decimalScale: 1000000000000000000n,
+          denominator: 1n,
+          numerator: 517926942058379677423n,
+        },
+      });
+      expect(trade.path).toEqual(
+        "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      );
+      expect(updatedAmountIn).toEqual([1000000000000000000n, 1000000000000000000n]);
 
       expect(pancakeSwapProviderMock).toHaveBeenNthCalledWith(
         3,
@@ -530,15 +581,15 @@ describe("Token Converter", () => {
       const balanceResults: BalanceResult[] = [
         {
           tokenConverter: addresses.USDCPrimeConverter,
-          assetIn: addresses.USDC,
-          assetOut: { address: addresses.BUSD, balance: 600000000000000000000n },
+          assetIn: { address: addresses.USDC, symbol: "USDC", decimals: 18 },
+          assetOut: { address: addresses.BUSD, balance: 600000000000000000000n, symbol: "BUSD", decimals: 18 },
           assetOutVTokens: { core: addresses.vBNBCore, isolated: [] },
           accountBalanceAssetOut: 6000000000000000000n,
         },
         {
           tokenConverter: addresses.USDTPrimeConverter,
-          assetIn: addresses.USDT,
-          assetOut: { address: addresses.WBNB, balance: 400000000000000000000n },
+          assetIn: { address: addresses.USDT, symbol: "USDT", decimals: 18 },
+          assetOut: { address: addresses.WBNB, balance: 400000000000000000000n, symbol: "BUSD", decimals: 18 },
           assetOutVTokens: { core: undefined, isolated: [[addresses.stableCoinComptroller, addresses.vBNBIL]] },
           accountBalanceAssetOut: 4000000000000000000n,
         },
@@ -840,28 +891,54 @@ describe("Token Converter", () => {
         result: [1000000000000000000n, 1000000000000000000n],
       }));
 
-      expect(
-        await tokenConverter.prepareConversion(
-          addresses.USDCPrimeConverter,
-          addresses.WBNB,
-          addresses.USDC,
-          1000000000000000000000n,
-        ),
-      ).toEqual({
-        trade: {
-          inputToken: {
-            amount: "8",
+      const arbitrageArgs = await tokenConverter.prepareConversion(
+        addresses.USDCPrimeConverter,
+        addresses.WBNB,
+        addresses.USDC,
+        1000000000000000000000n,
+      );
+
+      expect(arbitrageArgs?.amount).toEqual(1000000000000000000n);
+      expect(arbitrageArgs?.trade.inputToken).toEqual({
+        address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+        amount: {
+          currency: {
             address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+            chainId: 56,
+            decimals: 18,
+            isNative: false,
+            isToken: true,
+            name: undefined,
+            projectLink: undefined,
+            symbol: "WBNB",
           },
-          outputToken: {
-            amount: "517",
-            address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
-          },
-          path: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+          decimalScale: 1000000000000000000n,
+          denominator: 1n,
+          numerator: 8904975230019520420n,
         },
-        amount: 1000000000000000000n,
-        minIncome: 999999999999999992n,
       });
+      expect(arbitrageArgs?.trade.outputToken).toEqual({
+        address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+        amount: {
+          currency: {
+            address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
+            chainId: 56,
+            decimals: 18,
+            isNative: false,
+            isToken: true,
+            name: undefined,
+            projectLink: undefined,
+            symbol: "XVS",
+          },
+          decimalScale: 1000000000000000000n,
+          denominator: 1n,
+          numerator: 517926942058379677423n,
+        },
+      });
+      expect(arbitrageArgs?.trade.path).toEqual(
+        "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+      );
+      expect(arbitrageArgs?.minIncome).toEqual(-7904975230019520420n);
 
       expect(subscriberMock).toHaveBeenCalledWith({
         type: "GetBestTrade",
