@@ -11,7 +11,6 @@ import getConfig from "../config";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
 import { ConverterBotMessage } from "../converter-bot/types";
-import { LiquidationBotMessage } from "../liquidation-bot/types";
 import { TradeRoute } from "../types";
 import SwapProvider from "./swap-provider";
 
@@ -21,7 +20,7 @@ class UniswapProvider extends SwapProvider {
   private chainName: SUPPORTED_CHAINS;
   private tokens: Map<Address, Token>;
 
-  constructor({ subscriber }: { subscriber?: (msg: ConverterBotMessage | LiquidationBotMessage) => void }) {
+  constructor({ subscriber }: { subscriber?: (msg: ConverterBotMessage) => void }) {
     super({ subscriber });
     this.tokens = new Map();
     this.chainName = config.network.name;

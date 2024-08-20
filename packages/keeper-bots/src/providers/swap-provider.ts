@@ -5,18 +5,17 @@ import { Address } from "viem";
 import getPublicClient from "../config/clients/publicClient";
 import getWalletClient from "../config/clients/walletClient";
 import { ConverterBotMessage } from "../converter-bot/types";
-import { LiquidationBotMessage } from "../liquidation-bot/types";
 import { DefaultMessage, TradeRoute } from "../types";
 
 class SwapProvider {
-  protected subscriber: undefined | ((msg: ConverterBotMessage | LiquidationBotMessage) => void);
+  protected subscriber: undefined | ((msg: ConverterBotMessage) => void);
   public publicClient: ReturnType<typeof getPublicClient>;
   public walletClient: ReturnType<typeof getWalletClient>;
 
   // @ts-expect-error defined in inheriting classes
   liquidityProviderId: number;
 
-  constructor({ subscriber }: { subscriber?: (msg: ConverterBotMessage | LiquidationBotMessage) => void }) {
+  constructor({ subscriber }: { subscriber?: (msg: ConverterBotMessage) => void }) {
     this.subscriber = subscriber;
     this.publicClient = getPublicClient();
     this.walletClient = getWalletClient();
@@ -41,7 +40,7 @@ class SwapProvider {
     blockNumber = undefined,
   }: Partial<DefaultMessage> & Pick<DefaultMessage, "type">) {
     if (this.subscriber) {
-      this.subscriber({ type, trx, error, context, blockNumber } as ConverterBotMessage | LiquidationBotMessage);
+      this.subscriber({ type, trx, error, context, blockNumber } as ConverterBotMessage);
     }
   }
 
