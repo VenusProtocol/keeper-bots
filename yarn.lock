@@ -7196,7 +7196,32 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@venusprotocol/keeper-bots@1.0.0-dev.1, @venusprotocol/keeper-bots@workspace:packages/keeper-bots":
+"@venusprotocol/keeper-bots@npm:1.0.0-dev.1":
+  version: 1.0.0-dev.1
+  resolution: "@venusprotocol/keeper-bots@npm:1.0.0-dev.1"
+  dependencies:
+    "@graphprotocol/client-cli": 3.0.0
+    "@pancakeswap/sdk": ^5.8.8
+    "@pancakeswap/smart-router": ^6.0.17
+    "@pancakeswap/v3-core": ^1.0.2
+    "@uniswap/sdk": ^3.0.3
+    "@uniswap/sdk-core": ^5.3.1
+    "@uniswap/smart-order-router": ^3.36.0
+    "@venusprotocol/keeper-bot-contracts": 1.2.0-dev.4
+    "@venusprotocol/oracle": ^2.0.0
+    "@wagmi/cli": ^2.0.4
+    abitype: 0.10.0
+    graphql: ^16.8.1
+    hardhat: ^2.19.5
+    jsbi: ^3.2.5
+    urql: ^3.0.3
+    viem: ^2.7.1
+    winston: ^3.11.0
+  checksum: 495bd8c85a66aa8c0ac14eb4cb236d7d9c8951122b393180cc9a4f89da65b27ef9045d0003b2982e5cb3a21dce9035c00094ba50c226aecdabbffadda0169a20
+  languageName: node
+  linkType: hard
+
+"@venusprotocol/keeper-bots@workspace:packages/keeper-bots":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/keeper-bots@workspace:packages/keeper-bots"
   dependencies:
@@ -7233,7 +7258,6 @@ __metadata:
     typescript: ^5.3.2
     urql: ^3.0.3
     viem: ^2.7.1
-    winston: ^3.11.0
   languageName: unknown
   linkType: soft
 
