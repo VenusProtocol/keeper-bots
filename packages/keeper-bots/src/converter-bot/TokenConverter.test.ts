@@ -9,8 +9,8 @@ import {
   tokenConverterOperatorAbi,
   vBnbAdminAbi,
 } from "../config/abis/generated";
+import { PancakeSwapProvider, UniswapProvider } from "../providers";
 import TokenConverter from "./TokenConverter";
-import { PancakeSwapProvider, UniswapProvider } from "./providers";
 import readTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
 
 jest.mock("@pancakeswap/smart-router/evm");
@@ -41,7 +41,7 @@ const addresses = {
 
 const createTokenConverterInstance = ({ simulate = false }: { simulate: boolean } = { simulate: false }) => {
   const subscriberMock = jest.fn();
-  const pancakeSwapProvider = new PancakeSwapProvider({ subscriber: subscriberMock, verbose: false });
+  const pancakeSwapProvider = new PancakeSwapProvider({ subscriber: subscriberMock });
   (pancakeSwapProvider.publicClient.multicall as jest.Mock).mockImplementation(() => [
     { result: 18 },
     { result: "USDT" },
@@ -51,9 +51,8 @@ const createTokenConverterInstance = ({ simulate = false }: { simulate: boolean 
   }));
   const tokenConverter = new TokenConverter({
     subscriber: subscriberMock,
-    verbose: false,
     simulate,
-    swapProvider: pancakeSwapProvider,
+    swapProvider: PancakeSwapProvider,
   });
   return { tokenConverter, pancakeSwapProvider, subscriberMock };
 };
@@ -78,14 +77,9 @@ describe("Token Converter", () => {
       (SmartRouter.getBestTrade as jest.Mock).mockImplementationOnce(() => null);
 
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      expect(
-        tokenConverter.getBestTrade(
-          addresses.USDCPrimeConverter,
-          addresses.WBNB,
-          addresses.USDC,
-          1000000000000000000000n,
-        ),
-      ).rejects.toThrow("No trade found");
+      expect(tokenConverter.getBestTrade(addresses.WBNB, addresses.USDC, 1000000000000000000000n)).rejects.toThrow(
+        "No trade found",
+      );
     });
 
     test("should handle thrown error", async () => {
@@ -102,14 +96,9 @@ describe("Token Converter", () => {
         throw new Error("Cannot find a valid swap route");
       });
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      expect(
-        tokenConverter.getBestTrade(
-          addresses.USDCPrimeConverter,
-          addresses.WBNB,
-          addresses.USDC,
-          1000000000000000000000n,
-        ),
-      ).rejects.toThrow("Error getting best trade - Cannot find a valid swap route");
+      expect(tokenConverter.getBestTrade(addresses.WBNB, addresses.USDC, 1000000000000000000000n)).rejects.toThrow(
+        "Error getting best trade - Cannot find a valid swap route",
+      );
     });
 
     test("should return trade with low price impact", async () => {
@@ -121,12 +110,7 @@ describe("Token Converter", () => {
       (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
-      const [trade, updatedAmountIn] = await tokenConverter.getBestTrade(
-        addresses.USDCPrimeConverter,
-        addresses.WBNB,
-        addresses.USDC,
-        1000000000000000000000n,
-      );
+      const trade = await tokenConverter.getBestTrade(addresses.WBNB, addresses.USDC, 1000000000000000000000n);
 
       expect(trade.inputToken).toEqual({
         address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
@@ -167,7 +151,6 @@ describe("Token Converter", () => {
       expect(trade.path).toEqual(
         "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
       );
-      expect(updatedAmountIn).toEqual([1000000000000000000n, 1000000000000000000n]);
     });
 
     test("should call getBestTrade again if price impact is high with lower amount", async () => {
@@ -193,12 +176,7 @@ describe("Token Converter", () => {
         return new Percent(9n, 1000n);
       });
 
-      const [trade, updatedAmountIn] = await pancakeSwapProvider.getBestTrade(
-        addresses.USDCPrimeConverter,
-        addresses.WBNB,
-        addresses.USDC,
-        1000000000000000000000n,
-      );
+      const trade = await pancakeSwapProvider.getBestTrade(addresses.WBNB, addresses.USDC, 1000000000000000000000n);
 
       expect(trade.inputToken).toEqual({
         address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
@@ -239,7 +217,6 @@ describe("Token Converter", () => {
       expect(trade.path).toEqual(
         "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630009c4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
       );
-      expect(updatedAmountIn).toEqual([1000000000000000000n, 1000000000000000000n]);
 
       expect(pancakeSwapProviderMock).toHaveBeenNthCalledWith(
         3,
@@ -273,7 +250,7 @@ describe("Token Converter", () => {
 
   describe("encodeExactInputPath - UniswapProvider", () => {
     const subscriberMock = jest.fn();
-    const uniswapProvider = new UniswapProvider({ subscriber: subscriberMock, verbose: false });
+    const uniswapProvider = new UniswapProvider({ subscriber: subscriberMock });
 
     expect(uniswapProvider.encodeExactInputPath(mockUniswapRoute.trade.routes[0])).toEqual(
       "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c630001f4bb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",

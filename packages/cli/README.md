@@ -49,7 +49,6 @@ Usage: venus release-funds [options]
 
 Options:
   --simulate            Simulate transactions (default: false)
-  --verbose             Verbose logging (default: false)
   --accrue-interest     Accrue Interest (default: false)
   --no-reduce-reserves  Reduce BNB Reserves
   -d, --debug           Add debug logging (default: false)

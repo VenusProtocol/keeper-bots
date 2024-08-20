@@ -2,23 +2,22 @@ import { Token } from "@uniswap/sdk-core";
 import { Pool } from "@uniswap/v3-sdk";
 import { Address } from "viem";
 
-import getPublicClient from "../../config/clients/publicClient";
-import getWalletClient from "../../config/clients/walletClient";
-import logger from "../logger";
-import { Message, TradeRoute } from "../types";
+import getPublicClient from "../config/clients/publicClient";
+import getWalletClient from "../config/clients/walletClient";
+import { ConverterBotMessage } from "../converter-bot/types";
+import { LiquidationBotMessage } from "../liquidation-bot/types";
+import { DefaultMessage, TradeRoute } from "../types";
 
 class SwapProvider {
-  private subscriber: undefined | ((msg: Message) => void);
-  private verbose: boolean;
+  protected subscriber: undefined | ((msg: ConverterBotMessage | LiquidationBotMessage) => void);
   public publicClient: ReturnType<typeof getPublicClient>;
   public walletClient: ReturnType<typeof getWalletClient>;
 
   // @ts-expect-error defined in inheriting classes
   liquidityProviderId: number;
 
-  constructor({ subscriber, verbose }: { subscriber?: (msg: Message) => void; verbose?: boolean }) {
+  constructor({ subscriber }: { subscriber?: (msg: ConverterBotMessage | LiquidationBotMessage) => void }) {
     this.subscriber = subscriber;
-    this.verbose = !!verbose;
     this.publicClient = getPublicClient();
     this.walletClient = getWalletClient();
   }
@@ -31,7 +30,7 @@ class SwapProvider {
 
   /**
    * Function to post message to subscriber
-   * @param Message
+   * @param ConverterBotMessage
    *
    */
   sendMessage({
@@ -40,30 +39,22 @@ class SwapProvider {
     error = undefined,
     context = undefined,
     blockNumber = undefined,
-  }: Partial<Message> & Pick<Message, "type">) {
+  }: Partial<DefaultMessage> & Pick<DefaultMessage, "type">) {
     if (this.subscriber) {
-      this.subscriber({ type, trx, error, context, blockNumber } as Message);
-    }
-
-    if (this.verbose) {
-      if (error) {
-        logger.error(Array.isArray(error) ? error.join(",") : error, context);
-      } else {
-        logger.info(`${type} - ${trx}`, context);
-      }
+      this.subscriber({ type, trx, error, context, blockNumber } as ConverterBotMessage | LiquidationBotMessage);
     }
   }
 
   async getBestTrade(
     // eslint-disable-next-line
-    tokenConverter: Address,
+    // tokenConverter: Address,
     // eslint-disable-next-line
     swapFrom: Address,
     // eslint-disable-next-line
     swapTo: Address,
     // eslint-disable-next-line
     amount: bigint,
-  ): Promise<[TradeRoute, readonly [bigint, bigint]]> {
+  ): Promise<TradeRoute> {
     throw new Error("Not Implemented Error");
   }
 }
