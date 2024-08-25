@@ -4,6 +4,7 @@ import { Client as UrqlClient, createClient } from "urql/core";
 import { Address, Hex, encodePacked, erc20Abi } from "viem";
 
 import getConfig from "../config";
+import { tokenConverterAbi } from "../config/abis/generated";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
 import { ConverterBotMessage } from "../converter-bot/types";
@@ -66,9 +67,22 @@ class PancakeSwapProvider extends SwapProvider {
     throw new Error(`Unable to fetch token details for ${address}`);
   }
 
-  async getBestTrade(swapFrom: Address, swapTo: Address, amount: bigint): Promise<TradeRoute> {
+  async getBestTrade(
+    tokenConverter: Address,
+    swapFrom: Address,
+    swapTo: Address,
+    amount: bigint,
+  ): Promise<[TradeRoute, bigint]> {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
+
+    // [amount transferred out of converter, amount transferred in]
+    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
+      address: tokenConverter,
+      abi: tokenConverterAbi,
+      functionName: "getUpdatedAmountIn",
+      args: [amount, swapTo, swapFrom],
+    });
 
     const candidatePools = await SmartRouter.getV3CandidatePools({
       onChainProvider: () => this.publicClient,
@@ -82,7 +96,7 @@ class PancakeSwapProvider extends SwapProvider {
 
     try {
       const response = await SmartRouter.getBestTrade(
-        CurrencyAmount.fromRawAmount(swapToToken, amount),
+        CurrencyAmount.fromRawAmount(swapToToken, updatedAmountIn[1]),
         swapFromToken,
         TradeType.EXACT_OUTPUT,
         {
@@ -94,6 +108,7 @@ class PancakeSwapProvider extends SwapProvider {
           quoterOptimization: true,
         },
       );
+
       if (response) {
         trade = {
           inputToken: {
@@ -128,9 +143,9 @@ class PancakeSwapProvider extends SwapProvider {
         },
       });
 
-      return this.getBestTrade(swapFrom, swapTo, (amount * 75n) / 100n);
+      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[1] * 75n) / 100n);
     }
-    return trade;
+    return [trade, amount];
   }
 
   /**

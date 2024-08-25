@@ -50,8 +50,13 @@ export class TokenConverter extends BotBase {
    * @param amount The amount we will receive from the converter of swapFrom
    * @returns [SmartRouterTrade, [amount transferred out of converter, amount transferred in]]
    */
-  async getBestTrade(swapFrom: Address, swapTo: Address, amount: bigint): Promise<TradeRoute> {
-    return this.swapProvider.getBestTrade(swapFrom, swapTo, amount);
+  async getBestTrade(
+    tokenConverter: Address,
+    swapFrom: Address,
+    swapTo: Address,
+    amount: bigint,
+  ): Promise<[TradeRoute, bigint]> {
+    return this.swapProvider.getBestTrade(tokenConverter, swapFrom, swapTo, amount);
   }
 
   /**
@@ -384,7 +389,7 @@ export class TokenConverter extends BotBase {
   async prepareConversion(tokenConverter: Address, assetOut: Address, assetIn: Address, amountOut: bigint) {
     let error;
     let trade;
-    let tradeAmount;
+    let amount;
 
     // [amount transferred out of converter, amount transferred in]
     const { result: updatedAmountIn } = await this.publicClient.simulateContract({
@@ -395,14 +400,13 @@ export class TokenConverter extends BotBase {
     });
 
     try {
-      trade = await this.getBestTrade(assetOut, assetIn, updatedAmountIn[1]);
+      [trade, amount] = await this.getBestTrade(tokenConverter, assetOut, assetIn, updatedAmountIn[0]);
     } catch (e) {
       error = (e as Error).message;
     } finally {
-      let tradeContext: Pick<GetBestTradeMessage["context"], "tradeAmount" | "swap"> = {};
-      if (trade && tradeAmount) {
+      let tradeContext: Pick<GetBestTradeMessage["context"], "swap"> = {};
+      if (trade) {
         tradeContext = {
-          tradeAmount: { amountOut: tradeAmount && tradeAmount[0], amountIn: tradeAmount && tradeAmount[1] },
           swap: {
             inputToken: {
               amount: trade.inputToken.amount.toFixed(0),
@@ -428,13 +432,13 @@ export class TokenConverter extends BotBase {
       });
     }
 
-    if (trade && tradeAmount) {
+    if (trade && amount) {
       // the difference between the token you get from TokenConverter and the token you pay to the MM
-      const minIncome = new Fraction(tradeAmount[0], 1).subtract(trade.inputToken.amount);
+      const minIncome = new Fraction(amount).subtract(trade.inputToken.amount);
       return {
         trade,
-        amount: tradeAmount[0],
-        minIncome: BigInt(minIncome.toFixed(0, { groupSeparator: "" })),
+        amount: trade.inputToken.amount.quotient,
+        minIncome: minIncome.quotient,
       };
     }
   }

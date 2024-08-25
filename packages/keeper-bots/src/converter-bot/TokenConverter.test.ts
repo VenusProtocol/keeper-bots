@@ -77,9 +77,14 @@ describe("Token Converter", () => {
       (SmartRouter.getBestTrade as jest.Mock).mockImplementationOnce(() => null);
 
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      expect(tokenConverter.getBestTrade(addresses.WBNB, addresses.USDC, 1000000000000000000000n)).rejects.toThrow(
-        "No trade found",
-      );
+      expect(
+        tokenConverter.getBestTrade(
+          addresses.USDCPrimeConverter,
+          addresses.WBNB,
+          addresses.USDC,
+          1000000000000000000000n,
+        ),
+      ).rejects.toThrow("No trade found");
     });
 
     test("should handle thrown error", async () => {
@@ -96,9 +101,14 @@ describe("Token Converter", () => {
         throw new Error("Cannot find a valid swap route");
       });
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      expect(tokenConverter.getBestTrade(addresses.WBNB, addresses.USDC, 1000000000000000000000n)).rejects.toThrow(
-        "Error getting best trade - Cannot find a valid swap route",
-      );
+      expect(
+        tokenConverter.getBestTrade(
+          addresses.USDCPrimeConverter,
+          addresses.WBNB,
+          addresses.USDC,
+          1000000000000000000000n,
+        ),
+      ).rejects.toThrow("Error getting best trade - Cannot find a valid swap route");
     });
 
     test("should return trade with low price impact", async () => {
@@ -110,7 +120,12 @@ describe("Token Converter", () => {
       (tokenConverter.publicClient.simulateContract as jest.Mock).mockImplementation(() => ({
         result: [1000000000000000000n, 1000000000000000000n],
       }));
-      const trade = await tokenConverter.getBestTrade(addresses.WBNB, addresses.USDC, 1000000000000000000000n);
+      const [trade] = await tokenConverter.getBestTrade(
+        addresses.USDCPrimeConverter,
+        addresses.WBNB,
+        addresses.USDC,
+        1000000000000000000000n,
+      );
 
       expect(trade.inputToken).toEqual({
         address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
@@ -176,7 +191,12 @@ describe("Token Converter", () => {
         return new Percent(9n, 1000n);
       });
 
-      const trade = await pancakeSwapProvider.getBestTrade(addresses.WBNB, addresses.USDC, 1000000000000000000000n);
+      const [trade] = await pancakeSwapProvider.getBestTrade(
+        addresses.USDCPrimeConverter,
+        addresses.WBNB,
+        addresses.USDC,
+        1000000000000000000000n,
+      );
 
       expect(trade.inputToken).toEqual({
         address: "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",

@@ -8,6 +8,7 @@ import JSBI from "jsbi";
 import { Address, Hex, encodePacked, erc20Abi } from "viem";
 
 import getConfig from "../config";
+import { tokenConverterAbi } from "../config/abis/generated";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
 import { ConverterBotMessage } from "../converter-bot/types";
@@ -61,13 +62,21 @@ class UniswapProvider extends SwapProvider {
   }
 
   async getBestTrade(
-    // tokenConverter: Address,
+    tokenConverter: Address,
     swapFrom: Address,
     swapTo: Address,
     amount: bigint,
-  ): Promise<TradeRoute> {
+  ): Promise<[TradeRoute, bigint]> {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
+
+    // [amount transferred out of converter, amount transferred in]
+    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
+      address: tokenConverter,
+      abi: tokenConverterAbi,
+      functionName: "getUpdatedAmountIn",
+      args: [amount, swapTo, swapFrom],
+    });
 
     const provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
     const router = new AlphaRouter({
@@ -84,7 +93,7 @@ class UniswapProvider extends SwapProvider {
     let trade;
     try {
       const response = await router.route(
-        CurrencyAmount.fromRawAmount(swapToToken, JSBI.BigInt(amount.toString())),
+        CurrencyAmount.fromRawAmount(swapToToken, JSBI.BigInt(updatedAmountIn[1].toString())),
         swapFromToken,
         TradeType.EXACT_OUTPUT,
         options,
@@ -125,7 +134,7 @@ class UniswapProvider extends SwapProvider {
       throw new Error("No trade found");
     }
 
-    return trade;
+    return [trade, amount];
   }
 
   /**

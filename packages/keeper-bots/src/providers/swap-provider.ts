@@ -46,14 +46,14 @@ class SwapProvider {
 
   async getBestTrade(
     // eslint-disable-next-line
-    // tokenConverter: Address,
+    tokenConverter: Address,
     // eslint-disable-next-line
     swapFrom: Address,
     // eslint-disable-next-line
     swapTo: Address,
     // eslint-disable-next-line
     amount: bigint,
-  ): Promise<TradeRoute> {
+  ): Promise<[TradeRoute, bigint]> {
     throw new Error("Not Implemented Error");
   }
 }
