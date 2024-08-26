@@ -134,7 +134,7 @@ class UniswapProvider extends SwapProvider {
       throw new Error("No trade found");
     }
 
-    return [trade, amount];
+    return [trade, updatedAmountIn[0]];
   }
 
   /**

@@ -146,7 +146,7 @@ class PancakeSwapProvider extends SwapProvider {
 
       return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[1] * 75n) / 100n);
     }
-    return [trade, amount];
+    return [trade, updatedAmountIn[0]];
   }
 
   /**
