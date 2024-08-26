@@ -3,16 +3,15 @@ import { BaseRoute, Pool, QuoteProvider, SmartRouter, V3Pool } from "@pancakeswa
 import { Client as UrqlClient, createClient } from "urql/core";
 import { Address, Hex, encodePacked, erc20Abi } from "viem";
 
-import getConfig from "../../config";
-import { tokenConverterAbi } from "../../config/abis/generated";
-import type { SUPPORTED_CHAINS } from "../../config/chains";
-import { chains } from "../../config/chains";
-import { Message, TradeRoute } from "../types";
+import getConfig from "../config";
+import { tokenConverterAbi } from "../config/abis/generated";
+import type { SUPPORTED_CHAINS } from "../config/chains";
+import { chains } from "../config/chains";
+import { ConverterBotMessage } from "../converter-bot/types";
+import { TradeRoute } from "../types";
 import SwapProvider from "./swap-provider";
 
 const config = getConfig();
-
-const MAX_HOPS = 5;
 
 class PancakeSwapProvider extends SwapProvider {
   private chainName: SUPPORTED_CHAINS;
@@ -20,8 +19,8 @@ class PancakeSwapProvider extends SwapProvider {
   private tokens: Map<Address, Token>;
   private quoteProvider: QuoteProvider;
 
-  constructor({ subscriber, verbose }: { subscriber?: (msg: Message) => void; verbose?: boolean }) {
-    super({ subscriber, verbose });
+  constructor({ subscriber }: { subscriber?: (msg: ConverterBotMessage) => void }) {
+    super({ subscriber });
     this.v3PancakeSubgraphClient = config.swapSubgraphUrl
       ? createClient({
           url: config.swapSubgraphUrl,
@@ -73,9 +72,18 @@ class PancakeSwapProvider extends SwapProvider {
     swapFrom: Address,
     swapTo: Address,
     amount: bigint,
-  ): Promise<[TradeRoute, readonly [bigint, bigint]]> {
+  ): Promise<[TradeRoute, bigint]> {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
+
+    // [amount transferred out of converter, amount transferred in]
+    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
+      address: tokenConverter,
+      abi: tokenConverterAbi,
+      functionName: "getUpdatedAmountIn",
+      args: [amount, swapTo, swapFrom],
+    });
+
     const candidatePools = await SmartRouter.getV3CandidatePools({
       onChainProvider: () => this.publicClient,
       subgraphProvider: () => this.v3PancakeSubgraphClient,
@@ -86,14 +94,6 @@ class PancakeSwapProvider extends SwapProvider {
     let error;
     let priceImpact;
 
-    // [amount transferred out of converter, amount transferred in]
-    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
-      address: tokenConverter,
-      abi: tokenConverterAbi,
-      functionName: "getUpdatedAmountIn",
-      args: [amount, swapToToken.address, swapFromToken.address],
-    });
-
     try {
       const response = await SmartRouter.getBestTrade(
         CurrencyAmount.fromRawAmount(swapToToken, updatedAmountIn[1]),
@@ -101,7 +101,7 @@ class PancakeSwapProvider extends SwapProvider {
         TradeType.EXACT_OUTPUT,
         {
           gasPriceWei: () => this.publicClient.getGasPrice(),
-          maxHops: MAX_HOPS,
+          maxHops: 5,
           maxSplits: 0,
           poolProvider: SmartRouter.createStaticPoolProvider(candidatePools),
           quoteProvider: this.quoteProvider,
@@ -143,9 +143,10 @@ class PancakeSwapProvider extends SwapProvider {
           priceImpact: priceImpact.toFixed(),
         },
       });
-      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[0] * 75n) / 100n);
+
+      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[1] * 75n) / 100n);
     }
-    return [trade, updatedAmountIn];
+    return [trade, updatedAmountIn[0]];
   }
 
   /**

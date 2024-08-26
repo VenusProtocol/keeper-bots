@@ -1,6 +1,6 @@
 import { Address } from "viem";
 import {
-  Message,
+  ConverterBotMessage,
   GetBestTradeMessage,
   ArbitrageMessage,
   PotentialConversionsMessage,
@@ -43,7 +43,7 @@ export const defaultState = {
   messages: [],
 };
 
-export const reducer = (state: State, action: Message | ExecuteTradeMessage): State => {
+export const reducer = (state: State, action: ConverterBotMessage | ExecuteTradeMessage): State => {
   switch (action.type) {
     case "PotentialConversions":
     case "GetBestTrade":

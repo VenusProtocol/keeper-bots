@@ -4,7 +4,7 @@ import { Address, decodeFunctionResult, encodeFunctionData, erc20Abi, parseAbi }
 
 import { protocolShareReserveAbi } from "../../config/abis/generated";
 import getAddresses from "../../config/addresses";
-import getPublicClient from "../../config/clients/publicClient";
+import publicClient from "../../config/clients/publicClient";
 import { MULTICALL_ABI, MULTICALL_ADDRESS } from "../constants";
 import getCoreMarkets from "./getCoreMarkets";
 import getIsolatedMarkets from "./getIsolatedMarkets";
@@ -102,7 +102,6 @@ export const getTokenConvertersTokenBalances = async (
   releaseFunds?: boolean,
 ): Promise<{ results: BalanceResult[]; blockNumber: bigint }> => {
   const addresses = getAddresses();
-  const publicClient = getPublicClient();
   const pools = await reduceConfigsToComptrollerAndTokens(tokenConverterConfigs);
   let releaseFundsCalls: { target: string; allowFailure: boolean; callData: string }[] = [];
   if (releaseFunds) {

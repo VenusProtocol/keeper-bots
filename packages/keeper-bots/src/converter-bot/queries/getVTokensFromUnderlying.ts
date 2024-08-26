@@ -10,12 +10,19 @@ const getVTokensFromUnderlying = async (
   coreVTokens: CoreVTokensFromUnderlyingQuery["markets"];
   isolatedVTokens: IsolatedVTokensFromUnderlyingQuery["markets"];
 }> => {
-  const isolatedPoolSubgraphClient = new SubgraphClient(getConfig().isolatedPoolsSubgraphUrl);
-  const corePoolSubgraphClient = new SubgraphClient(getConfig().corePoolSubgraphUrl);
+  const config = getConfig();
+  const isolatedPoolSubgraphClient = new SubgraphClient(config.isolatedPoolsSubgraphUrl);
   const { data: { markets: isolatedVTokens = [] } = { isolatedVTokens: [] } } =
     await isolatedPoolSubgraphClient.getIsolatedVTokensFromUnderlying(underlyingAddress);
-  const { data: { markets: coreVTokens = [] } = { coreVTokens: [] } } =
-    await corePoolSubgraphClient.getCoreVTokensFromUnderlying(underlyingAddress);
+  const corePoolSubgraphUrl = config.corePoolSubgraphUrl;
+  let coreVTokens: CoreVTokensFromUnderlyingQuery["markets"] = [];
+  if (corePoolSubgraphUrl) {
+    const corePoolSubgraphClient = new SubgraphClient(corePoolSubgraphUrl);
+    const { data: { markets } = { markets: [] } } = await corePoolSubgraphClient.getCoreVTokensFromUnderlying(
+      underlyingAddress,
+    );
+    coreVTokens = markets;
+  }
 
   return { coreVTokens, isolatedVTokens };
 };

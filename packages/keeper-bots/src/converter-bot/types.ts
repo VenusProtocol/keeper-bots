@@ -1,17 +1,10 @@
-import { Fraction } from "@pancakeswap/sdk";
 import { Address } from "viem";
 
+import { DefaultMessage } from "../types";
 import { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
 
 export type MarketAddresses = { underlyingAddress: Address; vTokenAddress: Address };
 export type PoolAddressArray = [Address, MarketAddresses[]];
-
-export interface DefaultMessage {
-  trx: string | undefined;
-  error: string | undefined;
-  blockNumber?: bigint | undefined;
-  context?: unknown;
-}
 
 export interface ReduceReservesMessage extends DefaultMessage {
   type: "ReduceReserves";
@@ -24,6 +17,7 @@ export interface ReleaseFundsMessage extends DefaultMessage {
 
 export interface ArbitrageMessage extends DefaultMessage {
   type: "Arbitrage";
+  error: string | undefined;
   context: {
     beneficiary: Address;
     tokenToReceiveFromConverter: Address;
@@ -57,30 +51,17 @@ export interface PotentialConversionsMessage extends DefaultMessage {
   context: { conversions: BalanceResult[] };
 }
 
-export interface AccrueInterestMessage {
+export interface AccrueInterestMessage extends DefaultMessage {
   type: "AccrueInterest";
-  trx: string | undefined;
-  error: string | string[] | undefined;
+  trx?: string;
   blockNumber?: bigint | undefined;
   context: undefined;
 }
 
-export type Message =
+export type ConverterBotMessage =
   | ReduceReservesMessage
   | ReleaseFundsMessage
   | PotentialConversionsMessage
   | AccrueInterestMessage
   | ArbitrageMessage
   | GetBestTradeMessage;
-
-export interface TradeRoute {
-  inputToken: {
-    amount: Fraction;
-    address: Address;
-  };
-  outputToken: {
-    amount: Fraction;
-    address: Address;
-  };
-  path: Address;
-}

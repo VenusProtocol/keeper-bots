@@ -3,14 +3,13 @@ import { Address } from "viem";
 import getConfig from "../../config";
 import { coreComptrollerAbi, vBep20InterfaceAbi } from "../../config/abis/generated";
 import getAddresses from "../../config/addresses";
-import getPublicClient from "../../config/clients/publicClient";
+import publicClient from "../../config/clients/publicClient";
 import type { PoolAddressArray } from "../types";
 
 export const getCoreMarkets = async (): Promise<PoolAddressArray[]> => {
   const config = getConfig();
   if (config.network.name === "bscmainnet" || config.network.name === "bsctestnet") {
     const addresses = getAddresses();
-    const publicClient = getPublicClient();
     const markets = await publicClient.readContract({
       address: addresses.Unitroller as Address,
       abi: coreComptrollerAbi,

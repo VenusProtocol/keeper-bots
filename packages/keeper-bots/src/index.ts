@@ -5,5 +5,5 @@ import getAddresses from "./config/addresses";
 export * from "./converter-bot/TokenConverter";
 export * from "./converter-bot/queries";
 export * from "./converter-bot/types";
-export * from "./converter-bot/providers";
+export * from "./providers";
 export { getAddresses };
