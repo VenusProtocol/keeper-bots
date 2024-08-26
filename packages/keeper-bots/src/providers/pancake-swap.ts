@@ -137,6 +137,7 @@ class PancakeSwapProvider extends SwapProvider {
         type: "GetBestTrade",
         error: "High price impact",
         context: {
+          converter: tokenConverter,
           tokenToReceiveFromConverter: swapFromToken.address!,
           tokenToSendToConverter: swapToToken.address!,
           priceImpact: priceImpact.toFixed(),

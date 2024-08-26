@@ -12,4 +12,4 @@ const getPublicClient = () => {
   });
 };
 
-export default getPublicClient;
+export default getPublicClient();

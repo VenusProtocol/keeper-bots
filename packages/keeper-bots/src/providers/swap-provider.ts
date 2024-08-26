@@ -2,23 +2,23 @@ import { Token } from "@uniswap/sdk-core";
 import { Pool } from "@uniswap/v3-sdk";
 import { Address } from "viem";
 
-import getPublicClient from "../config/clients/publicClient";
-import getWalletClient from "../config/clients/walletClient";
+import publicClient from "../config/clients/publicClient";
+import walletClient from "../config/clients/walletClient";
 import { ConverterBotMessage } from "../converter-bot/types";
 import { DefaultMessage, TradeRoute } from "../types";
 
 class SwapProvider {
   protected subscriber: undefined | ((msg: ConverterBotMessage) => void);
-  public publicClient: ReturnType<typeof getPublicClient>;
-  public walletClient: ReturnType<typeof getWalletClient>;
+  public publicClient: typeof publicClient;
+  public walletClient: typeof walletClient;
 
   // @ts-expect-error defined in inheriting classes
   liquidityProviderId: number;
 
   constructor({ subscriber }: { subscriber?: (msg: ConverterBotMessage) => void }) {
     this.subscriber = subscriber;
-    this.publicClient = getPublicClient();
-    this.walletClient = getWalletClient();
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
   }
 
   getOutputCurrency = <P = Pool, T = Token>(pool: P, inputToken: T): T => {

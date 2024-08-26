@@ -1,7 +1,7 @@
 import getConfig from "./config";
 import type { SUPPORTED_CHAINS } from "./config/chains";
-import getPublicClient from "./config/clients/publicClient";
-import getWalletClient from "./config/clients/walletClient";
+import publicClient from "./config/clients/publicClient";
+import walletClient from "./config/clients/walletClient";
 import { ConverterBotMessage } from "./converter-bot/types";
 import { SwapProvider } from "./providers";
 
@@ -12,8 +12,8 @@ class BotBase {
   protected subscriber: undefined | ((msg: ConverterBotMessage) => void);
   protected simulate: boolean;
   protected swapProvider: SwapProvider;
-  public publicClient: ReturnType<typeof getPublicClient>;
-  public walletClient: ReturnType<typeof getWalletClient>;
+  public publicClient: typeof publicClient;
+  public walletClient: typeof walletClient;
 
   constructor({
     subscriber,
@@ -26,8 +26,8 @@ class BotBase {
   }) {
     this.subscriber = subscriber;
     this.swapProvider = new swapProvider({ subscriber });
-    this.publicClient = getPublicClient();
-    this.walletClient = getWalletClient();
+    this.publicClient = publicClient;
+    this.walletClient = walletClient;
     this.simulate = simulate;
     this.chainName = config.network.name;
   }

@@ -22,4 +22,4 @@ const getWalletClient = () => {
   });
 };
 
-export default getWalletClient;
+export default getWalletClient();

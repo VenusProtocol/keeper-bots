@@ -10,7 +10,6 @@ import {
   vBnbAdminAbi,
   venusLensAbi,
 } from "../config/abis/generated";
-import { tokenConverterAbi } from "../config/abis/generated";
 import getAddresses from "../config/addresses";
 import { SwapProvider } from "../providers";
 import { TradeRoute } from "../types";
@@ -391,16 +390,8 @@ export class TokenConverter extends BotBase {
     let trade;
     let amount;
 
-    // [amount transferred out of converter, amount transferred in]
-    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
-      address: tokenConverter,
-      abi: tokenConverterAbi,
-      functionName: "getUpdatedAmountIn",
-      args: [amountOut, assetIn, assetOut],
-    });
-
     try {
-      [trade, amount] = await this.getBestTrade(tokenConverter, assetOut, assetIn, updatedAmountIn[0]);
+      [trade, amount] = await this.getBestTrade(tokenConverter, assetOut, assetIn, amountOut);
     } catch (e) {
       error = (e as Error).message;
     } finally {
