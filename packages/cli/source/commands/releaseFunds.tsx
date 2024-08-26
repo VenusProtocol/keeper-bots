@@ -29,16 +29,6 @@ export const options = zod.object({
       }),
     )
     .optional(),
-  verbose: zod
-    .boolean()
-    .default(false)
-    .describe(
-      option({
-        description: "Verbose logging",
-        alias: "v",
-      }),
-    )
-    .optional(),
   accrueInterest: zod
     .boolean()
     .default(false)
@@ -136,10 +126,7 @@ function ReleaseFunds({ options = {} }: Props) {
       const tokenConverter = new TokenConverter({
         subscriber: dispatch,
         simulate: !!simulate,
-        verbose: false,
-        swapProvider: network?.includes("bsc")
-          ? new PancakeSwapProvider({ subscriber: dispatch, verbose: false })
-          : new UniswapProvider({ subscriber: dispatch, verbose: false }),
+        swapProvider: network?.includes("bsc") ? PancakeSwapProvider : UniswapProvider,
       });
       const corePoolMarkets = await getCoreMarkets();
       const isolatedPoolsMarkets = await getIsolatedMarkets();

@@ -1,4 +1,4 @@
-const getPublicClientMock = () => ({
+const publicClientMock = {
   simulateContract: jest.fn(),
   readContract: jest.fn(),
   multicall: jest.fn(),
@@ -6,6 +6,6 @@ const getPublicClientMock = () => ({
   getBlockNumber: jest.fn(),
   waitForTransactionReceipt: jest.fn(),
   estimateContractGas: jest.fn(),
-});
+};
 
-export default getPublicClientMock;
+export default publicClientMock;

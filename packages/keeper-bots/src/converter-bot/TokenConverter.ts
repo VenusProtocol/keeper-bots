@@ -1,7 +1,7 @@
 import { Fraction } from "@pancakeswap/sdk";
 import { Address, BaseError, ContractFunctionRevertedError, erc20Abi, formatUnits } from "viem";
 
-import getConfig from "../config";
+import BotBase from "../bot-base";
 import {
   coreVTokenAbi,
   poolLensAbi,
@@ -11,78 +11,34 @@ import {
   venusLensAbi,
 } from "../config/abis/generated";
 import getAddresses from "../config/addresses";
-import type { SUPPORTED_CHAINS } from "../config/chains";
-import getPublicClient from "../config/clients/publicClient";
-import getWalletClient from "../config/clients/walletClient";
-import logger from "./logger";
-import { SwapProvider } from "./providers";
+import { SwapProvider } from "../providers";
+import { TradeRoute } from "../types";
 import getConverterConfigs from "./queries/getTokenConverterConfigs";
 import getTokenConvertersTokenBalances, { BalanceResult } from "./queries/getTokenConvertersTokenBalances";
-import { GetBestTradeMessage, MarketAddresses, Message, TradeRoute } from "./types";
-
-const config = getConfig();
+import { ConverterBotMessage, GetBestTradeMessage, MarketAddresses } from "./types";
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 
-export class TokenConverter {
-  private chainName: SUPPORTED_CHAINS;
+export class TokenConverter extends BotBase {
   private addresses: ReturnType<typeof getAddresses>;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
-  private subscriber: undefined | ((msg: Message) => void);
-  private simulate: boolean;
-  private verbose: boolean;
-  private swapProvider: SwapProvider;
-  public publicClient: ReturnType<typeof getPublicClient>;
-  public walletClient: ReturnType<typeof getWalletClient>;
 
   constructor({
     subscriber,
     swapProvider,
     simulate,
-    verbose = false,
   }: {
-    subscriber?: (msg: Message) => void;
-    swapProvider: SwapProvider;
+    subscriber?: (msg: ConverterBotMessage) => void;
+    swapProvider: typeof SwapProvider;
     simulate: boolean;
-    verbose: boolean;
   }) {
+    super({ subscriber, simulate, swapProvider });
     this.addresses = getAddresses();
-    this.swapProvider = swapProvider;
-    this.chainName = config.network.name;
-    this.subscriber = subscriber;
+    this.swapProvider = new swapProvider({ subscriber });
     this.operator = {
       address: this.addresses.TokenConverterOperator,
       abi: tokenConverterOperatorAbi,
     };
-    this.publicClient = getPublicClient();
-    this.walletClient = getWalletClient();
-    this.simulate = simulate;
-    this.verbose = verbose;
-  }
-
-  /**
-   * Function to post message to subscriber
-   * @param Message
-   *
-   */
-  private sendMessage({
-    type,
-    trx = undefined,
-    error = undefined,
-    context = undefined,
-    blockNumber = undefined,
-  }: Partial<Message> & Pick<Message, "type">) {
-    if (this.subscriber) {
-      this.subscriber({ type, trx, error, context, blockNumber } as Message);
-    }
-
-    if (this.verbose) {
-      if (error) {
-        logger.error(Array.isArray(error) ? error.join(",") : error, context);
-      } else {
-        logger.info(`${type} - ${trx}`, context);
-      }
-    }
   }
 
   /**
@@ -98,7 +54,7 @@ export class TokenConverter {
     swapFrom: Address,
     swapTo: Address,
     amount: bigint,
-  ): Promise<[TradeRoute, readonly [bigint, bigint]]> {
+  ): Promise<[TradeRoute, bigint]> {
     return this.swapProvider.getBestTrade(tokenConverter, swapFrom, swapTo, amount);
   }
 
@@ -432,16 +388,16 @@ export class TokenConverter {
   async prepareConversion(tokenConverter: Address, assetOut: Address, assetIn: Address, amountOut: bigint) {
     let error;
     let trade;
-    let tradeAmount;
+    let amount;
+
     try {
-      [trade, tradeAmount] = await this.getBestTrade(tokenConverter, assetOut, assetIn, amountOut);
+      [trade, amount] = await this.getBestTrade(tokenConverter, assetOut, assetIn, amountOut);
     } catch (e) {
       error = (e as Error).message;
     } finally {
-      let tradeContext: Pick<GetBestTradeMessage["context"], "tradeAmount" | "swap"> = {};
-      if (trade && tradeAmount) {
+      let tradeContext: Pick<GetBestTradeMessage["context"], "swap"> = {};
+      if (trade) {
         tradeContext = {
-          tradeAmount: { amountOut: tradeAmount && tradeAmount[0], amountIn: tradeAmount && tradeAmount[1] },
           swap: {
             inputToken: {
               amount: trade.inputToken.amount.toFixed(0),
@@ -467,13 +423,13 @@ export class TokenConverter {
       });
     }
 
-    if (trade && tradeAmount) {
+    if (trade && amount) {
       // the difference between the token you get from TokenConverter and the token you pay to the MM
-      const minIncome = new Fraction(tradeAmount[0], 1).subtract(trade.inputToken.amount);
+      const minIncome = new Fraction(amount).subtract(trade.inputToken.amount);
       return {
         trade,
-        amount: tradeAmount[0],
-        minIncome: BigInt(minIncome.toFixed(0, { groupSeparator: "" })),
+        amount: trade.inputToken.amount.quotient,
+        minIncome: minIncome.quotient,
       };
     }
   }

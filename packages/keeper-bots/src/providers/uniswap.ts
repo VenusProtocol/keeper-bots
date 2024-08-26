@@ -7,11 +7,12 @@ import { ethers } from "ethers";
 import JSBI from "jsbi";
 import { Address, Hex, encodePacked, erc20Abi } from "viem";
 
-import getConfig from "../../config";
-import { tokenConverterAbi } from "../../config/abis/generated";
-import type { SUPPORTED_CHAINS } from "../../config/chains";
-import { chains } from "../../config/chains";
-import { Message, TradeRoute } from "../types";
+import getConfig from "../config";
+import { tokenConverterAbi } from "../config/abis/generated";
+import type { SUPPORTED_CHAINS } from "../config/chains";
+import { chains } from "../config/chains";
+import { ConverterBotMessage } from "../converter-bot/types";
+import { TradeRoute } from "../types";
 import SwapProvider from "./swap-provider";
 
 const config = getConfig();
@@ -20,8 +21,8 @@ class UniswapProvider extends SwapProvider {
   private chainName: SUPPORTED_CHAINS;
   private tokens: Map<Address, Token>;
 
-  constructor({ subscriber, verbose }: { subscriber?: (msg: Message) => void; verbose?: boolean }) {
-    super({ subscriber, verbose });
+  constructor({ subscriber }: { subscriber?: (msg: ConverterBotMessage) => void }) {
+    super({ subscriber });
     this.tokens = new Map();
     this.chainName = config.network.name;
     this.liquidityProviderId = 0;
@@ -65,7 +66,7 @@ class UniswapProvider extends SwapProvider {
     swapFrom: Address,
     swapTo: Address,
     amount: bigint,
-  ): Promise<[TradeRoute, readonly [bigint, bigint]]> {
+  ): Promise<[TradeRoute, bigint]> {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
 
@@ -125,7 +126,7 @@ class UniswapProvider extends SwapProvider {
     } catch (e) {
       error = `Error getting best trade - ${(e as Error).message} toToken ${swapToToken.address} fromToken ${
         swapFromToken.address
-      } amount ${JSBI.BigInt(updatedAmountIn[1].toString())}`;
+      } amount ${JSBI.BigInt(amount.toString())}`;
       throw new Error(error);
     }
 
@@ -133,7 +134,7 @@ class UniswapProvider extends SwapProvider {
       throw new Error("No trade found");
     }
 
-    return [trade, updatedAmountIn];
+    return [trade, updatedAmountIn[0]];
   }
 
   /**

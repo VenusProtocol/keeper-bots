@@ -1,6 +1,6 @@
 {
   "name": "@venusprotocol/keeper-bots",
-  "version": "1.0.0-dev.2",
+  "version": "1.0.0-dev.3",
   "description": "",
   "scripts": {
     "dev": "tsc --watch",
@@ -42,8 +42,7 @@
     "hardhat": "^2.19.5",
     "jsbi": "^3.2.5",
     "urql": "^3.0.3",
-    "viem": "^2.7.1",
-    "winston": "^3.11.0"
+    "viem": "^2.7.1"
   },
   "devDependencies": {
     "@typechain/hardhat": "^6.1.2",

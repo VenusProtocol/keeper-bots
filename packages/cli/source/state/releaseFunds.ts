@@ -1,9 +1,9 @@
-import { Message } from "@venusprotocol/keeper-bots";
+import { ConverterBotMessage } from "@venusprotocol/keeper-bots";
 
 interface State {
   releasedFunds: {
     trx: string | undefined;
-    error: string | undefined;
+    error: string | string[] | undefined;
     context: [`0x${string}`, readonly `0x${string}`[]];
   }[];
 }
@@ -12,7 +12,7 @@ export const defaultState = {
   releasedFunds: [],
 };
 
-export const reducer = (state: State, action: Message): State => {
+export const reducer = (state: State, action: ConverterBotMessage): State => {
   switch (action.type) {
     case "ReleaseFunds": {
       const releasedFunds = [...state.releasedFunds];

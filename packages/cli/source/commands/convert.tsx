@@ -3,7 +3,7 @@ import { option } from "pastel";
 import { Box, Spacer, Text, useApp, useStderr } from "ink";
 import zod from "zod";
 import { parseUnits } from "viem";
-import { TokenConverter, PancakeSwapProvider, UniswapProvider, BalanceResult } from "@venusprotocol/keeper-bots";
+import { TokenConverter, PancakeSwapProvider, UniswapProvider } from "@venusprotocol/keeper-bots";
 import { stringifyBigInt, getConverterConfigId } from "../utils/index.js";
 import { Options, Title, BorderBox } from "../components/index.js";
 import { reducer, defaultState } from "../state/convert.js";
@@ -152,10 +152,7 @@ export default function Convert({ options }: Props) {
       const tokenConverter = new TokenConverter({
         subscriber: dispatch,
         simulate: !!simulate,
-        verbose: debug,
-        swapProvider: network?.includes("bsc")
-          ? new PancakeSwapProvider({ subscriber: dispatch })
-          : new UniswapProvider({ subscriber: dispatch }),
+        swapProvider: network?.includes("bsc") ? PancakeSwapProvider : UniswapProvider,
       });
 
       do {
@@ -173,84 +170,69 @@ export default function Convert({ options }: Props) {
           // @todo check if we need to release funds or if there are already enough funds to make our trade
           await tokenConverter.releaseFundsForConversions(potentialConversions);
         }
-        await Promise.allSettled(
-          potentialConversions.map(async (t: BalanceResult) => {
-            let amountOut = t.assetOut.balance;
 
-            const vTokenAddress = t.assetOutVTokens.core || t.assetOutVTokens.isolated![0]![1];
-            const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(
+        for (const t of potentialConversions) {
+          let amountOut = t.assetOut.balance;
+
+          const vTokenAddress = t.assetOutVTokens.core || t.assetOutVTokens.isolated![0]![1];
+          const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(
+            t.assetOut.address,
+            vTokenAddress,
+            amountOut,
+          );
+
+          if (+underlyingUsdValue > minTradeUsd) {
+            if (+underlyingUsdValue > maxTradeUsd) {
+              amountOut = parseUnits((maxTradeUsd / +underlyingPriceUsd.toString()).toString(), underlyingDecimals);
+            }
+
+            const arbitrageArgs = await tokenConverter.prepareConversion(
+              t.tokenConverter,
               t.assetOut.address,
-              vTokenAddress,
+              t.assetIn.address,
               amountOut,
             );
 
-            if (+underlyingUsdValue > minTradeUsd) {
-              if (+underlyingUsdValue > maxTradeUsd) {
-                amountOut = parseUnits((maxTradeUsd / +underlyingPriceUsd.toString()).toString(), underlyingDecimals);
-              }
+            const { trade, amount, minIncome } = arbitrageArgs || {
+              trade: undefined,
+              amount: 0n,
+              minIncome: 0n,
+            };
 
-              const arbitrageArgs = await tokenConverter.prepareConversion(
-                t.tokenConverter,
-                t.assetOut.address,
-                t.assetIn.address,
-                amountOut,
-              );
+            const maxMinIncome = ((amount * BigInt(10000 + minIncomeBp)) / 10000n - amount) * -1n;
 
-              const { trade, amount, minIncome } = arbitrageArgs || {
-                trade: undefined,
-                amount: 0n,
-                minIncome: 0n,
-              };
-
-              const maxMinIncome = ((amount * BigInt(10000 + minIncomeBp)) / 10000n - amount) * -1n;
-
-              if (trade && ((profitable && minIncome > 0n) || !profitable)) {
-                dispatch({
-                  type: "ExecuteTrade",
-                  context: {
-                    converter: t.tokenConverter,
-                    tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn.address,
-                    amount,
-                    minIncome,
-                    percentage: Number((minIncome * 10000000n) / amount) / 10000000,
-                    maxMinIncome,
-                  },
-                });
-
-                await tokenConverter.arbitrage(t.tokenConverter, trade, amount, minIncome);
-              } else if (t.accountBalanceAssetOut < minIncome * -1n) {
-                dispatch({
-                  type: "ExecuteTrade",
-                  error: "Insufficient wallet balance to pay min income",
-                  context: {
-                    converter: t.tokenConverter,
-                    tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn.address,
-                    amount,
-                    minIncome,
-                    percentage: Number((minIncome * 10000000n) / amount) / 10000000,
-                    maxMinIncome,
-                  },
-                });
-              } else if (minIncome < 1 && minIncome * -1n > maxMinIncome * -1n) {
-                dispatch({
-                  type: "ExecuteTrade",
-                  error: "Min income too high",
-                  context: {
-                    converter: t.tokenConverter,
-                    tokenToReceiveFromConverter: t.assetOut.address,
-                    tokenToSendToConverter: t.assetIn.address,
-                    amount,
-                    minIncome,
-                    percentage: Number((minIncome * 10000000n) / amount) / 10000000,
-                    maxMinIncome,
-                  },
-                });
-              }
+            const context = {
+              converter: t.tokenConverter,
+              tokenToReceiveFromConverter: t.assetOut.address,
+              tokenToSendToConverter: t.assetIn.address,
+              amount,
+              minIncome,
+              percentage: Number(minIncome) && Number(amount) && Number((minIncome * 10000000n) / amount) / 10000000,
+              maxMinIncome,
+            };
+            if (profitable && minIncome < 0) {
+              dispatch({
+                error: "Conversion is not profitable",
+                type: "ExecuteTrade",
+                context,
+              });
+            } else if (minIncome < 1 && minIncome * -1n > maxMinIncome * -1n) {
+              dispatch({
+                type: "ExecuteTrade",
+                error: "Min income too high",
+                context,
+              });
+            } else if (t.accountBalanceAssetOut < minIncome * -1n && !profitable) {
+              dispatch({
+                error: "Insufficient wallet balance to pay min income",
+                type: "ExecuteTrade",
+                context,
+              });
+            } else if (trade) {
+              await tokenConverter.arbitrage(t.tokenConverter, trade, amount, minIncome);
             }
-          }),
-        );
+          }
+        }
       } while (loop);
     };
     if (converter || assetIn || assetOut) {
