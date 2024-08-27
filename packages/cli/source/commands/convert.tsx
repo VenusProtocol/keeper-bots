@@ -66,16 +66,6 @@ export const options = zod.object({
     )
     .optional()
     .default(false),
-  releaseFunds: zod
-    .boolean()
-    .describe(
-      option({
-        description: "Release funds",
-        alias: "rf",
-      }),
-    )
-    .optional()
-    .default(false),
   minTradeUsd: zod
     .number()
     .describe(
@@ -126,24 +116,13 @@ interface Props {
  * Command to search for and execute token conversions based on parameters
  */
 export default function Convert({ options }: Props) {
-  const {
-    minTradeUsd,
-    maxTradeUsd,
-    simulate,
-    releaseFunds,
-    assetIn,
-    assetOut,
-    converter,
-    profitable,
-    loop,
-    debug,
-    minIncomeBp,
-  } = options;
+  const { minTradeUsd, maxTradeUsd, simulate, assetIn, assetOut, converter, profitable, loop, debug, minIncomeBp } =
+    options;
 
   const { exit } = useApp();
   const { write: writeStdErr } = useStderr();
 
-  const [{ completed, messages, releasedFunds }, dispatch] = useReducer(reducer, defaultState);
+  const [{ completed, messages }, dispatch] = useReducer(reducer, defaultState);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -160,15 +139,11 @@ export default function Convert({ options }: Props) {
           assetIn,
           assetOut,
           converter,
-          releaseFunds: !!releaseFunds,
+          releaseFunds: false,
         });
 
         if (potentialConversions.length === 0) {
           setError("No Potential Trades Found");
-        }
-        if (releaseFunds) {
-          // @todo check if we need to release funds or if there are already enough funds to make our trade
-          await tokenConverter.releaseFundsForConversions(potentialConversions);
         }
 
         for (const t of potentialConversions) {
@@ -255,24 +230,6 @@ export default function Convert({ options }: Props) {
     <FullScreenBox flexDirection="column">
       <Title />
       {debug && <Options options={options} />}
-      {releaseFunds && (
-        <Box flexDirection="column" borderStyle="round" borderColor="#3396FF">
-          <Box flexDirection="row" marginLeft={1} justifyContent="space-between">
-            <Box flexDirection="column">
-              <Box flexDirection="row">
-                <Text bold color="white">
-                  Release Funds Steps
-                </Text>
-              </Box>
-              <Box flexDirection="row">
-                <Text color="green">{releasedFunds.done ? "✔" : " "}</Text>
-                <Box marginRight={1} />
-                <Text>Release Funds</Text>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-      )}
       <Box flexDirection="column" flexGrow={1}>
         <Text bold backgroundColor="#3396FF">
           Conversions
