@@ -36,7 +36,7 @@ const SmartRouter = {
   getV2PoolSubgraph: jest.fn(),
   getV2PoolsOnChain: jest.fn(),
   getV2PoolsWithTvlByCommonTokenPrices: jest.fn(),
-  getV3CandidatePools: jest.fn(),
+  getV3CandidatePools: jest.fn(() => [{}]),
   getV3PoolSubgraph: jest.fn(),
   getV3PoolsWithTvlFromOnChain: jest.fn(),
   getV3PoolsWithTvlFromOnChainFallback: jest.fn(),
