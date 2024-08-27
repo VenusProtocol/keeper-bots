@@ -54,8 +54,9 @@ export class TokenConverter extends BotBase {
     swapFrom: Address,
     swapTo: Address,
     amount: bigint,
+    fixedPairs?: boolean,
   ): Promise<[TradeRoute, bigint]> {
-    return this.swapProvider.getBestTrade(tokenConverter, swapFrom, swapTo, amount);
+    return this.swapProvider.getBestTrade(tokenConverter, swapFrom, swapTo, amount, fixedPairs);
   }
 
   /**
@@ -385,13 +386,19 @@ export class TokenConverter extends BotBase {
    * @param amountOut Amount of asset out to receive from the token converter
    * @returns {trade: SmartRouterTrade, amount: bigint, minIncome: bigint }
    */
-  async prepareConversion(tokenConverter: Address, assetOut: Address, assetIn: Address, amountOut: bigint) {
+  async prepareConversion(
+    tokenConverter: Address,
+    assetOut: Address,
+    assetIn: Address,
+    amountOut: bigint,
+    fixedPairs?: boolean,
+  ) {
     let error;
     let trade;
     let amount;
 
     try {
-      [trade, amount] = await this.getBestTrade(tokenConverter, assetOut, assetIn, amountOut);
+      [trade, amount] = await this.getBestTrade(tokenConverter, assetOut, assetIn, amountOut, fixedPairs);
     } catch (e) {
       error = (e as Error).message;
     } finally {

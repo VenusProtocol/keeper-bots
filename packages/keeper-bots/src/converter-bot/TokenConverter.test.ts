@@ -185,6 +185,7 @@ describe("Token Converter", () => {
         addresses.WBNB,
         addresses.USDC,
         1000000000000000000000n,
+        false,
       );
 
       expect(trade.inputToken).toEqual({
@@ -205,6 +206,7 @@ describe("Token Converter", () => {
           numerator: 8904975230019520420n,
         },
       });
+
       expect(trade.outputToken).toEqual({
         address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
         amount: {
@@ -233,6 +235,7 @@ describe("Token Converter", () => {
         addresses.WBNB,
         addresses.USDC,
         750000000000000000n,
+        false,
       );
       expect(subscriberMock).toHaveBeenCalledWith({
         type: "GetBestTrade",
