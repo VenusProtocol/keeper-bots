@@ -127,25 +127,25 @@ export default function Convert({ options }: Props) {
 
   useEffect(() => {
     const network = getEnvValue("NETWORK");
+    const tokenConverter = new TokenConverter({
+      subscriber: dispatch,
+      simulate: !!simulate,
+      swapProvider: network?.includes("bsc") ? PancakeSwapProvider : UniswapProvider,
+    });
+
     const convert = async () => {
-      const tokenConverter = new TokenConverter({
-        subscriber: dispatch,
-        simulate: !!simulate,
-        swapProvider: network?.includes("bsc") ? PancakeSwapProvider : UniswapProvider,
+      const potentialConversions = await tokenConverter.queryConversions({
+        assetIn,
+        assetOut,
+        converter,
+        releaseFunds: false,
       });
 
+      if (potentialConversions.length === 0) {
+        setError("No Potential Trades Found");
+      }
+
       do {
-        const potentialConversions = await tokenConverter.queryConversions({
-          assetIn,
-          assetOut,
-          converter,
-          releaseFunds: false,
-        });
-
-        if (potentialConversions.length === 0) {
-          setError("No Potential Trades Found");
-        }
-
         for (const t of potentialConversions) {
           let amountOut = t.assetOut.balance;
 
