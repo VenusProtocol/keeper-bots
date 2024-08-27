@@ -96,6 +96,16 @@ export const options = zod.object({
     )
     .optional()
     .default(false),
+  fixedPairs: zod
+    .boolean()
+    .describe(
+      option({
+        description: "Use fixed pairs to query available pools",
+        alias: "f",
+      }),
+    )
+    .optional()
+    .default(false),
   minIncomeBp: zod
     .number()
     .describe(
@@ -116,8 +126,19 @@ interface Props {
  * Command to search for and execute token conversions based on parameters
  */
 export default function Convert({ options }: Props) {
-  const { minTradeUsd, maxTradeUsd, simulate, assetIn, assetOut, converter, profitable, loop, debug, minIncomeBp } =
-    options;
+  const {
+    minTradeUsd,
+    maxTradeUsd,
+    simulate,
+    assetIn,
+    assetOut,
+    converter,
+    profitable,
+    loop,
+    debug,
+    minIncomeBp,
+    fixedPairs,
+  } = options;
 
   const { exit } = useApp();
   const { write: writeStdErr } = useStderr();
@@ -166,6 +187,7 @@ export default function Convert({ options }: Props) {
               t.assetOut.address,
               t.assetIn.address,
               amountOut,
+              fixedPairs,
             );
 
             const { trade, amount, minIncome } = arbitrageArgs || {

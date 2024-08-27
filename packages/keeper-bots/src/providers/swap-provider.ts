@@ -53,6 +53,8 @@ class SwapProvider {
     swapTo: Address,
     // eslint-disable-next-line
     amount: bigint,
+    // eslint-disable-next-line
+    fixedPairs?: boolean,
   ): Promise<[TradeRoute, bigint]> {
     throw new Error("Not Implemented Error");
   }

@@ -80,7 +80,7 @@ class PancakeSwapProvider extends SwapProvider {
    * @param swapFromToken
    * @param swapToToken
    */
-  getCandidatePools = async (swapFromToken: Token, swapToToken: Token) => {
+  getCandidatePools = async (swapFromToken: Token, swapToToken: Token, fixedPairs: boolean) => {
     const now = new Date();
     if (!this._candidatePools.data.length || this._candidatePools.expirationTimestamp < now) {
       const candidatePools = await SmartRouter.getV3CandidatePools({
@@ -88,6 +88,12 @@ class PancakeSwapProvider extends SwapProvider {
         subgraphProvider: () => this.v3PancakeSubgraphClient,
         currencyA: swapFromToken,
         currencyB: swapToToken,
+        pairs: fixedPairs
+          ? [
+              [swapFromToken, swapToToken],
+              [swapToToken, swapFromToken],
+            ]
+          : undefined,
       });
 
       now.setMinutes(15 + new Date().getMinutes());
@@ -105,6 +111,7 @@ class PancakeSwapProvider extends SwapProvider {
     swapFrom: Address,
     swapTo: Address,
     amount: bigint,
+    fixedPairs: boolean = false,
   ): Promise<[TradeRoute, bigint]> {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
@@ -122,7 +129,7 @@ class PancakeSwapProvider extends SwapProvider {
     });
 
     try {
-      const candidatePools = await this.getCandidatePools(swapFromToken, swapToToken);
+      const candidatePools = await this.getCandidatePools(swapFromToken, swapToToken, fixedPairs);
 
       const response = await SmartRouter.getBestTrade(
         CurrencyAmount.fromRawAmount(swapToToken, updatedAmountIn[1]),
@@ -179,7 +186,7 @@ class PancakeSwapProvider extends SwapProvider {
         },
       });
 
-      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[1] * 75n) / 100n);
+      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[1] * 75n) / 100n, fixedPairs);
     }
     return [trade, updatedAmountIn[0]];
   }
