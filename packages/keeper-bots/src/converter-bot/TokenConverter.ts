@@ -19,6 +19,13 @@ import { ConverterBotMessage, GetBestTradeMessage, MarketAddresses } from "./typ
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 
+const CONFIRMATIONS = {
+  bscmainnet: 4,
+  bsctestnet: 4,
+  ethereum: 12,
+  sepolia: 12,
+};
+
 export class TokenConverter extends BotBase {
   private addresses: ReturnType<typeof getAddresses>;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
@@ -298,13 +305,7 @@ export class TokenConverter extends BotBase {
         functionName: "approve",
         args: [this.operator.address, amount],
       });
-      const confirmations = {
-        bscmainnet: 4,
-        bsctestnet: 4,
-        ethereum: 12,
-        sepolia: 12,
-      };
-      await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: confirmations[this.chainName] });
+      await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: CONFIRMATIONS[this.chainName] });
     }
   }
 
@@ -361,7 +362,10 @@ export class TokenConverter extends BotBase {
       if (!this.simulate) {
         simulation = "Execution: ";
         trx = await this.walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
-        ({ blockNumber } = await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 }));
+        ({ blockNumber } = await this.publicClient.waitForTransactionReceipt({
+          hash: trx,
+          confirmations: CONFIRMATIONS[this.chainName],
+        }));
       }
     } catch (e) {
       if (e instanceof BaseError) {
