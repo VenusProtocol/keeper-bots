@@ -91,13 +91,13 @@ const reduceToTokensWithBalances = async (
     const token = tokenSetArray[idx]! as Address;
     const vToken = markets.find(m => m.underlyingAddress === token);
     if (result.result) {
-      const { underlyingUsdValue } = await tokenConverter.getUsdValue(
+      const { assetOutUsdValue } = await tokenConverter.getUsdValue(
         vToken?.underlyingAddress!,
         vToken?.vTokenAddress!,
         result.result as bigint,
       );
 
-      if (+underlyingUsdValue < 100) {
+      if (+assetOutUsdValue < 100) {
         tokenSet.delete(token);
       }
     } else {

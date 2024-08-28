@@ -248,13 +248,13 @@ export class TokenConverter extends BotBase {
    * @param underlyingAddress Asset address
    * @param vTokenAddress vToken market address for the asset
    * @param value Amount of asset
-   * @returns {underlyingPriceUsd: string, underlyingUsdValue: string, underlyingDecimals: number}
+   * @returns {assetOutPriceUsd: string, assetOutUsdValue: string, assetOutDecimals: number}
    */
-  async getUsdValue(underlyingAddress: Address, vTokenAddress: Address, value: bigint) {
+  async getUsdValue(assetOutAddress: Address, vTokenAddress: Address, value: bigint) {
     const result = await this.publicClient.multicall({
       contracts: [
         {
-          address: underlyingAddress,
+          address: assetOutAddress,
           abi: erc20Abi,
           functionName: "decimals",
           args: [],
@@ -272,14 +272,14 @@ export class TokenConverter extends BotBase {
 
     const [{ result: underlyingDecimals = 0 }, { result: { underlyingPrice } = { underlyingPrice: undefined } }] =
       result;
-    let underlyingUsdValue = "0";
+    let assetOutUsdValue = "0";
     if (underlyingPrice && underlyingDecimals) {
-      underlyingUsdValue = formatUnits(value * underlyingPrice, 36);
+      assetOutUsdValue = formatUnits(value * underlyingPrice, 36);
     }
     return {
-      underlyingPriceUsd: formatUnits(underlyingPrice || 0n, 36 - underlyingDecimals) || "0",
-      underlyingUsdValue,
-      underlyingDecimals,
+      assetOutPriceUsd: formatUnits(underlyingPrice || 0n, 36 - underlyingDecimals) || "0",
+      assetOutUsdValue,
+      assetOutDecimals: underlyingDecimals,
     };
   }
 

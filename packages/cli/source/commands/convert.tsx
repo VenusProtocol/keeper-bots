@@ -171,15 +171,15 @@ export default function Convert({ options }: Props) {
           let amountOut = t.assetOut.balance;
 
           const vTokenAddress = t.assetOutVTokens.core || t.assetOutVTokens.isolated![0]![1];
-          const { underlyingPriceUsd, underlyingUsdValue, underlyingDecimals } = await tokenConverter.getUsdValue(
+          const { assetOutPriceUsd, assetOutUsdValue, assetOutDecimals } = await tokenConverter.getUsdValue(
             t.assetOut.address,
             vTokenAddress,
             amountOut,
           );
 
-          if (+underlyingUsdValue > minTradeUsd) {
-            if (+underlyingUsdValue > maxTradeUsd) {
-              amountOut = parseUnits((maxTradeUsd / +underlyingPriceUsd.toString()).toString(), underlyingDecimals);
+          if (+assetOutUsdValue > minTradeUsd) {
+            if (+assetOutUsdValue > maxTradeUsd) {
+              amountOut = parseUnits((maxTradeUsd / +assetOutPriceUsd.toString()).toString(), assetOutDecimals);
             }
 
             const arbitrageArgs = await tokenConverter.prepareConversion(
