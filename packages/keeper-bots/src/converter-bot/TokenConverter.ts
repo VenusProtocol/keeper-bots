@@ -374,6 +374,8 @@ export class TokenConverter extends BotBase {
         if (revertError instanceof ContractFunctionRevertedError) {
           // writeContract || simulateContract shapes
           error = `${simulation}${revertError.reason || revertError.shortMessage}`;
+        } else {
+          error = `${simulation}${(e as Error).message}`;
         }
       } else {
         error = `${simulation}${(e as Error).message}`;
