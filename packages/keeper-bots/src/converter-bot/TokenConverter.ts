@@ -361,7 +361,8 @@ export class TokenConverter extends BotBase {
 
       if (!this.simulate) {
         simulation = "Execution: ";
-        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
+        // Increasing gas limit because the conversion frequently runs out of gas
+        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: (gasEstimation * 104n) / 100n });
         ({ blockNumber } = await this.publicClient.waitForTransactionReceipt({
           hash: trx,
           confirmations: CONFIRMATIONS[this.chainName],

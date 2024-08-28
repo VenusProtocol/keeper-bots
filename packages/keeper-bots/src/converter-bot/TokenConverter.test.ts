@@ -58,7 +58,7 @@ const createTokenConverterInstance = ({ simulate = false }: { simulate: boolean 
   (publicClient.waitForTransactionReceipt as unknown as jest.Mock).mockImplementation(
     jest.fn(() => ({ blockNumber: 23486902n })),
   );
-  (publicClient.estimateContractGas as unknown as jest.Mock).mockImplementation(jest.fn(() => {}));
+  (publicClient.estimateContractGas as unknown as jest.Mock).mockImplementation(jest.fn(() => 744684n));
 
   const tokenConverter = new TokenConverter({
     subscriber: subscriberMock,
