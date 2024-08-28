@@ -2,7 +2,7 @@ import { useEffect, useState, useReducer } from "react";
 import { option } from "pastel";
 import { Box, Spacer, Text, useApp, useStderr } from "ink";
 import zod from "zod";
-import { parseUnits } from "viem";
+import { parseUnits, formatUnits } from "viem";
 import { TokenConverter, PancakeSwapProvider, UniswapProvider } from "@venusprotocol/keeper-bots";
 import { stringifyBigInt, getConverterConfigId } from "../utils/index.js";
 import { Options, Title, BorderBox } from "../components/index.js";
@@ -196,7 +196,8 @@ export default function Convert({ options }: Props) {
               minIncome: 0n,
             };
 
-            const maxMinIncome = ((amount * BigInt(10000 + minIncomeBp)) / 10000n - amount) * -1n;
+            const minIncomeLimit = BigInt(Number(amount) * minIncomeBp) / 10000n;
+            const minIncomeUsdValue = +formatUnits(minIncome, assetOutDecimals) * +assetOutPriceUsd;
 
             const context = {
               converter: t.tokenConverter,
@@ -205,7 +206,7 @@ export default function Convert({ options }: Props) {
               amount,
               minIncome,
               percentage: Number(minIncome) && Number(amount) && Number((minIncome * 10000000n) / amount) / 10000000,
-              maxMinIncome,
+              minIncomeLimit,
             };
             if (profitable && minIncome < 0) {
               dispatch({
@@ -213,10 +214,16 @@ export default function Convert({ options }: Props) {
                 type: "ExecuteTrade",
                 context,
               });
-            } else if (minIncome < 1 && minIncome * -1n > maxMinIncome * -1n) {
+            } else if (minIncome < 1 && minIncome * -1n > minIncomeLimit) {
               dispatch({
                 type: "ExecuteTrade",
                 error: "Min income too high",
+                context,
+              });
+            } else if (profitable && +minIncomeUsdValue < 1) {
+              dispatch({
+                type: "ExecuteTrade",
+                error: "Min income too low",
                 context,
               });
             } else if (t.accountBalanceAssetOut < minIncome * -1n && !profitable) {
