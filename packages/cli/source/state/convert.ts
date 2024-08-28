@@ -16,7 +16,7 @@ interface ExecuteTradeMessage {
     amount: bigint;
     minIncome: bigint;
     percentage: number;
-    maxMinIncome: bigint;
+    minIncomeLimit: bigint;
   };
 }
 
