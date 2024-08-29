@@ -19,6 +19,13 @@ import { ConverterBotMessage, GetBestTradeMessage, MarketAddresses } from "./typ
 
 const REVERT_IF_NOT_MINED_AFTER = 60n; // seconds
 
+const CONFIRMATIONS = {
+  bscmainnet: 4,
+  bsctestnet: 4,
+  ethereum: 12,
+  sepolia: 12,
+};
+
 export class TokenConverter extends BotBase {
   private addresses: ReturnType<typeof getAddresses>;
   private operator: { address: Address; abi: typeof tokenConverterOperatorAbi };
@@ -241,13 +248,13 @@ export class TokenConverter extends BotBase {
    * @param underlyingAddress Asset address
    * @param vTokenAddress vToken market address for the asset
    * @param value Amount of asset
-   * @returns {underlyingPriceUsd: string, underlyingUsdValue: string, underlyingDecimals: number}
+   * @returns {assetOutPriceUsd: string, assetOutUsdValue: string, assetOutDecimals: number}
    */
-  async getUsdValue(underlyingAddress: Address, vTokenAddress: Address, value: bigint) {
+  async getUsdValue(assetOutAddress: Address, vTokenAddress: Address, value: bigint) {
     const result = await this.publicClient.multicall({
       contracts: [
         {
-          address: underlyingAddress,
+          address: assetOutAddress,
           abi: erc20Abi,
           functionName: "decimals",
           args: [],
@@ -265,14 +272,14 @@ export class TokenConverter extends BotBase {
 
     const [{ result: underlyingDecimals = 0 }, { result: { underlyingPrice } = { underlyingPrice: undefined } }] =
       result;
-    let underlyingUsdValue = "0";
+    let assetOutUsdValue = "0";
     if (underlyingPrice && underlyingDecimals) {
-      underlyingUsdValue = formatUnits(value * underlyingPrice, 36);
+      assetOutUsdValue = formatUnits(value * underlyingPrice, 36);
     }
     return {
-      underlyingPriceUsd: formatUnits(underlyingPrice || 0n, 36 - underlyingDecimals) || "0",
-      underlyingUsdValue,
-      underlyingDecimals,
+      assetOutPriceUsd: formatUnits(underlyingPrice || 0n, 36 - underlyingDecimals) || "0",
+      assetOutUsdValue,
+      assetOutDecimals: underlyingDecimals,
     };
   }
 
@@ -298,13 +305,7 @@ export class TokenConverter extends BotBase {
         functionName: "approve",
         args: [this.operator.address, amount],
       });
-      const confirmations = {
-        bscmainnet: 4,
-        bsctestnet: 4,
-        ethereum: 12,
-        sepolia: 12,
-      };
-      await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: confirmations[this.chainName] });
+      await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: CONFIRMATIONS[this.chainName] });
     }
   }
 
@@ -360,8 +361,12 @@ export class TokenConverter extends BotBase {
 
       if (!this.simulate) {
         simulation = "Execution: ";
-        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: gasEstimation });
-        ({ blockNumber } = await this.publicClient.waitForTransactionReceipt({ hash: trx, confirmations: 4 }));
+        // Increasing gas limit because the conversion frequently runs out of gas
+        trx = await this.walletClient.writeContract({ ...convertTransaction, gas: (gasEstimation * 104n) / 100n });
+        ({ blockNumber } = await this.publicClient.waitForTransactionReceipt({
+          hash: trx,
+          confirmations: CONFIRMATIONS[this.chainName],
+        }));
       }
     } catch (e) {
       if (e instanceof BaseError) {
@@ -369,6 +374,8 @@ export class TokenConverter extends BotBase {
         if (revertError instanceof ContractFunctionRevertedError) {
           // writeContract || simulateContract shapes
           error = `${simulation}${revertError.reason || revertError.shortMessage}`;
+        } else {
+          error = `${simulation}${(e as Error).message}`;
         }
       } else {
         error = `${simulation}${(e as Error).message}`;
