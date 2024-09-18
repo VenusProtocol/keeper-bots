@@ -18,6 +18,10 @@ class PancakeSwapProvider extends SwapProvider {
   private v3PancakeSubgraphClient: UrqlClient | undefined;
   private tokens: Map<Address, Token>;
   private quoteProvider: QuoteProvider;
+  private _candidatePools: {
+    expirationTimestamp: Date;
+    data: ReturnType<typeof SmartRouter.getV3CandidatePools>;
+  };
 
   constructor({ subscriber }: { subscriber?: (msg: ConverterBotMessage) => void }) {
     super({ subscriber });
@@ -32,6 +36,10 @@ class PancakeSwapProvider extends SwapProvider {
     this.tokens = new Map();
     this.chainName = config.network.name;
     this.liquidityProviderId = 1;
+    this._candidatePools = {
+      expirationTimestamp: new Date(),
+      data: [],
+    };
   }
 
   /**
@@ -67,14 +75,50 @@ class PancakeSwapProvider extends SwapProvider {
     throw new Error(`Unable to fetch token details for ${address}`);
   }
 
+  /**
+   * Querying candidate pools can be a heavy operation so we cache it for 15 minutes
+   * @param swapFromToken
+   * @param swapToToken
+   */
+  getCandidatePools = async (swapFromToken: Token, swapToToken: Token, fixedPairs: boolean) => {
+    const now = new Date();
+    if (!this._candidatePools.data.length || this._candidatePools.expirationTimestamp < now) {
+      const candidatePools = await SmartRouter.getV3CandidatePools({
+        onChainProvider: () => this.publicClient,
+        subgraphProvider: () => this.v3PancakeSubgraphClient,
+        currencyA: swapFromToken,
+        currencyB: swapToToken,
+        pairs: fixedPairs
+          ? [
+              [swapFromToken, swapToToken],
+              [swapToToken, swapFromToken],
+            ]
+          : undefined,
+      });
+
+      now.setMinutes(15 + new Date().getMinutes());
+      this._candidatePools.data = candidatePools;
+      this._candidatePools.expirationTimestamp = now;
+
+      return candidatePools;
+    }
+
+    return this._candidatePools.data;
+  };
+
   async getBestTrade(
     tokenConverter: Address,
     swapFrom: Address,
     swapTo: Address,
     amount: bigint,
+    fixedPairs: boolean = false,
   ): Promise<[TradeRoute, bigint]> {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
+
+    let trade;
+    let error;
+    let priceImpact;
 
     // [amount transferred out of converter, amount transferred in]
     const { result: updatedAmountIn } = await this.publicClient.simulateContract({
@@ -84,17 +128,9 @@ class PancakeSwapProvider extends SwapProvider {
       args: [amount, swapTo, swapFrom],
     });
 
-    const candidatePools = await SmartRouter.getV3CandidatePools({
-      onChainProvider: () => this.publicClient,
-      subgraphProvider: () => this.v3PancakeSubgraphClient,
-      currencyA: swapFromToken,
-      currencyB: swapToToken,
-    });
-    let trade;
-    let error;
-    let priceImpact;
-
     try {
+      const candidatePools = await this.getCandidatePools(swapFromToken, swapToToken, fixedPairs);
+
       const response = await SmartRouter.getBestTrade(
         CurrencyAmount.fromRawAmount(swapToToken, updatedAmountIn[1]),
         swapFromToken,
@@ -124,7 +160,13 @@ class PancakeSwapProvider extends SwapProvider {
       }
       priceImpact = SmartRouter.getPriceImpact(response);
     } catch (e) {
-      error = `Error getting best trade - ${(e as Error).message}`;
+      const message = (e as Error).message;
+      error = `Error getting best trade - ${message}`;
+      // If we can't find a valid swap invalidate pool cache
+      if (message === "Cannot find a valid swap route") {
+        this._candidatePools.data = [];
+        this._candidatePools.expirationTimestamp = new Date();
+      }
       throw new Error(error);
     }
 
@@ -144,7 +186,7 @@ class PancakeSwapProvider extends SwapProvider {
         },
       });
 
-      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[1] * 75n) / 100n);
+      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[1] * 75n) / 100n, fixedPairs);
     }
     return [trade, updatedAmountIn[0]];
   }

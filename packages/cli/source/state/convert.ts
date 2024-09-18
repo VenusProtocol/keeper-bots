@@ -16,7 +16,7 @@ interface ExecuteTradeMessage {
     amount: bigint;
     minIncome: bigint;
     percentage: number;
-    maxMinIncome: bigint;
+    minIncomeLimit: bigint;
   };
 }
 
@@ -31,13 +31,11 @@ interface TradeError {
 }
 
 interface State {
-  releasedFunds: { done: boolean };
   completed: (TradeSuccess | TradeError)[];
   messages: Array<PotentialConversionsMessage | GetBestTradeMessage | ArbitrageMessage | ExecuteTradeMessage>;
 }
 
 export const defaultState = {
-  releasedFunds: { done: false },
   trades: {},
   completed: [],
   messages: [],

@@ -58,7 +58,7 @@ const createTokenConverterInstance = ({ simulate = false }: { simulate: boolean 
   (publicClient.waitForTransactionReceipt as unknown as jest.Mock).mockImplementation(
     jest.fn(() => ({ blockNumber: 23486902n })),
   );
-  (publicClient.estimateContractGas as unknown as jest.Mock).mockImplementation(jest.fn(() => {}));
+  (publicClient.estimateContractGas as unknown as jest.Mock).mockImplementation(jest.fn(() => 744684n));
 
   const tokenConverter = new TokenConverter({
     subscriber: subscriberMock,
@@ -185,6 +185,7 @@ describe("Token Converter", () => {
         addresses.WBNB,
         addresses.USDC,
         1000000000000000000000n,
+        false,
       );
 
       expect(trade.inputToken).toEqual({
@@ -205,6 +206,7 @@ describe("Token Converter", () => {
           numerator: 8904975230019520420n,
         },
       });
+
       expect(trade.outputToken).toEqual({
         address: "0xcf6bb5389c92bdda8a3747ddb454cb7a64626c63",
         amount: {
@@ -233,6 +235,7 @@ describe("Token Converter", () => {
         addresses.WBNB,
         addresses.USDC,
         750000000000000000n,
+        false,
       );
       expect(subscriberMock).toHaveBeenCalledWith({
         type: "GetBestTrade",
@@ -675,9 +678,9 @@ describe("Token Converter", () => {
       ]);
 
       expect(await tokenConverter.getUsdValue(addresses.USDC, addresses.vUSDC, 1n)).toEqual({
-        underlyingPriceUsd: "20000000000000000000",
-        underlyingUsdValue: "20",
-        underlyingDecimals: 18,
+        assetOutPriceUsd: "20000000000000000000",
+        assetOutUsdValue: "20",
+        assetOutDecimals: 18,
       });
     });
   });
