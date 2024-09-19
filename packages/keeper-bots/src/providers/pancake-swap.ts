@@ -4,7 +4,6 @@ import { Client as UrqlClient, createClient } from "urql/core";
 import { Address, Hex, encodePacked, erc20Abi } from "viem";
 
 import getConfig from "../config";
-import { tokenConverterAbi } from "../config/abis/generated";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
 import { ConverterBotMessage } from "../converter-bot/types";
@@ -107,12 +106,11 @@ class PancakeSwapProvider extends SwapProvider {
   };
 
   async getBestTrade(
-    tokenConverter: Address,
     swapFrom: Address,
     swapTo: Address,
     amount: bigint,
     fixedPairs: boolean = false,
-  ): Promise<[TradeRoute, bigint]> {
+  ): Promise<[TradeRoute, Percent | null]> {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
 
@@ -120,19 +118,11 @@ class PancakeSwapProvider extends SwapProvider {
     let error;
     let priceImpact;
 
-    // [amount transferred out of converter, amount transferred in]
-    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
-      address: tokenConverter,
-      abi: tokenConverterAbi,
-      functionName: "getUpdatedAmountIn",
-      args: [amount, swapTo, swapFrom],
-    });
-
     try {
       const candidatePools = await this.getCandidatePools(swapFromToken, swapToToken, fixedPairs);
 
       const response = await SmartRouter.getBestTrade(
-        CurrencyAmount.fromRawAmount(swapToToken, updatedAmountIn[1]),
+        CurrencyAmount.fromRawAmount(swapToToken, amount),
         swapFromToken,
         TradeType.EXACT_OUTPUT,
         {
@@ -144,6 +134,8 @@ class PancakeSwapProvider extends SwapProvider {
           quoterOptimization: true,
         },
       );
+
+      priceImpact = SmartRouter.getPriceImpact(response);
 
       if (response) {
         trade = {
@@ -158,7 +150,6 @@ class PancakeSwapProvider extends SwapProvider {
           path: this.encodeExactInputPath(response.routes[0]),
         };
       }
-      priceImpact = SmartRouter.getPriceImpact(response);
     } catch (e) {
       const message = (e as Error).message;
       error = `Error getting best trade - ${message}`;
@@ -174,21 +165,7 @@ class PancakeSwapProvider extends SwapProvider {
       throw new Error("No trade found");
     }
 
-    if (priceImpact.greaterThan(new Percent(5n, 1000n))) {
-      this.sendMessage({
-        type: "GetBestTrade",
-        error: "High price impact",
-        context: {
-          converter: tokenConverter,
-          tokenToReceiveFromConverter: swapFromToken.address!,
-          tokenToSendToConverter: swapToToken.address!,
-          priceImpact: priceImpact.toFixed(),
-        },
-      });
-
-      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[1] * 75n) / 100n, fixedPairs);
-    }
-    return [trade, updatedAmountIn[0]];
+    return [trade, priceImpact];
   }
 
   /**

@@ -1,3 +1,4 @@
+import { Percent } from "@pancakeswap/sdk";
 import { Token } from "@uniswap/sdk-core";
 import { Pool } from "@uniswap/v3-sdk";
 import { Address } from "viem";
@@ -46,8 +47,6 @@ class SwapProvider {
 
   async getBestTrade(
     // eslint-disable-next-line
-    tokenConverter: Address,
-    // eslint-disable-next-line
     swapFrom: Address,
     // eslint-disable-next-line
     swapTo: Address,
@@ -55,7 +54,7 @@ class SwapProvider {
     amount: bigint,
     // eslint-disable-next-line
     fixedPairs?: boolean,
-  ): Promise<[TradeRoute, bigint]> {
+  ): Promise<[TradeRoute, Percent | null]> {
     throw new Error("Not Implemented Error");
   }
 }
