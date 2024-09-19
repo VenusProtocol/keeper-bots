@@ -1,4 +1,4 @@
-import { Fraction } from "@pancakeswap/sdk";
+import { Fraction, Percent as PancakePercent } from "@pancakeswap/sdk";
 import { IRoute } from "@uniswap/router-sdk";
 import { ChainId, Currency, CurrencyAmount, Percent, Token, TradeType } from "@uniswap/sdk-core";
 import { AlphaRouter, SwapOptionsSwapRouter02, SwapType } from "@uniswap/smart-order-router";
@@ -8,7 +8,6 @@ import JSBI from "jsbi";
 import { Address, Hex, encodePacked, erc20Abi } from "viem";
 
 import getConfig from "../config";
-import { tokenConverterAbi } from "../config/abis/generated";
 import type { SUPPORTED_CHAINS } from "../config/chains";
 import { chains } from "../config/chains";
 import { ConverterBotMessage } from "../converter-bot/types";
@@ -61,22 +60,9 @@ class UniswapProvider extends SwapProvider {
     throw new Error(`Unable to fetch token details for ${address}`);
   }
 
-  async getBestTrade(
-    tokenConverter: Address,
-    swapFrom: Address,
-    swapTo: Address,
-    amount: bigint,
-  ): Promise<[TradeRoute, bigint]> {
+  async getBestTrade(swapFrom: Address, swapTo: Address, amount: bigint): Promise<[TradeRoute, PancakePercent | null]> {
     const swapFromToken = await this.getToken(swapFrom);
     const swapToToken = await this.getToken(swapTo);
-
-    // [amount transferred out of converter, amount transferred in]
-    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
-      address: tokenConverter,
-      abi: tokenConverterAbi,
-      functionName: "getUpdatedAmountIn",
-      args: [amount, swapTo, swapFrom],
-    });
 
     const provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
     const router = new AlphaRouter({
@@ -91,14 +77,14 @@ class UniswapProvider extends SwapProvider {
     };
     let error;
     let trade;
+
     try {
       const response = await router.route(
-        CurrencyAmount.fromRawAmount(swapToToken, JSBI.BigInt(updatedAmountIn[1].toString())),
+        CurrencyAmount.fromRawAmount(swapToToken, JSBI.BigInt(amount.toString())),
         swapFromToken,
         TradeType.EXACT_OUTPUT,
         options,
       );
-
       if (response) {
         const inputCurrency = response.trade.swaps[0].inputAmount;
         const outputCurrency = response.trade.swaps[response.trade.swaps.length - 1].outputAmount;
@@ -134,7 +120,7 @@ class UniswapProvider extends SwapProvider {
       throw new Error("No trade found");
     }
 
-    return [trade, updatedAmountIn[0]];
+    return [trade, null];
   }
 
   /**

@@ -165,7 +165,7 @@ describe("Token Converter", () => {
     });
 
     test("should call getBestTrade again if price impact is high with lower amount", async () => {
-      const { subscriberMock, pancakeSwapProvider } = createTokenConverterInstance();
+      const { subscriberMock, pancakeSwapProvider, tokenConverter } = createTokenConverterInstance();
 
       const pancakeSwapProviderMock = jest
         .spyOn(PancakeSwapProvider.prototype, "getBestTrade")
@@ -180,7 +180,20 @@ describe("Token Converter", () => {
         return new Percent(9n, 1000n);
       });
 
-      const [trade] = await pancakeSwapProvider.getBestTrade(
+      (publicClient.simulateContract as unknown as jest.Mock).mockImplementation(
+        jest.fn(() => {
+          if (called) {
+            return {
+              result: [1000000000000000000n, 750000000000000000n],
+            };
+          }
+          return {
+            result: [1000000000000000000n, 1000000000000000000n],
+          };
+        }),
+      );
+
+      const [trade] = await tokenConverter.getBestTrade(
         addresses.USDCPrimeConverter,
         addresses.WBNB,
         addresses.USDC,
@@ -231,7 +244,6 @@ describe("Token Converter", () => {
 
       expect(pancakeSwapProviderMock).toHaveBeenNthCalledWith(
         3,
-        addresses.USDCPrimeConverter,
         addresses.WBNB,
         addresses.USDC,
         750000000000000000n,

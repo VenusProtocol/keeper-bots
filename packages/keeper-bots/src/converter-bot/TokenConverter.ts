@@ -1,4 +1,4 @@
-import { Fraction } from "@pancakeswap/sdk";
+import { Fraction, Percent } from "@pancakeswap/sdk";
 import { Address, BaseError, ContractFunctionRevertedError, erc20Abi, formatUnits } from "viem";
 
 import BotBase from "../bot-base";
@@ -10,6 +10,7 @@ import {
   vBnbAdminAbi,
   venusLensAbi,
 } from "../config/abis/generated";
+import { tokenConverterAbi } from "../config/abis/generated";
 import getAddresses from "../config/addresses";
 import { SwapProvider } from "../providers";
 import { TradeRoute } from "../types";
@@ -63,7 +64,31 @@ export class TokenConverter extends BotBase {
     amount: bigint,
     fixedPairs?: boolean,
   ): Promise<[TradeRoute, bigint]> {
-    return this.swapProvider.getBestTrade(tokenConverter, swapFrom, swapTo, amount, fixedPairs);
+    // [amount transferred out of converter, amount transferred in]
+    const { result: updatedAmountIn } = await this.publicClient.simulateContract({
+      address: tokenConverter,
+      abi: tokenConverterAbi,
+      functionName: "getUpdatedAmountIn",
+      args: [amount, swapTo, swapFrom],
+    });
+
+    const [trade, priceImpact] = await this.swapProvider.getBestTrade(swapFrom, swapTo, updatedAmountIn[1], fixedPairs);
+
+    if (priceImpact && priceImpact.greaterThan(new Percent(5n, 1000n))) {
+      this.sendMessage({
+        type: "GetBestTrade",
+        error: "High price impact",
+        context: {
+          converter: tokenConverter,
+          tokenToReceiveFromConverter: swapFrom,
+          tokenToSendToConverter: swapTo,
+          priceImpact: priceImpact.toFixed(),
+        },
+      });
+
+      return this.getBestTrade(tokenConverter, swapFrom, swapTo, (updatedAmountIn[1] * 75n) / 100n, fixedPairs);
+    }
+    return [trade, updatedAmountIn[0]];
   }
 
   /**

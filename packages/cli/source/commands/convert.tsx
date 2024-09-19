@@ -234,6 +234,16 @@ export default function Convert({ options }: Props) {
             } else if (trade) {
               await tokenConverter.arbitrage(t.tokenConverter, trade, amount, minIncome);
             }
+          } else {
+            dispatch({
+              error: `Swap amount too low (${assetOutUsdValue} USD)`,
+              type: "GetBestTrade",
+              context: {
+                converter: t.tokenConverter,
+                tokenToReceiveFromConverter: t.assetOut.address,
+                tokenToSendToConverter: t.assetIn.address,
+              },
+            });
           }
         }
       } while (loop);
