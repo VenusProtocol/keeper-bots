@@ -7,15 +7,10 @@ import vBnbAdminArtifact from "@venusprotocol/venus-protocol/artifacts/contracts
 import diamondComptrollerArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Comptroller/Diamond/DiamondConsolidated.sol/DiamondConsolidated.json" assert { type: "json" };
 import venusLensArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Lens/VenusLens.sol/VenusLens.json" assert { type: "json" };
 import coreVTokenArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Tokens/VTokens/VBep20Delegate.sol/VBep20Delegate.json" assert { type: "json" };
-import vBep20InterfaceArtifact from "@venusprotocol/venus-protocol/artifacts/contracts/Tokens/VTokens/VTokenInterfaces.sol/VBep20Interface.json" assert { type: "json" };
 import { defineConfig } from "@wagmi/cli";
 import { Abi } from "abitype";
 
 const getExternalContracts = async (): Promise<{ name: string; abi: Abi }[]> => [
-  {
-    abi: vBep20InterfaceArtifact.abi as Abi,
-    name: "VBep20Interface",
-  },
   {
     abi: poolLensArtifact.abi as Abi,
     name: "PoolLens",
