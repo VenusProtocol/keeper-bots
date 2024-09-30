@@ -16,6 +16,7 @@ export const getCoreMarkets = async (): Promise<PoolAddressArray[]> => {
       functionName: "getAllMarkets",
     });
 
+    // @ts-expect-error not infinte
     const underlyingAddresses = await publicClient.multicall({
       contracts: markets.map(m => ({
         address: m,
