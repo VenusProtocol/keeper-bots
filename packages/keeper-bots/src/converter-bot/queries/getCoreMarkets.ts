@@ -1,7 +1,7 @@
 import { Address } from "viem";
 
 import getConfig from "../../config";
-import { coreComptrollerAbi, vBep20InterfaceAbi } from "../../config/abis/generated";
+import { coreComptrollerAbi, coreVTokenAbi } from "../../config/abis/generated";
 import getAddresses from "../../config/addresses";
 import publicClient from "../../config/clients/publicClient";
 import type { PoolAddressArray } from "../types";
@@ -16,10 +16,11 @@ export const getCoreMarkets = async (): Promise<PoolAddressArray[]> => {
       functionName: "getAllMarkets",
     });
 
+    // @ts-expect-error not infinte
     const underlyingAddresses = await publicClient.multicall({
       contracts: markets.map(m => ({
         address: m,
-        abi: vBep20InterfaceAbi,
+        abi: coreVTokenAbi,
         functionName: "underlying",
         args: [],
       })),

@@ -1,7 +1,6 @@
 import { Address } from "viem";
 
-import { vBep20InterfaceAbi } from "../../config/abis/generated";
-import { poolLensAbi } from "../../config/abis/generated";
+import { ilVTokenAbi, poolLensAbi } from "../../config/abis/generated";
 import getAddresses from "../../config/addresses";
 import publicClient from "../../config/clients/publicClient";
 import type { PoolAddressArray } from "../types";
@@ -16,11 +15,12 @@ export const getIsolatedMarkets = async (): Promise<PoolAddressArray[]> => {
   });
 
   const underlyingAddressesByPool = await Promise.all(
+    // @ts-expect-error not infinte
     pools.map(async p => {
       return await publicClient.multicall({
         contracts: p.vTokens.map(m => ({
           address: m.vToken,
-          abi: vBep20InterfaceAbi,
+          abi: ilVTokenAbi,
           functionName: "underlying",
           args: [],
         })),

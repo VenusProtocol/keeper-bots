@@ -146,7 +146,7 @@ function ReleaseFunds({ options = {} }: Props) {
       const withBalances = allPools.reduce((acc, curr) => {
         const tokensWithBalance = curr[1].filter(t => tokensWithBalances.has(t.underlyingAddress));
         if (tokensWithBalance.length) {
-          acc[curr[0]] = tokensWithBalance.map(t => t.vTokenAddress);
+          acc[curr[0]] = tokensWithBalance.map(t => t.underlyingAddress);
         }
         return acc;
       }, {} as Record<Address, readonly Address[]>);
