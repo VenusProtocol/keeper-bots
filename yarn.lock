@@ -7597,22 +7597,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/keeper-bot-contracts@npm:1.2.0":
-  version: 1.2.0
-  resolution: "@venusprotocol/keeper-bot-contracts@npm:1.2.0"
-  dependencies:
-    "@openzeppelin/contracts": 4.9.3
-    "@openzeppelin/contracts-upgradeable": 4.9.3
-    "@uniswap/permit2-sdk": ^1.2.1
-    "@uniswap/v3-core": ^1.0.1
-    "@venusprotocol/governance-contracts": ^2.0.0
-    "@venusprotocol/isolated-pools": ^3.3.0
-    "@venusprotocol/protocol-reserve": ^2.3.0-dev.1
-    "@venusprotocol/venus-protocol": ^9.1.0
-  checksum: 82590c61f5ba53d03a74acc9031092fc2c600bb69bd6cf47505d73b141afdfc894ac3a09a0b6421804338f3c094557cf4abdf87b6686b648123f1d12080a66a4
-  languageName: node
-  linkType: hard
-
 "@venusprotocol/keeper-bot-contracts@npm:1.2.0-dev.4":
   version: 1.2.0-dev.4
   resolution: "@venusprotocol/keeper-bot-contracts@npm:1.2.0-dev.4"
@@ -7626,6 +7610,22 @@ __metadata:
     "@venusprotocol/protocol-reserve": ^2.3.0-dev.1
     "@venusprotocol/venus-protocol": ^9.1.0
   checksum: dd87949cc6ed93f7117758552e2fd11aa7e20c9599bfc35c87ce15c88e545b64f6f589212cabe8eedd964e84998d14c2363ae7d9d6d71c5b33c3c2eab768a949
+  languageName: node
+  linkType: hard
+
+"@venusprotocol/keeper-bot-contracts@npm:1.3.0-dev.1":
+  version: 1.3.0-dev.1
+  resolution: "@venusprotocol/keeper-bot-contracts@npm:1.3.0-dev.1"
+  dependencies:
+    "@openzeppelin/contracts": 4.9.3
+    "@openzeppelin/contracts-upgradeable": 4.9.3
+    "@uniswap/permit2-sdk": ^1.2.1
+    "@uniswap/v3-core": ^1.0.1
+    "@venusprotocol/governance-contracts": ^2.0.0
+    "@venusprotocol/isolated-pools": ^3.3.0
+    "@venusprotocol/protocol-reserve": ^2.3.0
+    "@venusprotocol/venus-protocol": ^9.1.0
+  checksum: 0dd44caffa8ce4adeaf01967b84123c881e0ecc39605dd6cfae057f6ab933766bb9cffb0d4b53916ecb48cb3c6933df573f0bf23d0401ff71dd0299eefeb14ec
   languageName: node
   linkType: hard
 
@@ -7748,7 +7748,7 @@ __metadata:
     "@uniswap/sdk": ^3.0.3
     "@uniswap/sdk-core": ^5.3.1
     "@uniswap/smart-order-router": ^3.36.0
-    "@venusprotocol/keeper-bot-contracts": 1.2.0
+    "@venusprotocol/keeper-bot-contracts": 1.3.0-dev.1
     "@venusprotocol/oracle": ^2.0.0
     "@wagmi/cli": ^2.0.4
     abitype: 0.10.0
