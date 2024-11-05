@@ -47,9 +47,6 @@ jobs:
         run: 
           yarn workspace @venusprotocol/keeper-bot-contracts run semantic-release
       
-      - name: Install dependencies
-        run: yarn
-      
       - name: Build Keeper Bots
         env:
           THE_GRAPH_STUDIO_API_KEY: ${{ secrets.THE_GRAPH_STUDIO_API_KEY }}
@@ -66,9 +63,6 @@ jobs:
           GIT_COMMITTER_NAME: Venus Tools
           GIT_COMMITTER_EMAIL: tools@venus.io
         run: yarn workspace @venusprotocol/keeper-bots run semantic-release
-      
-      - name: Install dependencies
-        run: yarn
 
       - name: Build CLI
         run: yarn workspace @venusprotocol/cli run build

@@ -5793,7 +5793,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/smart-router@npm:^6.0.17":
+"@pancakeswap/smart-router@npm:6.1.4, @pancakeswap/smart-router@npm:^6.0.17":
   version: 6.1.4
   resolution: "@pancakeswap/smart-router@npm:6.1.4"
   dependencies:
@@ -5907,7 +5907,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/v3-core@npm:^1.0.2":
+"@pancakeswap/v3-core@npm:1.0.2, @pancakeswap/v3-core@npm:^1.0.2":
   version: 1.0.2
   resolution: "@pancakeswap/v3-core@npm:1.0.2"
   checksum: 3fddad82a0a4bfdbe99ee10e40b538dc9f83547b547a16c9ec02a145a4f2337e1eeca7525f628dde237554a0bd0266e231de0410a156eb53273a736d29a99609
@@ -7613,6 +7613,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@venusprotocol/keeper-bot-contracts@npm:1.3.0-dev.1":
+  version: 1.3.0-dev.1
+  resolution: "@venusprotocol/keeper-bot-contracts@npm:1.3.0-dev.1"
+  dependencies:
+    "@openzeppelin/contracts": 4.9.3
+    "@openzeppelin/contracts-upgradeable": 4.9.3
+    "@uniswap/permit2-sdk": ^1.2.1
+    "@uniswap/v3-core": ^1.0.1
+    "@venusprotocol/governance-contracts": ^2.0.0
+    "@venusprotocol/isolated-pools": ^3.3.0
+    "@venusprotocol/protocol-reserve": ^2.3.0
+    "@venusprotocol/venus-protocol": ^9.1.0
+  checksum: 0dd44caffa8ce4adeaf01967b84123c881e0ecc39605dd6cfae057f6ab933766bb9cffb0d4b53916ecb48cb3c6933df573f0bf23d0401ff71dd0299eefeb14ec
+  languageName: node
+  linkType: hard
+
 "@venusprotocol/keeper-bot-contracts@workspace:packages/smart-contracts":
   version: 0.0.0-use.local
   resolution: "@venusprotocol/keeper-bot-contracts@workspace:packages/smart-contracts"
@@ -7637,7 +7653,7 @@ __metadata:
     "@uniswap/v3-core": ^1.0.1
     "@venusprotocol/governance-contracts": ^2.0.0
     "@venusprotocol/isolated-pools": ^3.3.0
-    "@venusprotocol/protocol-reserve": ^2.3.0-dev.1
+    "@venusprotocol/protocol-reserve": ^2.3.0
     "@venusprotocol/solidity-utilities": ^2.0.0
     "@venusprotocol/venus-protocol": ^9.1.0
     "@wagmi/cli": ^2.0.4
@@ -7690,14 +7706,38 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@venusprotocol/keeper-bots@1.1.1, @venusprotocol/keeper-bots@workspace:packages/keeper-bots":
-  version: 0.0.0-use.local
-  resolution: "@venusprotocol/keeper-bots@workspace:packages/keeper-bots"
+"@venusprotocol/keeper-bots@npm:1.1.1":
+  version: 1.1.1
+  resolution: "@venusprotocol/keeper-bots@npm:1.1.1"
   dependencies:
     "@graphprotocol/client-cli": 3.0.0
     "@pancakeswap/sdk": ^5.8.8
     "@pancakeswap/smart-router": ^6.0.17
     "@pancakeswap/v3-core": ^1.0.2
+    "@uniswap/sdk": ^3.0.3
+    "@uniswap/sdk-core": ^5.3.1
+    "@uniswap/smart-order-router": ^3.36.0
+    "@venusprotocol/keeper-bot-contracts": 1.2.0-dev.4
+    "@venusprotocol/oracle": ^2.0.0
+    "@wagmi/cli": ^2.0.4
+    abitype: 0.10.0
+    graphql: ^16.8.1
+    hardhat: ^2.19.5
+    jsbi: ^3.2.5
+    urql: ^3.0.3
+    viem: ^2.7.1
+  checksum: 400ba69d806bc49a2871ad11143e77354546e3c54f7aa2d7d4351c3139ffbd8df7263d0614d16b680282ca4d4409eac6c9c152982ef1adfced96197f7d5ce7c6
+  languageName: node
+  linkType: hard
+
+"@venusprotocol/keeper-bots@workspace:packages/keeper-bots":
+  version: 0.0.0-use.local
+  resolution: "@venusprotocol/keeper-bots@workspace:packages/keeper-bots"
+  dependencies:
+    "@graphprotocol/client-cli": 3.0.0
+    "@pancakeswap/sdk": 5.8.8
+    "@pancakeswap/smart-router": 6.1.4
+    "@pancakeswap/v3-core": 1.0.2
     "@typechain/hardhat": ^6.1.2
     "@types/chai": ^4.3.11
     "@types/jest": ^29.5.12
@@ -7708,7 +7748,7 @@ __metadata:
     "@uniswap/sdk": ^3.0.3
     "@uniswap/sdk-core": ^5.3.1
     "@uniswap/smart-order-router": ^3.36.0
-    "@venusprotocol/keeper-bot-contracts": 1.2.0-dev.4
+    "@venusprotocol/keeper-bot-contracts": 1.3.0-dev.1
     "@venusprotocol/oracle": ^2.0.0
     "@wagmi/cli": ^2.0.4
     abitype: 0.10.0

@@ -1,6 +1,6 @@
 {
   "name": "@venusprotocol/keeper-bots",
-  "version": "1.1.1",
+  "version": "1.2.0-dev.1",
   "description": "",
   "scripts": {
     "dev": "tsc --watch",
@@ -28,13 +28,13 @@
   "typings": "dist/index.d.ts",
   "dependencies": {
     "@graphprotocol/client-cli": "3.0.0",
-    "@pancakeswap/sdk": "^5.8.8",
-    "@pancakeswap/smart-router": "^6.0.17",
-    "@pancakeswap/v3-core": "^1.0.2",
+    "@pancakeswap/sdk": "5.8.8",
+    "@pancakeswap/smart-router": "6.1.4",
+    "@pancakeswap/v3-core": "1.0.2",
     "@uniswap/sdk": "^3.0.3",
     "@uniswap/sdk-core": "^5.3.1",
     "@uniswap/smart-order-router": "^3.36.0",
-    "@venusprotocol/keeper-bot-contracts": "1.2.0-dev.4",
+    "@venusprotocol/keeper-bot-contracts": "1.3.0-dev.1",
     "@venusprotocol/oracle": "^2.0.0",
     "@wagmi/cli": "^2.0.4",
     "abitype": "0.10.0",
@@ -64,7 +64,7 @@
     "typescript": "^5.3.2"
   },
   "resolutions": {
-    "@venusprotocol/protocol-reserve": "^2.3.0-dev.1",
+    "@venusprotocol/protocol-reserve": "^2.3.0",
     "@venusprotocol/venus-protocol": "^9.1.0"
   },
   "publishConfig": {
