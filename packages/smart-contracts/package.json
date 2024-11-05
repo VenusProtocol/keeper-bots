@@ -30,7 +30,7 @@
     "@uniswap/v3-core": "^1.0.1",
     "@venusprotocol/governance-contracts": "^2.0.0",
     "@venusprotocol/isolated-pools": "^3.3.0",
-    "@venusprotocol/protocol-reserve": "^2.3.0-dev.1",
+    "@venusprotocol/protocol-reserve": "^2.3.0",
     "@venusprotocol/venus-protocol": "^9.1.0"
   },
   "devDependencies": {

@@ -5764,18 +5764,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/gauges@npm:2.0.1":
-  version: 2.0.1
-  resolution: "@pancakeswap/gauges@npm:2.0.1"
-  dependencies:
-    "@pancakeswap/chains": ^0.4.6
-    "@pancakeswap/tokens": ^0.6.27
-    "@pancakeswap/v3-sdk": ^3.8.11
-    viem: ^2.21.9
-  checksum: bade92b4643d14a75194e4639d1d0c21a092a4424436ee7b06201da13e967e709477460f480d46eafa67aa4d6ae7e0e63e7293f4c9c0333dabf4e112bb9d2dff
-  languageName: node
-  linkType: hard
-
 "@pancakeswap/multicall@npm:3.5.8":
   version: 3.5.8
   resolution: "@pancakeswap/multicall@npm:3.5.8"
@@ -5805,34 +5793,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/smart-router@npm:6.1.6":
-  version: 6.1.6
-  resolution: "@pancakeswap/smart-router@npm:6.1.6"
-  dependencies:
-    "@pancakeswap/chains": 0.4.6
-    "@pancakeswap/gauges": 2.0.1
-    "@pancakeswap/multicall": 3.5.8
-    "@pancakeswap/sdk": 5.8.8
-    "@pancakeswap/stable-swap-sdk": 1.1.3
-    "@pancakeswap/swap-sdk-core": 1.2.0
-    "@pancakeswap/token-lists": 0.0.13
-    "@pancakeswap/tokens": 0.6.27
-    "@pancakeswap/v3-sdk": 3.8.11
-    async-retry: ^1.3.1
-    debug: ^4.3.4
-    graphql: ^16.8.1
-    graphql-request: 5.0.0
-    lodash: ^4.17.21
-    mnemonist: ^0.38.3
-    stats-lite: ^2.2.0
-    tiny-invariant: ^1.3.0
-    viem: ^2.21.9
-    zod: ^3.22.3
-  checksum: cfbeb48228e4c72519883fddb2b7cdc21eb43db946bff0edd964efbc79f010db80a5d828ce85ac5c2b67f1b2a16a0d5c1f96d91d576ff4854521f40ddc6d8959
-  languageName: node
-  linkType: hard
-
-"@pancakeswap/smart-router@npm:^6.0.17":
+"@pancakeswap/smart-router@npm:6.1.4, @pancakeswap/smart-router@npm:^6.0.17":
   version: 6.1.4
   resolution: "@pancakeswap/smart-router@npm:6.1.4"
   dependencies:
@@ -7692,7 +7653,7 @@ __metadata:
     "@uniswap/v3-core": ^1.0.1
     "@venusprotocol/governance-contracts": ^2.0.0
     "@venusprotocol/isolated-pools": ^3.3.0
-    "@venusprotocol/protocol-reserve": ^2.3.0-dev.1
+    "@venusprotocol/protocol-reserve": ^2.3.0
     "@venusprotocol/solidity-utilities": ^2.0.0
     "@venusprotocol/venus-protocol": ^9.1.0
     "@wagmi/cli": ^2.0.4
@@ -7775,7 +7736,7 @@ __metadata:
   dependencies:
     "@graphprotocol/client-cli": 3.0.0
     "@pancakeswap/sdk": 5.8.8
-    "@pancakeswap/smart-router": 6.1.6
+    "@pancakeswap/smart-router": 6.1.4
     "@pancakeswap/v3-core": 1.0.2
     "@typechain/hardhat": ^6.1.2
     "@types/chai": ^4.3.11
