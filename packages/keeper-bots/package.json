@@ -29,7 +29,7 @@
   "dependencies": {
     "@graphprotocol/client-cli": "3.0.0",
     "@pancakeswap/sdk": "5.8.8",
-    "@pancakeswap/smart-router": "6.1.6",
+    "@pancakeswap/smart-router": "6.1.4",
     "@pancakeswap/v3-core": "1.0.2",
     "@uniswap/sdk": "^3.0.3",
     "@uniswap/sdk-core": "^5.3.1",
