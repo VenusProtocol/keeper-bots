@@ -105,16 +105,27 @@ export const options = zod.object({
     )
     .optional()
     .default(false),
-  minIncomeBp: zod
-    .number()
+  minIncomeLimitBp: zod
+    .preprocess(val => BigInt(val as string), zod.bigint())
     .describe(
       option({
-        description: "Min income in basis points as percentage of amount",
-        alias: "bp",
+        description: "Min income limit in basis points as percentage of amount",
+        alias: "income-limit",
       }),
     )
     .optional()
-    .default(3),
+    .default(3n),
+  minIncomeModifier: zod
+    .preprocess(val => BigInt(val as string), zod.bigint())
+    .describe(
+      option({
+        description:
+          "Increase the min income offered to make swaps more likely to succeed. If min income is negative this will increase the amount offered in the swap. If the min the min income is positive this will accept a lower profit.",
+        alias: "income-modifier",
+      }),
+    )
+    .optional()
+    .default(0n),
 });
 
 interface Props {
@@ -135,7 +146,8 @@ export default function Convert({ options }: Props) {
     profitable,
     loop,
     debug,
-    minIncomeBp,
+    minIncomeLimitBp,
+    minIncomeModifier,
     fixedPairs,
   } = options;
 
@@ -188,14 +200,24 @@ export default function Convert({ options }: Props) {
               amountOut,
               fixedPairs,
             );
-
-            const { trade, amount, minIncome } = arbitrageArgs || {
+            const {
+              trade,
+              amount,
+              minIncome: unadjustedMinIncome,
+            } = arbitrageArgs || {
               trade: undefined,
               amount: 0n,
               minIncome: 0n,
             };
 
-            const minIncomeLimit = BigInt(Number(amount) * minIncomeBp) / 10000n;
+            let minIncome = unadjustedMinIncome;
+
+            if (unadjustedMinIncome < 0n && minIncomeModifier > 0) {
+              minIncome = (unadjustedMinIncome * (10000n + minIncomeModifier)) / 10000n;
+            } else {
+              minIncome = (unadjustedMinIncome * (10000n - minIncomeModifier)) / 10000n;
+            }
+            const minIncomeLimit = (amount * minIncomeLimitBp) / 10000n;
             const minIncomeUsdValue = +formatUnits(minIncome, assetOutDecimals) * +assetOutPriceUsd;
 
             const context = {
