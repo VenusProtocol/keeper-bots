@@ -119,7 +119,7 @@ jobs:
           token: ${{ secrets.VENUS_TOOLS_TOKEN }}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 20
           cache: "yarn"
