@@ -1,6 +1,6 @@
 {
   "name": "@venusprotocol/keeper-bots",
-  "version": "1.2.0-dev.2",
+  "version": "1.2.0",
   "description": "",
   "scripts": {
     "dev": "tsc --watch",
