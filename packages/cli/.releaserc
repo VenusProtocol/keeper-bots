@@ -16,7 +16,7 @@
           },
           {
             "type": "chore",
-            "release": false
+            "release": "minor"
           },
           {
             "type": "docs",
