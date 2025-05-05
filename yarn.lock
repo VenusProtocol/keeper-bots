@@ -5775,7 +5775,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/sdk@npm:5.8.8, @pancakeswap/sdk@npm:^5.8.8":
+"@pancakeswap/sdk@npm:5.8.8":
   version: 5.8.8
   resolution: "@pancakeswap/sdk@npm:5.8.8"
   dependencies:
@@ -5793,7 +5793,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/smart-router@npm:6.1.4, @pancakeswap/smart-router@npm:^6.0.17":
+"@pancakeswap/smart-router@npm:6.1.4":
   version: 6.1.4
   resolution: "@pancakeswap/smart-router@npm:6.1.4"
   dependencies:
@@ -5907,7 +5907,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pancakeswap/v3-core@npm:1.0.2, @pancakeswap/v3-core@npm:^1.0.2":
+"@pancakeswap/v3-core@npm:1.0.2":
   version: 1.0.2
   resolution: "@pancakeswap/v3-core@npm:1.0.2"
   checksum: 3fddad82a0a4bfdbe99ee10e40b538dc9f83547b547a16c9ec02a145a4f2337e1eeca7525f628dde237554a0bd0266e231de0410a156eb53273a736d29a99609
@@ -7543,7 +7543,7 @@ __metadata:
     "@graphql-mesh/graphql": ^0.98.4
     "@sindresorhus/tsconfig": ^3.0.1
     "@types/react": ^18.2.55
-    "@venusprotocol/keeper-bots": 1.1.1
+    "@venusprotocol/keeper-bots": 1.2.0
     "@venusprotocol/venus-protocol": ^9.1.0
     ava: ^5.2.0
     chalk: ^5.2.0
@@ -7597,9 +7597,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/keeper-bot-contracts@npm:1.2.0-dev.4":
-  version: 1.2.0-dev.4
-  resolution: "@venusprotocol/keeper-bot-contracts@npm:1.2.0-dev.4"
+"@venusprotocol/keeper-bot-contracts@npm:1.3.0":
+  version: 1.3.0
+  resolution: "@venusprotocol/keeper-bot-contracts@npm:1.3.0"
   dependencies:
     "@openzeppelin/contracts": 4.9.3
     "@openzeppelin/contracts-upgradeable": 4.9.3
@@ -7607,9 +7607,9 @@ __metadata:
     "@uniswap/v3-core": ^1.0.1
     "@venusprotocol/governance-contracts": ^2.0.0
     "@venusprotocol/isolated-pools": ^3.3.0
-    "@venusprotocol/protocol-reserve": ^2.3.0-dev.1
+    "@venusprotocol/protocol-reserve": ^2.3.0
     "@venusprotocol/venus-protocol": ^9.1.0
-  checksum: dd87949cc6ed93f7117758552e2fd11aa7e20c9599bfc35c87ce15c88e545b64f6f589212cabe8eedd964e84998d14c2363ae7d9d6d71c5b33c3c2eab768a949
+  checksum: 926f2952c3c051d5133e1a3a8adcd88f59e6ac1646b84f4376378f778c6bdb947d609be27edd62185a2bb13be1a4b460c0daac398201de2ffdad1919e9c23359
   languageName: node
   linkType: hard
 
@@ -7706,18 +7706,18 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@venusprotocol/keeper-bots@npm:1.1.1":
-  version: 1.1.1
-  resolution: "@venusprotocol/keeper-bots@npm:1.1.1"
+"@venusprotocol/keeper-bots@npm:1.2.0":
+  version: 1.2.0
+  resolution: "@venusprotocol/keeper-bots@npm:1.2.0"
   dependencies:
     "@graphprotocol/client-cli": 3.0.0
-    "@pancakeswap/sdk": ^5.8.8
-    "@pancakeswap/smart-router": ^6.0.17
-    "@pancakeswap/v3-core": ^1.0.2
+    "@pancakeswap/sdk": 5.8.8
+    "@pancakeswap/smart-router": 6.1.4
+    "@pancakeswap/v3-core": 1.0.2
     "@uniswap/sdk": ^3.0.3
     "@uniswap/sdk-core": ^5.3.1
     "@uniswap/smart-order-router": ^3.36.0
-    "@venusprotocol/keeper-bot-contracts": 1.2.0-dev.4
+    "@venusprotocol/keeper-bot-contracts": 1.3.0-dev.1
     "@venusprotocol/oracle": ^2.0.0
     "@wagmi/cli": ^2.0.4
     abitype: 0.10.0
@@ -7726,7 +7726,7 @@ __metadata:
     jsbi: ^3.2.5
     urql: ^3.0.3
     viem: ^2.7.1
-  checksum: 400ba69d806bc49a2871ad11143e77354546e3c54f7aa2d7d4351c3139ffbd8df7263d0614d16b680282ca4d4409eac6c9c152982ef1adfced96197f7d5ce7c6
+  checksum: 8be12ddf049068857ae5f476490d669fc2c2fe40db59836fdff78d51bc2662ddecbc56e801ac5a2fcf07aa817fa3cc3a58559b5e1e4cd5e280f70e32e6847662
   languageName: node
   linkType: hard
 
@@ -7748,7 +7748,7 @@ __metadata:
     "@uniswap/sdk": ^3.0.3
     "@uniswap/sdk-core": ^5.3.1
     "@uniswap/smart-order-router": ^3.36.0
-    "@venusprotocol/keeper-bot-contracts": 1.3.0-dev.1
+    "@venusprotocol/keeper-bot-contracts": 1.3.0
     "@venusprotocol/oracle": ^2.0.0
     "@wagmi/cli": ^2.0.4
     abitype: 0.10.0
@@ -7791,7 +7791,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@venusprotocol/protocol-reserve@npm:^2.3.0, @venusprotocol/protocol-reserve@npm:^2.3.0-dev.1":
+"@venusprotocol/protocol-reserve@npm:^2.3.0":
   version: 2.3.0
   resolution: "@venusprotocol/protocol-reserve@npm:2.3.0"
   dependencies:
