@@ -289,7 +289,7 @@ export default function Convert({ options }: Props) {
           if ("error" in result) {
             return (
               <BorderBox borderStyle="bold" borderBottom key={idx} flexDirection="column">
-                <Text color="red">Error: {result.error as string}</Text>
+                <Text color="red">{`Error: ${result.error}`}</Text>
                 {result.args && (
                   <BorderBox borderTop borderStyle="classic" borderColor="#3396FF">
                     <Text>{JSON.stringify(result.args || " ", stringifyBigInt)}</Text>
@@ -317,11 +317,11 @@ export default function Convert({ options }: Props) {
                   <Box flexGrow={1} flexDirection="column" marginLeft={1} marginRight={1} minWidth={60}>
                     <Text bold>{msg.type}</Text>
                     {"blockNumber" in msg && msg.blockNumber !== undefined && (
-                      <Text bold>Block Number {msg.blockNumber?.toString()}</Text>
+                      <Text bold>{`Block Number ${msg.blockNumber?.toString()}`}</Text>
                     )}
                     {"error" in msg && msg.error && (
                       <>
-                        <Text color="red">{msg.error}</Text>
+                        <Text color="red">{`Message error: ${msg.error}`}</Text>
                       </>
                     )}
                     {"pancakeSwapTrade" in msg.context && (
@@ -345,7 +345,7 @@ export default function Convert({ options }: Props) {
           </Box>
         )}
       </Box>
-      {error ? <Text color="red">Error - {error}</Text> : null}
+      {error ? <Text color="red">{`Error - ${error}`}</Text> : null}
     </Box>
   );
 }
